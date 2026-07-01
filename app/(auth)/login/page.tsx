@@ -10,6 +10,7 @@ function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const justVerified = searchParams.get('verified') === '1'
+  const callbackUrl = searchParams.get('callbackUrl') || '/dashboard'
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -28,7 +29,7 @@ function LoginForm() {
       setError(res.error === 'CredentialsSignin' ? 'Invalid email or password' : res.error)
       return
     }
-    router.push('/')
+    router.push(callbackUrl)
     router.refresh()
   }
 

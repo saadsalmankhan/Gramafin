@@ -19,7 +19,7 @@ import {
 import clsx from 'clsx'
 
 const nav = [
-  { href: '/',             label: 'Dashboard',    icon: LayoutDashboard },
+  { href: '/dashboard',    label: 'Dashboard',    icon: LayoutDashboard },
   { href: '/expenses',     label: 'Expenses',     icon: Receipt },
   { href: '/assets',       label: 'Net worth',    icon: Building2 },
   { href: '/budget',       label: 'Budget',       icon: Target },
