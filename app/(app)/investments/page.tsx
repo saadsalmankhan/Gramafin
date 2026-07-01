@@ -17,11 +17,10 @@ import {
 } from 'recharts'
 
 const TYPE_COLORS: Record<InvestmentType, string> = {
-  'Stocks':       '#2a78d6',
-  'Mutual funds': '#1baf7a',
-  'Crypto':       '#eda100',
-  'Bonds':        '#4a3aa7',
-  'Other':        '#73726c',
+  'Stocks': '#2a78d6',
+  'Crypto': '#eda100',
+  'Bonds':  '#4a3aa7',
+  'Other':  '#73726c',
 }
 
 export default function InvestmentsPage() {

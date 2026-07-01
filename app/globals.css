@@ -5,6 +5,7 @@
 
 :root {
   --scrollbar-color: #d4d2cb;
+  --sidebar-w: 240px;
 }
 
 * {
