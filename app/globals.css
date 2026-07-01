@@ -1,0 +1,76 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --scrollbar-color: #d4d2cb;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background-color: #f8f7f4;
+  color: #0f0f0e;
+  font-family: 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scrollbar-color); border-radius: 3px; }
+
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+}
+
+@layer components {
+  .input {
+    @apply w-full h-9 rounded border border-gray-200 bg-white px-3 text-sm text-ink-primary
+           placeholder:text-ink-muted focus:outline-none focus:ring-2 focus:ring-brand-500/30
+           focus:border-brand-500 transition-colors;
+  }
+
+  .select {
+    @apply h-9 rounded border border-gray-200 bg-white px-3 text-sm text-ink-primary
+           focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500
+           transition-colors cursor-pointer;
+  }
+
+  .btn-primary {
+    @apply h-9 px-4 rounded bg-brand-600 text-white text-sm font-medium
+           hover:bg-brand-700 active:scale-[.98] transition-all duration-100
+           flex items-center gap-1.5 whitespace-nowrap;
+  }
+
+  .btn-ghost {
+    @apply h-9 px-3 rounded border border-gray-200 bg-white text-sm text-ink-secondary
+           hover:bg-surface-1 active:scale-[.98] transition-all duration-100
+           flex items-center gap-1.5 whitespace-nowrap;
+  }
+
+  .btn-danger {
+    @apply h-8 px-2.5 rounded border border-red-200 text-red-500 text-xs
+           hover:bg-red-50 active:scale-[.98] transition-all duration-100
+           flex items-center gap-1;
+  }
+
+  .card {
+    @apply bg-white border border-gray-100 rounded-card p-5 shadow-sm;
+  }
+
+  .metric-card {
+    @apply bg-surface-1 rounded-card p-4;
+  }
+
+  .badge {
+    @apply inline-block text-[10px] font-medium px-2 py-0.5 rounded-full;
+  }
+
+  .section-label {
+    @apply text-[10px] font-medium uppercase tracking-widest text-ink-muted;
+  }
+}
