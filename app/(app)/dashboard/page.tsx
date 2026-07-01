@@ -2,7 +2,7 @@
 
 import { useStore, useThisMonth } from '@/lib/store'
 import { fmt, fmtCompact, gainPct } from '@/lib/utils'
-import { CATEGORY_COLORS, EXPENSE_CATEGORIES, ExpenseCategory } from '@/types'
+import { CATEGORY_COLORS, EXPENSE_CATEGORIES, ExpenseCategory, isLiabilityCategory } from '@/types'
 import MetricCard from '@/components/MetricCard'
 import CategoryBadge from '@/components/CategoryBadge'
 import PageHeader from '@/components/PageHeader'
@@ -24,10 +24,10 @@ export default function Dashboard() {
 
   const totalSpend = monthExpenses.reduce((s, e) => s + e.amount, 0)
   const totalAssets = state.assets
-    .filter(a => a.category !== 'Liability')
+    .filter(a => !isLiabilityCategory(a.category))
     .reduce((s, a) => s + a.value, 0)
   const totalLiab = state.assets
-    .filter(a => a.category === 'Liability')
+    .filter(a => isLiabilityCategory(a.category))
     .reduce((s, a) => s + a.value, 0)
   const netWorth = totalAssets - totalLiab
   const totalBudget = Object.values(state.budgets).reduce((s, v) => s + v, 0)

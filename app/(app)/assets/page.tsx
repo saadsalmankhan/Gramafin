@@ -2,11 +2,11 @@
 
 import { useState } from 'react'
 import { useStore } from '@/lib/store'
-import { Asset, ASSET_CATEGORIES, AssetCategory } from '@/types'
+import { Asset, ASSET_CATEGORIES, AssetCategory, isLiabilityCategory } from '@/types'
 import { fmt, pct, uid } from '@/lib/utils'
 import MetricCard from '@/components/MetricCard'
 import PageHeader from '@/components/PageHeader'
-import { Plus, Trash2, TrendingUp, TrendingDown } from 'lucide-react'
+import { Plus, Trash2, TrendingUp, TrendingDown, CreditCard } from 'lucide-react'
 
 const ASSET_COLORS: Record<AssetCategory, string> = {
   'Cash / Bank':      '#2a78d6',
@@ -15,7 +15,12 @@ const ASSET_COLORS: Record<AssetCategory, string> = {
   'Mutual funds':     '#eda100',
   'Gold / Jewelry':   '#eb6834',
   'Tangible assets':  '#e87ba4',
+  'Credit card':      '#c026d3',
   'Liability':        '#e34948',
+}
+
+function utilizationColor(p: number): string {
+  return p < 70 ? '#15803d' : p < 90 ? '#d97706' : '#dc2626'
 }
 
 export default function AssetsPage() {
@@ -23,10 +28,15 @@ export default function AssetsPage() {
   const [name, setName] = useState('')
   const [value, setValue] = useState('')
   const [category, setCategory] = useState<AssetCategory>('Cash / Bank')
+  const [creditLimit, setCreditLimit] = useState('')
+  const [dueDate, setDueDate] = useState('')
+  const [minimumPayment, setMinimumPayment] = useState('')
   const [error, setError] = useState('')
 
-  const assets = state.assets.filter(a => a.category !== 'Liability')
-  const liabilities = state.assets.filter(a => a.category === 'Liability')
+  const isCreditCard = category === 'Credit card'
+
+  const assets = state.assets.filter(a => !isLiabilityCategory(a.category))
+  const liabilities = state.assets.filter(a => isLiabilityCategory(a.category))
   const totalAssets = assets.reduce((s, a) => s + a.value, 0)
   const totalLiab = liabilities.reduce((s, a) => s + a.value, 0)
   const netWorth = totalAssets - totalLiab
@@ -35,15 +45,35 @@ export default function AssetsPage() {
     if (!name.trim()) { setError('Name is required'); return }
     const val = parseFloat(value)
     if (isNaN(val) || val <= 0) { setError('Enter a valid value'); return }
+
+    let limit: number | undefined
+    if (isCreditCard) {
+      limit = parseFloat(creditLimit)
+      if (isNaN(limit) || limit <= 0) { setError('Enter a valid credit limit'); return }
+    }
+
     setError('')
-    const asset: Asset = { id: uid(), name: name.trim(), value: val, category }
+    const asset: Asset = {
+      id: uid(),
+      name: name.trim(),
+      value: val,
+      category,
+      ...(isCreditCard && {
+        creditLimit: limit,
+        dueDate: dueDate || undefined,
+        minimumPayment: minimumPayment ? parseFloat(minimumPayment) : undefined,
+      }),
+    }
     dispatch({ type: 'ADD_ASSET', payload: asset })
     setName('')
     setValue('')
+    setCreditLimit('')
+    setDueDate('')
+    setMinimumPayment('')
   }
 
   function AssetRow({ a }: { a: Asset }) {
-    const base = a.category === 'Liability' ? totalLiab : totalAssets
+    const base = isLiabilityCategory(a.category) ? totalLiab : totalAssets
     const share = pct(a.value, base)
     const color = ASSET_COLORS[a.category]
     return (
@@ -70,7 +100,7 @@ export default function AssetsPage() {
         </div>
         <span
           className={`text-sm font-mono font-medium flex-shrink-0 ${
-            a.category === 'Liability' ? 'text-danger' : 'text-success'
+            isLiabilityCategory(a.category) ? 'text-danger' : 'text-success'
           }`}
         >
           {fmt(a.value)}
@@ -82,6 +112,50 @@ export default function AssetsPage() {
         >
           <Trash2 className="w-3.5 h-3.5" />
         </button>
+      </div>
+    )
+  }
+
+  function CreditCardRow({ a }: { a: Asset }) {
+    const limit = a.creditLimit ?? 0
+    const utilization = limit > 0 ? Math.min(100, Math.round((a.value / limit) * 100)) : 0
+    const color = utilizationColor(utilization)
+    return (
+      <div className="py-3 px-2 hover:bg-surface-0 rounded-lg transition-colors">
+        <div className="flex items-center gap-4">
+          <div
+            className="w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center"
+            style={{ background: ASSET_COLORS['Credit card'] + '18' }}
+          >
+            <CreditCard className="w-4 h-4" style={{ color: ASSET_COLORS['Credit card'] }} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-ink-primary truncate">{a.name}</p>
+            <p className="text-[11px] text-ink-muted">
+              Limit {fmt(limit)}
+              {a.dueDate && ` · Due ${a.dueDate}`}
+              {a.minimumPayment ? ` · Min payment ${fmt(a.minimumPayment)}` : ''}
+            </p>
+          </div>
+          <div className="w-24 hidden sm:block">
+            <div className="h-1.5 bg-surface-1 rounded-full overflow-hidden">
+              <div className="h-full rounded-full" style={{ width: `${utilization}%`, background: color }} />
+            </div>
+            <p className="text-[10px] mt-0.5 text-right font-medium" style={{ color }}>
+              {utilization}% used
+            </p>
+          </div>
+          <span className="text-sm font-mono font-medium text-danger flex-shrink-0">
+            {fmt(a.value)}
+          </span>
+          <button
+            className="btn-danger flex-shrink-0"
+            onClick={() => dispatch({ type: 'DELETE_ASSET', payload: a.id })}
+            aria-label="Delete"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+        </div>
       </div>
     )
   }
@@ -105,7 +179,7 @@ export default function AssetsPage() {
       <div className="card mb-6">
         <h2 className="text-sm font-medium text-ink-primary mb-4">Add asset or liability</h2>
         {error && <p className="text-xs text-danger mb-3 bg-red-50 px-3 py-2 rounded">{error}</p>}
-        <div className="flex gap-3 flex-wrap">
+        <div className="flex gap-3 flex-wrap mb-3">
           <input
             className="input flex-1 min-w-40"
             placeholder="Name (e.g. Meezan Bank savings)"
@@ -115,7 +189,7 @@ export default function AssetsPage() {
           <input
             className="input flex-1 min-w-32 font-mono"
             type="number"
-            placeholder="Value (PKR)"
+            placeholder={isCreditCard ? 'Current balance (PKR)' : 'Value (PKR)'}
             value={value}
             onChange={e => setValue(e.target.value)}
           />
@@ -128,10 +202,40 @@ export default function AssetsPage() {
               <option key={c} value={c}>{c}</option>
             ))}
           </select>
-          <button className="btn-primary" onClick={add}>
-            <Plus className="w-4 h-4" /> Add
-          </button>
+          {!isCreditCard && (
+            <button className="btn-primary" onClick={add}>
+              <Plus className="w-4 h-4" /> Add
+            </button>
+          )}
         </div>
+        {isCreditCard && (
+          <div className="flex gap-3 flex-wrap">
+            <input
+              className="input flex-1 min-w-32 font-mono"
+              type="number"
+              placeholder="Credit limit (PKR)"
+              value={creditLimit}
+              onChange={e => setCreditLimit(e.target.value)}
+            />
+            <input
+              className="input flex-1 min-w-32"
+              type="date"
+              placeholder="Due date"
+              value={dueDate}
+              onChange={e => setDueDate(e.target.value)}
+            />
+            <input
+              className="input flex-1 min-w-32 font-mono"
+              type="number"
+              placeholder="Minimum payment (PKR)"
+              value={minimumPayment}
+              onChange={e => setMinimumPayment(e.target.value)}
+            />
+            <button className="btn-primary" onClick={add}>
+              <Plus className="w-4 h-4" /> Add
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Assets */}
@@ -161,7 +265,11 @@ export default function AssetsPage() {
           <p className="text-sm text-ink-muted text-center py-6">No liabilities added yet</p>
         ) : (
           <div className="divide-y divide-gray-50">
-            {liabilities.map(a => <AssetRow key={a.id} a={a} />)}
+            {liabilities.map(a =>
+              a.category === 'Credit card'
+                ? <CreditCardRow key={a.id} a={a} />
+                : <AssetRow key={a.id} a={a} />
+            )}
           </div>
         )}
       </div>

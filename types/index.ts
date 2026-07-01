@@ -15,6 +15,7 @@ export type AssetCategory =
   | 'Mutual funds'
   | 'Gold / Jewelry'
   | 'Tangible assets'
+  | 'Credit card'
   | 'Liability'
 
 export type InvestmentType =
@@ -68,6 +69,16 @@ export interface Asset {
   name: string
   value: number
   category: AssetCategory
+  // Credit card only
+  creditLimit?: number
+  dueDate?: string        // ISO date of next payment due
+  minimumPayment?: number
+}
+
+export const LIABILITY_CATEGORIES: AssetCategory[] = ['Liability', 'Credit card']
+
+export function isLiabilityCategory(category: AssetCategory): boolean {
+  return LIABILITY_CATEGORIES.includes(category)
 }
 
 export interface Investment {
@@ -106,6 +117,7 @@ export const ASSET_CATEGORIES: AssetCategory[] = [
   'Mutual funds',
   'Gold / Jewelry',
   'Tangible assets',
+  'Credit card',
   'Liability',
 ]
 
