@@ -1,7 +1,7 @@
 'use client'
 
 import { useStore, useThisMonth } from '@/lib/store'
-import { fmt, fmtCompact, gainPct } from '@/lib/utils'
+import { fmt, fmtCompact, gainPct, daysUntil } from '@/lib/utils'
 import { CATEGORY_COLORS, EXPENSE_CATEGORIES, ExpenseCategory, isLiabilityCategory } from '@/types'
 import MetricCard from '@/components/MetricCard'
 import CategoryBadge from '@/components/CategoryBadge'
@@ -15,8 +15,10 @@ import {
   ResponsiveContainer,
   Cell,
 } from 'recharts'
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight, AlertTriangle, CreditCard } from 'lucide-react'
 import Link from 'next/link'
+
+const REMINDER_WINDOW_DAYS = 7
 
 export default function Dashboard() {
   const { state } = useStore()
@@ -52,12 +54,60 @@ export default function Dashboard() {
 
   const recent = state.expenses.slice(0, 8)
 
+  const cardReminders = state.assets
+    .filter(a => a.category === 'Credit card' && a.dueDate)
+    .map(a => ({ ...a, days: daysUntil(a.dueDate!) }))
+    .filter(a => a.days <= REMINDER_WINDOW_DAYS)
+    .sort((a, b) => a.days - b.days)
+
   return (
     <div>
       <PageHeader
         title="Dashboard"
         subtitle={new Date().toLocaleDateString('en-PK', { month: 'long', year: 'numeric' })}
       />
+
+      {/* Payment reminders */}
+      {cardReminders.length > 0 && (
+        <div className="card mb-6 border-l-4 border-l-danger">
+          <div className="flex items-center gap-2 mb-3">
+            <AlertTriangle className="w-4 h-4 text-danger" />
+            <h2 className="text-sm font-medium text-ink-primary">Payment reminders</h2>
+            <Link href="/assets" className="text-xs text-brand-600 hover:text-brand-700 flex items-center gap-1 ml-auto">
+              Manage <ArrowRight className="w-3 h-3" />
+            </Link>
+          </div>
+          <div className="space-y-2">
+            {cardReminders.map(c => {
+              const urgent = c.days <= 3
+              const color = urgent ? 'text-danger' : 'text-warning'
+              const bg = urgent ? 'bg-red-50' : 'bg-amber-50'
+              return (
+                <div key={c.id} className={`flex items-center justify-between px-3 py-2 rounded-lg ${bg}`}>
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <CreditCard className={`w-3.5 h-3.5 flex-shrink-0 ${color}`} />
+                    <span className="text-sm text-ink-primary truncate">{c.name}</span>
+                  </div>
+                  <div className="flex items-center gap-3 flex-shrink-0">
+                    {c.minimumPayment && (
+                      <span className="text-xs font-mono text-ink-muted hidden sm:inline">
+                        Min {fmt(c.minimumPayment)}
+                      </span>
+                    )}
+                    <span className={`text-xs font-medium ${color}`}>
+                      {c.days < 0
+                        ? `Overdue by ${Math.abs(c.days)}d`
+                        : c.days === 0
+                        ? 'Due today'
+                        : `Due in ${c.days}d`}
+                    </span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Metrics */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">

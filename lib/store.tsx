@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useContext, useEffect, useReducer, ReactNode } from 'react'
+import React, { createContext, useContext, useEffect, useReducer, useState, ReactNode } from 'react'
 import {
   AppState,
   Expense,
@@ -80,7 +80,13 @@ const StoreContext = createContext<StoreCtx | null>(null)
 
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, initialState)
+  // Hydration flag lives in state (not a ref) so a React StrictMode dev
+  // double-invoke of these effects can't fool the persist effect below —
+  // a ref mutation would be visible to the replayed call immediately,
+  // while this is only visible after a real re-render commits.
+  const [hydrated, setHydrated] = useState(false)
 
+  // Load from localStorage after mount (client-only, keeps SSR/hydration output identical).
   useEffect(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY)
@@ -89,13 +95,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         dispatch({ type: 'LOAD', payload: { ...initialState, ...parsed } })
       }
     } catch {}
+    setHydrated(true)
   }, [])
 
+  // Don't persist until hydration has committed, so we never clobber real
+  // data in localStorage with the empty initialState before the load above
+  // has had a chance to apply.
   useEffect(() => {
+    if (!hydrated) return
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
     } catch {}
-  }, [state])
+  }, [state, hydrated])
 
   return <StoreContext.Provider value={{ state, dispatch }}>{children}</StoreContext.Provider>
 }

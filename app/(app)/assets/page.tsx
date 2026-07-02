@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useStore } from '@/lib/store'
 import { Asset, ASSET_CATEGORIES, AssetCategory, isLiabilityCategory } from '@/types'
-import { fmt, pct, uid } from '@/lib/utils'
+import { fmt, pct, uid, daysUntil } from '@/lib/utils'
 import MetricCard from '@/components/MetricCard'
 import PageHeader from '@/components/PageHeader'
 import { Plus, Trash2, TrendingUp, TrendingDown, CreditCard } from 'lucide-react'
@@ -135,6 +135,16 @@ export default function AssetsPage() {
               Limit {fmt(limit)}
               {a.dueDate && ` · Due ${a.dueDate}`}
               {a.minimumPayment ? ` · Min payment ${fmt(a.minimumPayment)}` : ''}
+              {a.dueDate && (() => {
+                const d = daysUntil(a.dueDate)
+                if (d > 7) return null
+                const label = d < 0 ? `Overdue ${Math.abs(d)}d` : d === 0 ? 'Due today' : `Due in ${d}d`
+                return (
+                  <span className={`ml-1 font-medium ${d <= 3 ? 'text-danger' : 'text-warning'}`}>
+                    · {label}
+                  </span>
+                )
+              })()}
             </p>
           </div>
           <div className="w-24 hidden sm:block">

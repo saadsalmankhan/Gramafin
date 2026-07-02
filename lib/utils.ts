@@ -24,3 +24,10 @@ export function gainPct(cost: number, current: number): string {
   if (cost === 0) return '0.0'
   return (((current - cost) / cost) * 100).toFixed(1)
 }
+
+export function daysUntil(dateStr: string): number {
+  const target = new Date(dateStr + 'T00:00:00')
+  const now = new Date()
+  const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  return Math.round((target.getTime() - todayMidnight.getTime()) / (1000 * 60 * 60 * 24))
+}
