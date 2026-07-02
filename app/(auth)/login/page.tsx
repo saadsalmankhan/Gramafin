@@ -4,7 +4,7 @@ import { FormEvent, Suspense, useState } from 'react'
 import { signIn } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { Wallet } from 'lucide-react'
+import Image from 'next/image'
 
 function LoginForm() {
   const router = useRouter()
@@ -36,9 +36,7 @@ function LoginForm() {
   return (
     <div className="w-full max-w-sm">
       <div className="flex flex-col items-center mb-8">
-        <div className="w-10 h-10 rounded-lg bg-brand-600 flex items-center justify-center mb-3">
-          <Wallet className="w-5 h-5 text-white" />
-        </div>
+        <Image src="/logo-full.png" alt="Gramafin" width={505} height={126} className="h-9 w-auto mb-4" priority />
         <h1 className="text-lg font-semibold text-ink-primary">Welcome back</h1>
         <p className="text-sm text-ink-muted mt-1">Log in to Gramafin</p>
       </div>

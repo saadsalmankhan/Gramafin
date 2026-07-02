@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { CheckCircle2, XCircle } from 'lucide-react'
 import { consumeVerificationToken } from '@/lib/auth/verification'
 import { markEmailVerified } from '@/lib/auth/users'
@@ -17,6 +18,7 @@ export default async function VerifyPage({
 
   return (
     <div className="w-full max-w-sm text-center">
+      <Image src="/logo-full.png" alt="Gramafin" width={505} height={126} className="h-9 w-auto mb-6 mx-auto" priority />
       <div className="card">
         {email ? (
           <>

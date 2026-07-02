@@ -1,9 +1,9 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { getServerSession } from 'next-auth/next'
 import { redirect } from 'next/navigation'
 import { authOptions } from '@/lib/auth/options'
 import {
-  Wallet,
   Receipt,
   Building2,
   Target,
@@ -61,12 +61,7 @@ export default async function HomePage() {
       {/* Nav */}
       <header className="sticky top-0 z-10 border-b border-gray-100 bg-white/90 backdrop-blur">
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center">
-              <Wallet className="w-4 h-4 text-white" />
-            </div>
-            <span className="text-sm font-semibold text-ink-primary">Gramafin</span>
-          </div>
+          <Image src="/logo-full.png" alt="Gramafin" width={505} height={126} className="h-6 w-auto" priority />
           <nav className="hidden sm:flex items-center gap-8 text-sm text-ink-secondary">
             <a href="#features" className="hover:text-ink-primary transition-colors">Features</a>
             <a href="#how-it-works" className="hover:text-ink-primary transition-colors">How it works</a>
@@ -89,7 +84,7 @@ export default async function HomePage() {
       <section className="max-w-6xl mx-auto px-6 pt-16 sm:pt-20 pb-16 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
         <div>
           <h1 className="text-5xl sm:text-6xl font-semibold leading-[1.05] tracking-tight">
-            <span className="bg-gradient-to-r from-brand-600 to-violet-500 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-brand-700 to-brand-500 bg-clip-text text-transparent">
               All-in-One
             </span>
             <br />
@@ -114,7 +109,7 @@ export default async function HomePage() {
 
         {/* Product mockup */}
         <div className="relative">
-          <div className="absolute -inset-6 bg-gradient-to-br from-brand-100 to-violet-100 rounded-[2rem] -z-10 blur-2xl opacity-70" />
+          <div className="absolute -inset-6 bg-gradient-to-br from-brand-100 to-brand-200 rounded-[2rem] -z-10 blur-2xl opacity-70" />
           <div className="card shadow-xl border-gray-100 p-0 overflow-hidden">
             <div className="flex items-center gap-1.5 px-4 py-3 border-b border-gray-100">
               <span className="w-2.5 h-2.5 rounded-full bg-gray-200" />
@@ -179,7 +174,7 @@ export default async function HomePage() {
       <section id="features" className="max-w-6xl mx-auto px-6 py-24">
         <div className="text-center mb-12">
           <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight">
-            <span className="bg-gradient-to-r from-brand-600 to-violet-500 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-brand-700 to-brand-500 bg-clip-text text-transparent">
               Take control
             </span>{' '}
             <span className="text-ink-primary">of your finances</span>
@@ -194,7 +189,7 @@ export default async function HomePage() {
                 {bars.map((h, i) => (
                   <div
                     key={i}
-                    className="flex-1 rounded-t bg-gradient-to-t from-brand-600 to-violet-400 opacity-80"
+                    className="flex-1 rounded-t bg-gradient-to-t from-brand-700 to-brand-500 opacity-80"
                     style={{ height: `${h}%` }}
                   />
                 ))}
@@ -286,12 +281,7 @@ export default async function HomePage() {
       {/* Footer */}
       <footer className="border-t border-gray-100 py-8">
         <div className="max-w-6xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-md bg-brand-600 flex items-center justify-center">
-              <Wallet className="w-3 h-3 text-white" />
-            </div>
-            <span className="text-xs font-medium text-ink-secondary">Gramafin</span>
-          </div>
+          <Image src="/logo-full.png" alt="Gramafin" width={505} height={126} className="h-5 w-auto" />
           <p className="text-xs text-ink-muted">Personal finance in PKR — free, forever.</p>
         </div>
       </footer>

@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { useLayoutEffect, useRef, useState } from 'react'
 import { useSession, signOut } from 'next-auth/react'
@@ -10,7 +11,6 @@ import {
   Building2,
   Target,
   TrendingUp,
-  Wallet,
   PieChart,
   ChevronLeft,
   ChevronRight,
@@ -111,9 +111,7 @@ export default function Sidebar() {
       {/* Logo */}
       <div className="px-4 py-6 border-b border-gray-100 flex items-center justify-between">
         <div className="flex items-center gap-2.5 overflow-hidden">
-          <div className="w-8 h-8 shrink-0 rounded-lg bg-brand-600 flex items-center justify-center">
-            <Wallet className="w-4 h-4 text-white" />
-          </div>
+          <Image src="/logo-mark.png" alt="Gramafin" width={314} height={295} className="w-8 h-auto shrink-0" priority />
           {!collapsed && (
             <div className="whitespace-nowrap">
               <p className="text-sm font-semibold text-ink-primary leading-none">Gramafin</p>
