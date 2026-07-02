@@ -17,6 +17,7 @@ import {
   ChevronRight,
   LogOut,
   CloudOff,
+  HelpCircle,
 } from 'lucide-react'
 import clsx from 'clsx'
 
@@ -148,6 +149,21 @@ export default function Sidebar() {
           )
         })}
       </nav>
+
+      {/* Help */}
+      <div className="px-3">
+        <Link
+          href="/help"
+          title={collapsed ? 'Help Centre' : undefined}
+          className={clsx(
+            'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-ink-muted hover:bg-surface-0 hover:text-ink-primary transition-colors',
+            collapsed && 'justify-center'
+          )}
+        >
+          <HelpCircle className="w-4 h-4 shrink-0" />
+          {!collapsed && 'Help Centre'}
+        </Link>
+      </div>
 
       {/* Toggle */}
       <div className="px-3 pb-2">

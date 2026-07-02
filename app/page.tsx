@@ -65,6 +65,7 @@ export default async function HomePage() {
           <nav className="hidden sm:flex items-center gap-8 text-sm text-ink-secondary">
             <a href="#features" className="hover:text-ink-primary transition-colors">Features</a>
             <a href="#how-it-works" className="hover:text-ink-primary transition-colors">How it works</a>
+            <Link href="/help" className="hover:text-ink-primary transition-colors">Help Centre</Link>
           </nav>
           <div className="flex items-center gap-4">
             <Link href="/login" className="text-sm text-ink-secondary hover:text-ink-primary transition-colors">
