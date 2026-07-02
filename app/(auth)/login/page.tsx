@@ -35,6 +35,7 @@ function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const justVerified = searchParams.get('verified') === '1'
+  const justReset = searchParams.get('reset') === '1'
   const callbackUrl = searchParams.get('callbackUrl') || '/dashboard'
 
   const [email, setEmail] = useState('')
@@ -81,6 +82,11 @@ function LoginForm() {
                 Email verified — you can log in now.
               </p>
             )}
+            {justReset && !error && (
+              <p className="text-xs text-success bg-green-50 px-3 py-2 rounded">
+                Password updated — you can log in now.
+              </p>
+            )}
             {error && <p className="text-xs text-danger bg-red-50 px-3 py-2 rounded">{error}</p>}
             <input
               className="input"
@@ -91,15 +97,22 @@ function LoginForm() {
               autoComplete="email"
               required
             />
-            <input
-              className="input"
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              autoComplete="current-password"
-              required
-            />
+            <div>
+              <input
+                className="input"
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                autoComplete="current-password"
+                required
+              />
+              <div className="flex justify-end mt-1.5">
+                <Link href="/forgot-password" className="text-xs text-ink-muted hover:text-ink-primary transition-colors">
+                  Forgot password?
+                </Link>
+              </div>
+            </div>
             <button type="submit" className="btn-primary w-full justify-center" disabled={loading}>
               {loading ? 'Logging in…' : 'Log in'}
             </button>

@@ -49,6 +49,16 @@ export async function markEmailVerified(email: string): Promise<void> {
   await redis.set(userKey(user.email), user)
 }
 
+export async function updateUserPassword(email: string, newPassword: string): Promise<void> {
+  const user = await getUserByEmail(email)
+  if (!user) return
+  user.passwordHash = await bcrypt.hash(newPassword, 10)
+  // Resetting via a mailed link proves email ownership just as well as the
+  // original verification link would have, so clear up any unverified state.
+  user.emailVerified = true
+  await redis.set(userKey(user.email), user)
+}
+
 export async function verifyPassword(user: StoredUser, password: string): Promise<boolean> {
   return bcrypt.compare(password, user.passwordHash)
 }
