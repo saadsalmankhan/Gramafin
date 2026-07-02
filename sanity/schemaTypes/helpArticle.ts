@@ -42,6 +42,38 @@ export const helpArticle = defineType({
       validation: rule => rule.required().max(200),
     }),
     defineField({
+      name: 'mainImage',
+      title: 'Image',
+      type: 'image',
+      options: { hotspot: true },
+      description: 'Must be Creative Commons licensed (or public domain). Fill in attribution below.',
+      fields: [
+        defineField({
+          name: 'alt',
+          title: 'Alt text',
+          type: 'string',
+          validation: rule => rule.required(),
+        }),
+        defineField({
+          name: 'attribution',
+          title: 'Attribution',
+          type: 'object',
+          fields: [
+            defineField({ name: 'author', title: 'Author', type: 'string' }),
+            defineField({ name: 'sourceUrl', title: 'Source URL', type: 'url' }),
+            defineField({
+              name: 'license',
+              title: 'License',
+              type: 'string',
+              options: {
+                list: ['CC0', 'CC BY 2.0', 'CC BY 3.0', 'CC BY 4.0', 'CC BY-SA 3.0', 'CC BY-SA 4.0', 'Public Domain'],
+              },
+            }),
+          ],
+        }),
+      ],
+    }),
+    defineField({
       name: 'body',
       title: 'Body',
       type: 'array',

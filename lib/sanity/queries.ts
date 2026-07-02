@@ -1,4 +1,15 @@
 import { client } from './client'
+import type { SanityImageSource } from '@sanity/image-url/lib/types/types'
+
+export interface HelpArticleImage {
+  asset: SanityImageSource
+  alt: string
+  attribution?: {
+    author?: string
+    sourceUrl?: string
+    license?: string
+  }
+}
 
 export interface HelpArticleSummary {
   _id: string
@@ -7,6 +18,7 @@ export interface HelpArticleSummary {
   category: string
   excerpt: string
   publishedAt: string
+  mainImage?: HelpArticleImage
 }
 
 export interface HelpArticle extends HelpArticleSummary {
@@ -25,6 +37,12 @@ export function categoryLabel(category: string): string {
   return CATEGORY_LABELS[category] ?? category
 }
 
+const IMAGE_PROJECTION = `mainImage{
+  asset,
+  alt,
+  attribution
+}`
+
 export async function getAllHelpArticles(): Promise<HelpArticleSummary[]> {
   return client.fetch(
     `*[_type == "helpArticle"] | order(publishedAt desc) {
@@ -33,7 +51,8 @@ export async function getAllHelpArticles(): Promise<HelpArticleSummary[]> {
       "slug": slug.current,
       category,
       excerpt,
-      publishedAt
+      publishedAt,
+      ${IMAGE_PROJECTION}
     }`,
     {},
     { next: { revalidate: 60 } }
@@ -49,7 +68,8 @@ export async function getHelpArticleBySlug(slug: string): Promise<HelpArticle | 
       category,
       excerpt,
       body,
-      publishedAt
+      publishedAt,
+      ${IMAGE_PROJECTION}
     }`,
     { slug },
     { next: { revalidate: 60 } }

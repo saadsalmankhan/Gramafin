@@ -1,6 +1,8 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { Rocket, Receipt, Building2, TrendingUp, Settings, ArrowRight, LucideIcon } from 'lucide-react'
 import { getAllHelpArticles, categoryLabel, HelpArticleSummary } from '@/lib/sanity/queries'
+import { urlForImage } from '@/lib/sanity/image'
 
 const CATEGORY_ICONS: Record<string, LucideIcon> = {
   'getting-started': Rocket,
@@ -50,12 +52,28 @@ export default async function HelpIndexPage() {
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {grouped.get(category)!.map(article => (
-                    <Link key={article._id} href={`/help/${article.slug}`} className="card hover:border-brand-200 transition-colors">
-                      <h3 className="text-sm font-medium text-ink-primary mb-1.5 flex items-center gap-1.5">
-                        {article.title}
-                        <ArrowRight className="w-3.5 h-3.5 text-ink-muted" />
-                      </h3>
-                      <p className="text-xs text-ink-muted leading-relaxed">{article.excerpt}</p>
+                    <Link
+                      key={article._id}
+                      href={`/help/${article.slug}`}
+                      className="card hover:border-brand-200 transition-colors overflow-hidden p-0"
+                    >
+                      {article.mainImage && (
+                        <div className="relative w-full h-28 bg-surface-1">
+                          <Image
+                            src={urlForImage(article.mainImage.asset).width(600).height(280).fit('crop').url()}
+                            alt={article.mainImage.alt}
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
+                      )}
+                      <div className="p-5">
+                        <h3 className="text-sm font-medium text-ink-primary mb-1.5 flex items-center gap-1.5">
+                          {article.title}
+                          <ArrowRight className="w-3.5 h-3.5 text-ink-muted" />
+                        </h3>
+                        <p className="text-xs text-ink-muted leading-relaxed">{article.excerpt}</p>
+                      </div>
                     </Link>
                   ))}
                 </div>
