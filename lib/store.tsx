@@ -1,6 +1,7 @@
 'use client'
 
 import React, { createContext, useContext, useEffect, useReducer, useState, ReactNode } from 'react'
+import { useSession } from 'next-auth/react'
 import {
   AppState,
   Expense,
@@ -11,7 +12,7 @@ import {
   DEFAULT_BUDGETS,
 } from '@/types'
 
-const STORAGE_KEY = 'wm_state_v2'
+const LEGACY_STORAGE_KEY = 'wm_state_v2'
 
 const initialState: AppState = {
   expenses: [],
@@ -74,41 +75,82 @@ function reducer(state: AppState, action: Action): AppState {
 interface StoreCtx {
   state: AppState
   dispatch: React.Dispatch<Action>
+  syncError: boolean
 }
 
 const StoreContext = createContext<StoreCtx | null>(null)
 
 export function StoreProvider({ children }: { children: ReactNode }) {
+  const { data: session, status } = useSession()
+  const userId = session?.user?.id
+
   const [state, dispatch] = useReducer(reducer, initialState)
-  // Hydration flag lives in state (not a ref) so a React StrictMode dev
-  // double-invoke of these effects can't fool the persist effect below —
-  // a ref mutation would be visible to the replayed call immediately,
-  // while this is only visible after a real re-render commits.
   const [hydrated, setHydrated] = useState(false)
+  const [syncError, setSyncError] = useState(false)
 
-  // Load from localStorage after mount (client-only, keeps SSR/hydration output identical).
+  // Load this user's data from the cloud after auth resolves. Falls back to
+  // migrating any pre-existing browser-local data on the very first load.
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY)
-      if (raw) {
-        const parsed = JSON.parse(raw) as AppState
-        dispatch({ type: 'LOAD', payload: { ...initialState, ...parsed } })
+    if (status !== 'authenticated' || !userId) return
+    let cancelled = false
+
+    async function load() {
+      try {
+        const res = await fetch('/api/data')
+        if (!res.ok) throw new Error(`Failed to load data (${res.status})`)
+        const { data } = (await res.json()) as { data: AppState | null }
+
+        if (data) {
+          if (!cancelled) dispatch({ type: 'LOAD', payload: { ...initialState, ...data } })
+        } else {
+          try {
+            const raw = localStorage.getItem(LEGACY_STORAGE_KEY)
+            if (raw) {
+              const legacy = JSON.parse(raw) as AppState
+              if (!cancelled) dispatch({ type: 'LOAD', payload: { ...initialState, ...legacy } })
+            }
+          } catch {}
+        }
+        localStorage.removeItem(LEGACY_STORAGE_KEY)
+      } catch (err) {
+        console.error('Failed to load cloud data:', err)
+        if (!cancelled) setSyncError(true)
+      } finally {
+        if (!cancelled) setHydrated(true)
       }
-    } catch {}
-    setHydrated(true)
-  }, [])
+    }
 
-  // Don't persist until hydration has committed, so we never clobber real
-  // data in localStorage with the empty initialState before the load above
-  // has had a chance to apply.
+    load()
+    return () => {
+      cancelled = true
+    }
+  }, [status, userId])
+
+  // Persist to the cloud whenever state changes post-hydration (covers both
+  // normal edits and the one-time migration load above).
   useEffect(() => {
-    if (!hydrated) return
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
-    } catch {}
-  }, [state, hydrated])
+    if (!hydrated || status !== 'authenticated' || !userId) return
 
-  return <StoreContext.Provider value={{ state, dispatch }}>{children}</StoreContext.Provider>
+    fetch('/api/data', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(state),
+    })
+      .then(res => {
+        if (!res.ok) throw new Error(`Failed to save data (${res.status})`)
+        setSyncError(false)
+      })
+      .catch(err => {
+        console.error('Failed to save data:', err)
+        setSyncError(true)
+      })
+  }, [state, hydrated, status, userId])
+
+  return (
+    <StoreContext.Provider value={{ state, dispatch, syncError }}>
+      {children}
+    </StoreContext.Provider>
+  )
 }
 
 export function useStore() {

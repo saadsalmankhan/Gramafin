@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { useLayoutEffect, useRef, useState } from 'react'
 import { useSession, signOut } from 'next-auth/react'
+import { useStore } from '@/lib/store'
 import {
   LayoutDashboard,
   Receipt,
@@ -15,6 +16,7 @@ import {
   ChevronLeft,
   ChevronRight,
   LogOut,
+  CloudOff,
 } from 'lucide-react'
 import clsx from 'clsx'
 
@@ -42,6 +44,7 @@ function setCssWidth(px: number) {
 export default function Sidebar() {
   const path = usePathname()
   const { data: session } = useSession()
+  const { syncError } = useStore()
   const initial = session?.user?.name?.trim()?.[0]?.toUpperCase() ?? '?'
   const [collapsed, setCollapsed] = useState(false)
   const [dragging, setDragging] = useState(false)
@@ -160,6 +163,11 @@ export default function Sidebar() {
       {/* User + footer */}
       {collapsed ? (
         <div className="px-3 pb-3 flex flex-col items-center gap-2 border-t border-gray-100 pt-3">
+          {syncError && (
+            <span title="Sync failed — changes aren't saving">
+              <CloudOff className="w-4 h-4 text-danger" />
+            </span>
+          )}
           <div
             className="w-7 h-7 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center text-xs font-semibold shrink-0"
             title={session?.user?.name || undefined}
@@ -192,7 +200,13 @@ export default function Sidebar() {
               <LogOut className="w-4 h-4" />
             </button>
           </div>
-          <p className="text-[10px] text-ink-muted px-2 mt-2">All amounts in PKR</p>
+          {syncError ? (
+            <p className="text-[10px] text-danger px-2 mt-2 flex items-center gap-1">
+              <CloudOff className="w-3 h-3" /> Sync failed — check your connection
+            </p>
+          ) : (
+            <p className="text-[10px] text-ink-muted px-2 mt-2">All amounts in PKR</p>
+          )}
         </div>
       )}
 
