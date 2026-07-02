@@ -7,7 +7,7 @@ import { fmt, today, uid } from '@/lib/utils'
 import MetricCard from '@/components/MetricCard'
 import CategoryBadge from '@/components/CategoryBadge'
 import PageHeader from '@/components/PageHeader'
-import { Plus, Trash2 } from 'lucide-react'
+import { Plus, Trash2, Paperclip } from 'lucide-react'
 
 export default function ExpensesPage() {
   const { state, dispatch } = useStore()
@@ -15,8 +15,10 @@ export default function ExpensesPage() {
   const [amount, setAmount] = useState('')
   const [category, setCategory] = useState<ExpenseCategory>('Food & Dining')
   const [date, setDate] = useState(today())
+  const [receipt, setReceipt] = useState<File | null>(null)
   const [filter, setFilter] = useState<'all' | ExpenseCategory>('all')
   const [error, setError] = useState('')
+  const [uploading, setUploading] = useState(false)
 
   const month = new Date().toISOString().slice(0, 7)
   const monthTotal = state.expenses
@@ -24,22 +26,54 @@ export default function ExpensesPage() {
     .reduce((s, e) => s + e.amount, 0)
   const totalAll = state.expenses.reduce((s, e) => s + e.amount, 0)
 
-  function add() {
+  async function add() {
     if (!desc.trim()) { setError('Description is required'); return }
     const amt = parseFloat(amount)
     if (isNaN(amt) || amt <= 0) { setError('Enter a valid amount'); return }
     setError('')
+
+    let receiptUrl: string | undefined
+    if (receipt) {
+      setUploading(true)
+      try {
+        const form = new FormData()
+        form.append('file', receipt)
+        const res = await fetch('/api/upload/receipt', { method: 'POST', body: form })
+        const body = await res.json()
+        if (!res.ok) throw new Error(body.error || 'Upload failed')
+        receiptUrl = body.url
+      } catch (err) {
+        setUploading(false)
+        setError(err instanceof Error ? err.message : 'Failed to upload receipt')
+        return
+      }
+      setUploading(false)
+    }
+
     const expense: Expense = {
       id: uid(),
       description: desc.trim(),
       amount: amt,
       category,
       date,
+      ...(receiptUrl ? { receiptUrl } : {}),
     }
     dispatch({ type: 'ADD_EXPENSE', payload: expense })
     setDesc('')
     setAmount('')
     setDate(today())
+    setReceipt(null)
+  }
+
+  function removeExpense(e: Expense) {
+    dispatch({ type: 'DELETE_EXPENSE', payload: e.id })
+    if (e.receiptUrl) {
+      fetch('/api/upload/receipt', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: e.receiptUrl }),
+      }).catch(err => console.error('Failed to delete receipt:', err))
+    }
   }
 
   const visible = filter === 'all'
@@ -95,8 +129,18 @@ export default function ExpensesPage() {
             value={date}
             onChange={e => setDate(e.target.value)}
           />
-          <button className="btn-primary" onClick={add}>
-            <Plus className="w-4 h-4" /> Add expense
+          <label className="btn-ghost cursor-pointer">
+            <Paperclip className="w-4 h-4" />
+            {receipt ? receipt.name : 'Attach receipt'}
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/heic"
+              className="hidden"
+              onChange={e => setReceipt(e.target.files?.[0] ?? null)}
+            />
+          </label>
+          <button className="btn-primary" onClick={add} disabled={uploading}>
+            <Plus className="w-4 h-4" /> {uploading ? 'Uploading…' : 'Add expense'}
           </button>
         </div>
       </div>
@@ -141,6 +185,18 @@ export default function ExpensesPage() {
                       {e.category.slice(0, 2).toUpperCase()}
                     </div>
                     <span className="text-sm text-ink-primary truncate">{e.description}</span>
+                    {e.receiptUrl && (
+                      <a
+                        href={`/api/upload/receipt?url=${encodeURIComponent(e.receiptUrl)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-ink-muted hover:text-ink-primary flex-shrink-0"
+                        aria-label="View receipt"
+                        title="View receipt"
+                      >
+                        <Paperclip className="w-3.5 h-3.5" />
+                      </a>
+                    )}
                   </div>
                   <CategoryBadge category={e.category} />
                   <span className="text-xs text-ink-muted font-mono">{e.date}</span>
@@ -149,7 +205,7 @@ export default function ExpensesPage() {
                   </span>
                   <button
                     className="btn-danger"
-                    onClick={() => dispatch({ type: 'DELETE_EXPENSE', payload: e.id })}
+                    onClick={() => removeExpense(e)}
                     aria-label="Delete expense"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
