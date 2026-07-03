@@ -40,7 +40,9 @@ export function applyDueIncome(
       generated.push({
         id: uid(),
         source: r.source,
+        category: r.category,
         amount: r.amount,
+        account: r.account,
         date: nextDate,
         recurringId: r.id,
       })

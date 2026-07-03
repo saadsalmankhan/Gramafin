@@ -31,3 +31,18 @@ export function daysUntil(dateStr: string): number {
   const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate())
   return Math.round((target.getTime() - todayMidnight.getTime()) / (1000 * 60 * 60 * 24))
 }
+
+// Pakistan's tax year runs July 1 - June 30, spanning two calendar years.
+export function fiscalYearRange(dateStr: string = today()): { start: string; end: string; label: string } {
+  const [year, month] = dateStr.split('-').map(Number)
+  const startYear = month >= 7 ? year : year - 1
+  return {
+    start: `${startYear}-07-01`,
+    end: `${startYear + 1}-06-30`,
+    label: `FY${startYear}-${String(startYear + 1).slice(2)}`,
+  }
+}
+
+export function inFiscalYear(dateStr: string, range = fiscalYearRange()): boolean {
+  return dateStr >= range.start && dateStr <= range.end
+}
