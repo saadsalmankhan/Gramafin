@@ -9,6 +9,7 @@ import { useStore } from '@/lib/store'
 import {
   LayoutDashboard,
   Receipt,
+  Wallet,
   Building2,
   Target,
   TrendingUp,
@@ -23,6 +24,7 @@ import clsx from 'clsx'
 
 const nav = [
   { href: '/dashboard',    label: 'Dashboard',    icon: LayoutDashboard },
+  { href: '/income',       label: 'Income',       icon: Wallet },
   { href: '/expenses',     label: 'Expenses',     icon: Receipt },
   { href: '/assets',       label: 'Net worth',    icon: Building2 },
   { href: '/budget',       label: 'Budget',       icon: Target },

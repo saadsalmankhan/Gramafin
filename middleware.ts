@@ -7,6 +7,7 @@ const MARKETING_HOSTS = ['gramafin.com', 'www.gramafin.com']
 
 const PROTECTED_PREFIXES = [
   '/dashboard',
+  '/income',
   '/expenses',
   '/assets',
   '/budget',

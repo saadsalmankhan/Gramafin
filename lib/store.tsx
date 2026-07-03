@@ -9,8 +9,10 @@ import {
   Investment,
   MutualFund,
   ExpenseCategory,
+  RecurringIncome,
   DEFAULT_BUDGETS,
 } from '@/types'
+import { applyDueIncome } from '@/lib/income'
 
 const LEGACY_STORAGE_KEY = 'wm_state_v2'
 
@@ -20,6 +22,8 @@ const initialState: AppState = {
   investments: [],
   mutualFunds: [],
   budgets: DEFAULT_BUDGETS,
+  incomes: [],
+  recurringIncomes: [],
 }
 
 type Action =
@@ -33,6 +37,9 @@ type Action =
   | { type: 'UPDATE_MUTUAL_FUND'; payload: MutualFund }
   | { type: 'DELETE_MUTUAL_FUND'; payload: string }
   | { type: 'SET_BUDGET'; payload: { category: ExpenseCategory; amount: number } }
+  | { type: 'ADD_RECURRING_INCOME'; payload: RecurringIncome }
+  | { type: 'DELETE_RECURRING_INCOME'; payload: string }
+  | { type: 'DELETE_INCOME'; payload: string }
   | { type: 'LOAD'; payload: AppState }
 
 function reducer(state: AppState, action: Action): AppState {
@@ -67,6 +74,20 @@ function reducer(state: AppState, action: Action): AppState {
         ...state,
         budgets: { ...state.budgets, [action.payload.category]: action.payload.amount },
       }
+    case 'ADD_RECURRING_INCOME': {
+      const { incomes, recurring } = applyDueIncome(
+        [...state.recurringIncomes, action.payload],
+        state.incomes
+      )
+      return { ...state, recurringIncomes: recurring, incomes }
+    }
+    case 'DELETE_RECURRING_INCOME':
+      return {
+        ...state,
+        recurringIncomes: state.recurringIncomes.filter(r => r.id !== action.payload),
+      }
+    case 'DELETE_INCOME':
+      return { ...state, incomes: state.incomes.filter(i => i.id !== action.payload) }
     default:
       return state
   }
@@ -101,13 +122,20 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         const { data } = (await res.json()) as { data: AppState | null }
 
         if (data) {
-          if (!cancelled) dispatch({ type: 'LOAD', payload: { ...initialState, ...data } })
+          const merged = { ...initialState, ...data }
+          const { incomes, recurring } = applyDueIncome(merged.recurringIncomes, merged.incomes)
+          if (!cancelled) {
+            dispatch({ type: 'LOAD', payload: { ...merged, incomes, recurringIncomes: recurring } })
+          }
         } else {
           try {
             const raw = localStorage.getItem(LEGACY_STORAGE_KEY)
             if (raw) {
-              const legacy = JSON.parse(raw) as AppState
-              if (!cancelled) dispatch({ type: 'LOAD', payload: { ...initialState, ...legacy } })
+              const legacy = { ...initialState, ...(JSON.parse(raw) as AppState) }
+              const { incomes, recurring } = applyDueIncome(legacy.recurringIncomes, legacy.incomes)
+              if (!cancelled) {
+                dispatch({ type: 'LOAD', payload: { ...legacy, incomes, recurringIncomes: recurring } })
+              }
             }
           } catch {}
         }
