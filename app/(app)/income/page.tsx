@@ -4,27 +4,36 @@ import { useState } from 'react'
 import { useStore } from '@/lib/store'
 import {
   RecurringIncome,
+  Income,
   INCOME_FREQUENCIES,
   IncomeFrequency,
   INCOME_CATEGORIES,
   IncomeCategory,
 } from '@/types'
 import { fmt, today, uid, fiscalYearRange, inFiscalYear } from '@/lib/utils'
+import { computeNetWorth } from '@/lib/networth'
 import MetricCard from '@/components/MetricCard'
 import IncomeCategoryBadge from '@/components/IncomeCategoryBadge'
+import AccountSelect from '@/components/AccountSelect'
 import PageHeader from '@/components/PageHeader'
+import NetWorthTrendChart from '@/components/NetWorthTrendChart'
+import NetWorthBreakdownChart from '@/components/NetWorthBreakdownChart'
 import { Plus, Trash2, RefreshCw } from 'lucide-react'
+import clsx from 'clsx'
 
 export default function IncomePage() {
   const { state, dispatch } = useStore()
+  const [mode, setMode] = useState<'one-time' | 'recurring'>('one-time')
   const [source, setSource] = useState('')
   const [category, setCategory] = useState<IncomeCategory>('Salary')
   const [amount, setAmount] = useState('')
-  const [account, setAccount] = useState('')
+  const [account, setAccount] = useState('Cash')
   const [frequency, setFrequency] = useState<IncomeFrequency>('Monthly')
-  const [startDate, setStartDate] = useState(today())
+  const [date, setDate] = useState(today())
   const [filter, setFilter] = useState<'all' | IncomeCategory>('all')
   const [error, setError] = useState('')
+
+  const netWorthBreakdown = computeNetWorth(state)
 
   const month = new Date().toISOString().slice(0, 7)
   const monthTotal = state.incomes
@@ -36,30 +45,41 @@ export default function IncomePage() {
     .reduce((s, i) => s + i.amount, 0)
   const totalAll = state.incomes.reduce((s, i) => s + i.amount, 0)
 
-  const cashBankAccounts = state.assets
-    .filter(a => a.category === 'Cash / Bank')
-    .map(a => a.name)
-  const accountOptions = Array.from(new Set(['Cash', ...cashBankAccounts]))
-
-  function addRecurring() {
-    const amt = parseFloat(amount)
-    if (isNaN(amt) || amt <= 0) { setError('Enter a valid amount'); return }
-    if (!account.trim()) { setError('Account is required (or enter "Cash")'); return }
-    setError('')
-    const recurring: RecurringIncome = {
-      id: uid(),
-      source: source.trim() || category,
-      category,
-      amount: amt,
-      account: account.trim(),
-      frequency,
-      nextDate: startDate,
-    }
-    dispatch({ type: 'ADD_RECURRING_INCOME', payload: recurring })
+  function resetForm() {
     setSource('')
     setAmount('')
-    setAccount('')
-    setStartDate(today())
+    setAccount('Cash')
+    setDate(today())
+  }
+
+  function addIncome() {
+    const amt = parseFloat(amount)
+    if (isNaN(amt) || amt <= 0) { setError('Enter a valid amount'); return }
+    setError('')
+
+    if (mode === 'recurring') {
+      const recurring: RecurringIncome = {
+        id: uid(),
+        source: source.trim() || category,
+        category,
+        amount: amt,
+        account,
+        frequency,
+        nextDate: date,
+      }
+      dispatch({ type: 'ADD_RECURRING_INCOME', payload: recurring })
+    } else {
+      const income: Income = {
+        id: uid(),
+        source: source.trim() || category,
+        category,
+        amount: amt,
+        account,
+        date,
+      }
+      dispatch({ type: 'ADD_INCOME', payload: income })
+    }
+    resetForm()
   }
 
   const visible = filter === 'all'
@@ -69,7 +89,7 @@ export default function IncomePage() {
 
   return (
     <div>
-      <PageHeader title="Income" subtitle="Set up salary and other income to auto-track it every period" />
+      <PageHeader title="Income" subtitle="Log one-off income or set up salary to auto-track it every period" />
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
         <MetricCard label="This month" value={fmt(monthTotal)} variant="positive" />
@@ -78,9 +98,25 @@ export default function IncomePage() {
         <MetricCard label="Transactions" value={String(state.incomes.length)} sub="total logged" />
       </div>
 
-      {/* Add recurring income */}
+      {/* Add income */}
       <div className="card mb-6">
-        <h2 className="text-sm font-medium text-ink-primary mb-4">Add recurring income</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-sm font-medium text-ink-primary">Add income</h2>
+          <div className="flex rounded-lg border border-gray-200 p-0.5">
+            {(['one-time', 'recurring'] as const).map(m => (
+              <button
+                key={m}
+                onClick={() => setMode(m)}
+                className={clsx(
+                  'px-3 py-1 text-xs rounded-md transition-colors',
+                  mode === m ? 'bg-brand-600 text-white' : 'text-ink-secondary hover:bg-surface-0'
+                )}
+              >
+                {m === 'one-time' ? 'One-time' : 'Recurring'}
+              </button>
+            ))}
+          </div>
+        </div>
         {error && (
           <p className="text-xs text-danger mb-3 bg-red-50 px-3 py-2 rounded">{error}</p>
         )}
@@ -108,38 +144,30 @@ export default function IncomePage() {
             placeholder="Amount (PKR)"
             value={amount}
             onChange={e => setAmount(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && addRecurring()}
+            onKeyDown={e => e.key === 'Enter' && addIncome()}
           />
-          <input
-            className="input"
-            list="income-accounts"
-            placeholder="Account (or Cash)"
-            value={account}
-            onChange={e => setAccount(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && addRecurring()}
-          />
-          <datalist id="income-accounts">
-            {accountOptions.map(a => <option key={a} value={a} />)}
-          </datalist>
+          <AccountSelect value={account} onChange={setAccount} bankAccounts={state.bankAccounts} />
         </div>
         <div className="flex gap-3 flex-wrap">
-          <select
-            className="select flex-1"
-            value={frequency}
-            onChange={e => setFrequency(e.target.value as IncomeFrequency)}
-          >
-            {INCOME_FREQUENCIES.map(f => (
-              <option key={f} value={f}>{f}</option>
-            ))}
-          </select>
+          {mode === 'recurring' && (
+            <select
+              className="select flex-1"
+              value={frequency}
+              onChange={e => setFrequency(e.target.value as IncomeFrequency)}
+            >
+              {INCOME_FREQUENCIES.map(f => (
+                <option key={f} value={f}>{f}</option>
+              ))}
+            </select>
+          )}
           <input
             className="input flex-1"
             type="date"
-            value={startDate}
-            onChange={e => setStartDate(e.target.value)}
+            value={date}
+            onChange={e => setDate(e.target.value)}
           />
-          <button className="btn-primary" onClick={addRecurring}>
-            <Plus className="w-4 h-4" /> Add recurring income
+          <button className="btn-primary" onClick={addIncome}>
+            <Plus className="w-4 h-4" /> {mode === 'recurring' ? 'Add recurring income' : 'Add income'}
           </button>
         </div>
       </div>
@@ -229,6 +257,18 @@ export default function IncomePage() {
             </div>
           </div>
         )}
+      </div>
+
+      {/* Net worth */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+        <div className="card">
+          <h2 className="text-sm font-medium text-ink-primary mb-4">Net worth over time</h2>
+          <NetWorthTrendChart history={state.netWorthHistory} />
+        </div>
+        <div className="card">
+          <h2 className="text-sm font-medium text-ink-primary mb-4">Net worth breakdown</h2>
+          <NetWorthBreakdownChart breakdown={netWorthBreakdown} />
+        </div>
       </div>
     </div>
   )

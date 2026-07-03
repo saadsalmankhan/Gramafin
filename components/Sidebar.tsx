@@ -19,6 +19,7 @@ import {
   LogOut,
   CloudOff,
   HelpCircle,
+  Settings,
 } from 'lucide-react'
 import clsx from 'clsx'
 
@@ -152,8 +153,19 @@ export default function Sidebar() {
         })}
       </nav>
 
-      {/* Help */}
-      <div className="px-3">
+      {/* Settings + Help */}
+      <div className="px-3 space-y-0.5">
+        <Link
+          href="/settings"
+          title={collapsed ? 'Settings' : undefined}
+          className={clsx(
+            'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-ink-muted hover:bg-surface-0 hover:text-ink-primary transition-colors',
+            collapsed && 'justify-center'
+          )}
+        >
+          <Settings className="w-4 h-4 shrink-0" />
+          {!collapsed && 'Settings'}
+        </Link>
         <Link
           href="/help"
           title={collapsed ? 'Help Centre' : undefined}

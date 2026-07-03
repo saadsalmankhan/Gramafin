@@ -63,6 +63,17 @@ export interface Expense {
   category: ExpenseCategory
   date: string
   receiptUrl?: string
+  account?: string // e.g. a bank account name, or "Cash"
+}
+
+export interface BankAccount {
+  id: string
+  name: string
+}
+
+export interface NetWorthSnapshot {
+  date: string
+  value: number
 }
 
 export type IncomeFrequency = 'Weekly' | 'Bi-weekly' | 'Monthly' | 'Quarterly' | 'Yearly'
@@ -180,6 +191,8 @@ export interface AppState {
   budgets: Budgets
   incomes: Income[]
   recurringIncomes: RecurringIncome[]
+  bankAccounts: BankAccount[]
+  netWorthHistory: NetWorthSnapshot[]
 }
 
 export const EXPENSE_CATEGORIES: ExpenseCategory[] = [

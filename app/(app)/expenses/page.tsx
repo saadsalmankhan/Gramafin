@@ -6,6 +6,7 @@ import { Expense, EXPENSE_CATEGORIES, ExpenseCategory, CATEGORY_COLORS } from '@
 import { fmt, today, uid } from '@/lib/utils'
 import MetricCard from '@/components/MetricCard'
 import CategoryBadge from '@/components/CategoryBadge'
+import AccountSelect from '@/components/AccountSelect'
 import PageHeader from '@/components/PageHeader'
 import { Plus, Trash2, Paperclip } from 'lucide-react'
 
@@ -14,6 +15,7 @@ export default function ExpensesPage() {
   const [desc, setDesc] = useState('')
   const [amount, setAmount] = useState('')
   const [category, setCategory] = useState<ExpenseCategory>('Food & Dining')
+  const [account, setAccount] = useState('Cash')
   const [date, setDate] = useState(today())
   const [receipt, setReceipt] = useState<File | null>(null)
   const [filter, setFilter] = useState<'all' | ExpenseCategory>('all')
@@ -55,12 +57,14 @@ export default function ExpensesPage() {
       description: desc.trim(),
       amount: amt,
       category,
+      account,
       date,
       ...(receiptUrl ? { receiptUrl } : {}),
     }
     dispatch({ type: 'ADD_EXPENSE', payload: expense })
     setDesc('')
     setAmount('')
+    setAccount('Cash')
     setDate(today())
     setReceipt(null)
   }
@@ -123,6 +127,12 @@ export default function ExpensesPage() {
               <option key={c} value={c}>{c}</option>
             ))}
           </select>
+          <AccountSelect
+            value={account}
+            onChange={setAccount}
+            bankAccounts={state.bankAccounts}
+            className="select flex-1"
+          />
           <input
             className="input flex-1"
             type="date"
@@ -184,7 +194,10 @@ export default function ExpensesPage() {
                     >
                       {e.category.slice(0, 2).toUpperCase()}
                     </div>
-                    <span className="text-sm text-ink-primary truncate">{e.description}</span>
+                    <div className="min-w-0">
+                      <span className="text-sm text-ink-primary truncate block">{e.description}</span>
+                      {e.account && <span className="text-[11px] text-ink-muted">{e.account}</span>}
+                    </div>
                     {e.receiptUrl && (
                       <a
                         href={`/api/upload/receipt?url=${encodeURIComponent(e.receiptUrl)}`}

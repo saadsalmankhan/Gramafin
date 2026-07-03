@@ -2,10 +2,13 @@
 
 import { useStore, useThisMonth } from '@/lib/store'
 import { fmt, fmtCompact, gainPct, daysUntil } from '@/lib/utils'
-import { CATEGORY_COLORS, EXPENSE_CATEGORIES, ExpenseCategory, isLiabilityCategory } from '@/types'
+import { CATEGORY_COLORS, EXPENSE_CATEGORIES, ExpenseCategory } from '@/types'
+import { computeNetWorth } from '@/lib/networth'
 import MetricCard from '@/components/MetricCard'
 import CategoryBadge from '@/components/CategoryBadge'
 import PageHeader from '@/components/PageHeader'
+import NetWorthTrendChart from '@/components/NetWorthTrendChart'
+import NetWorthBreakdownChart from '@/components/NetWorthBreakdownChart'
 import {
   BarChart,
   Bar,
@@ -25,20 +28,11 @@ export default function Dashboard() {
   const monthExpenses = useThisMonth()
 
   const totalSpend = monthExpenses.reduce((s, e) => s + e.amount, 0)
-  const totalAssets = state.assets
-    .filter(a => !isLiabilityCategory(a.category))
-    .reduce((s, a) => s + a.value, 0)
-  const totalLiab = state.assets
-    .filter(a => isLiabilityCategory(a.category))
-    .reduce((s, a) => s + a.value, 0)
-  const netWorth = totalAssets - totalLiab
+  const netWorthBreakdown = computeNetWorth(state)
+  const netWorth = netWorthBreakdown.netWorth
   const totalBudget = Object.values(state.budgets).reduce((s, v) => s + v, 0)
   const budgetLeft = totalBudget - totalSpend
-  const portfolioValue = state.investments.reduce((s, i) => s + i.currentValue, 0)
-    + state.mutualFunds.reduce((s, f) => {
-        const nav = f.navOverride !== null && f.navOverride > 0 ? f.navOverride : f.currentNav
-        return s + f.unitsHeld * nav
-      }, 0)
+  const portfolioValue = netWorthBreakdown.investments + netWorthBreakdown.mutualFunds
   const portfolioCost = state.investments.reduce((s, i) => s + i.amountInvested, 0)
     + state.mutualFunds.reduce((s, f) => s + f.unitsHeld * f.buyNav, 0)
   const portfolioGain = portfolioValue - portfolioCost
@@ -114,7 +108,7 @@ export default function Dashboard() {
         <MetricCard
           label="Net worth"
           value={fmtCompact(netWorth)}
-          sub="assets − liabilities"
+          sub="assets + investments + savings − liabilities"
           variant={netWorth >= 0 ? 'positive' : 'negative'}
         />
         <MetricCard
@@ -135,6 +129,22 @@ export default function Dashboard() {
           sub={`${portfolioGain >= 0 ? '+' : ''}${gainPct(portfolioCost, portfolioValue)}% return`}
           variant={portfolioGain >= 0 ? 'positive' : 'negative'}
         />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <div className="card">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-medium text-ink-primary">Net worth over time</h2>
+            <Link href="/assets" className="text-xs text-brand-600 hover:text-brand-700 flex items-center gap-1">
+              Manage <ArrowRight className="w-3 h-3" />
+            </Link>
+          </div>
+          <NetWorthTrendChart history={state.netWorthHistory} />
+        </div>
+        <div className="card">
+          <h2 className="text-sm font-medium text-ink-primary mb-4">Net worth breakdown</h2>
+          <NetWorthBreakdownChart breakdown={netWorthBreakdown} />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">

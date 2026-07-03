@@ -10,9 +10,13 @@ import {
   MutualFund,
   ExpenseCategory,
   RecurringIncome,
+  Income,
+  BankAccount,
   DEFAULT_BUDGETS,
 } from '@/types'
 import { applyDueIncome } from '@/lib/income'
+import { computeNetWorth } from '@/lib/networth'
+import { today } from '@/lib/utils'
 
 const LEGACY_STORAGE_KEY = 'wm_state_v2'
 
@@ -24,6 +28,8 @@ const initialState: AppState = {
   budgets: DEFAULT_BUDGETS,
   incomes: [],
   recurringIncomes: [],
+  bankAccounts: [],
+  netWorthHistory: [],
 }
 
 type Action =
@@ -39,10 +45,32 @@ type Action =
   | { type: 'SET_BUDGET'; payload: { category: ExpenseCategory; amount: number } }
   | { type: 'ADD_RECURRING_INCOME'; payload: RecurringIncome }
   | { type: 'DELETE_RECURRING_INCOME'; payload: string }
+  | { type: 'ADD_INCOME'; payload: Income }
   | { type: 'DELETE_INCOME'; payload: string }
+  | { type: 'ADD_BANK_ACCOUNT'; payload: BankAccount }
+  | { type: 'DELETE_BANK_ACCOUNT'; payload: string }
   | { type: 'LOAD'; payload: AppState }
 
+// Keeps a running daily history of net worth so it can be charted over time,
+// updating today's entry in place rather than appending on every action.
+function upsertNetWorthSnapshot(state: AppState): AppState {
+  const value = computeNetWorth(state).netWorth
+  const t = today()
+  const history = state.netWorthHistory
+  const last = history[history.length - 1]
+  if (last && last.date === t) {
+    return last.value === value
+      ? state
+      : { ...state, netWorthHistory: [...history.slice(0, -1), { date: t, value }] }
+  }
+  return { ...state, netWorthHistory: [...history, { date: t, value }] }
+}
+
 function reducer(state: AppState, action: Action): AppState {
+  return upsertNetWorthSnapshot(baseReducer(state, action))
+}
+
+function baseReducer(state: AppState, action: Action): AppState {
   switch (action.type) {
     case 'LOAD':
       return action.payload
@@ -86,8 +114,14 @@ function reducer(state: AppState, action: Action): AppState {
         ...state,
         recurringIncomes: state.recurringIncomes.filter(r => r.id !== action.payload),
       }
+    case 'ADD_INCOME':
+      return { ...state, incomes: [action.payload, ...state.incomes] }
     case 'DELETE_INCOME':
       return { ...state, incomes: state.incomes.filter(i => i.id !== action.payload) }
+    case 'ADD_BANK_ACCOUNT':
+      return { ...state, bankAccounts: [...state.bankAccounts, action.payload] }
+    case 'DELETE_BANK_ACCOUNT':
+      return { ...state, bankAccounts: state.bankAccounts.filter(b => b.id !== action.payload) }
     default:
       return state
   }
