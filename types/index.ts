@@ -66,9 +66,51 @@ export interface Expense {
   account?: string // e.g. a bank account name, or "Cash"
 }
 
+export type BankAccountType = 'Checking' | 'Saving' | 'Credit Card'
+
+export const BANK_ACCOUNT_TYPES: BankAccountType[] = ['Checking', 'Saving', 'Credit Card']
+
+export const PAKISTANI_BANKS: string[] = [
+  'Allied Bank',
+  'Askari Bank',
+  'Bank Al Habib',
+  'Bank Alfalah',
+  'Bank of Khyber',
+  'Bank of Punjab',
+  'BankIslami Pakistan',
+  'Dubai Islamic Bank Pakistan',
+  'Faysal Bank',
+  'Habib Bank Limited (HBL)',
+  'Habib Metropolitan Bank',
+  'JS Bank',
+  'MCB Bank',
+  'Meezan Bank',
+  'National Bank of Pakistan',
+  'Samba Bank',
+  'Silk Bank',
+  'Sindh Bank',
+  'Soneri Bank',
+  'Standard Chartered Pakistan',
+  'Summit Bank',
+  'United Bank Limited (UBL)',
+  'Other',
+]
+
 export interface BankAccount {
   id: string
-  name: string
+  bank: string
+  nickname: string
+  type: BankAccountType
+  startingBalance: number
+}
+
+// Loaded data from before this field set existed may be missing fields —
+// fall back gracefully rather than crash on legacy records.
+export function bankAccountLabel(b: Partial<BankAccount>): string {
+  const nickname = (b.nickname ?? '').trim()
+  if (nickname) return nickname
+  if (b.bank) return b.type ? `${b.bank} — ${b.type}` : b.bank
+  return 'Account'
 }
 
 export interface NetWorthSnapshot {

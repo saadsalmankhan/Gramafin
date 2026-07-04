@@ -1,6 +1,6 @@
 'use client'
 
-import { BankAccount } from '@/types'
+import { BankAccount, bankAccountLabel } from '@/types'
 
 const ADD_NEW = '__add_new_account__'
 
@@ -26,7 +26,7 @@ export default function AccountSelect({ value, onChange, bankAccounts, className
     >
       <option value="Cash">Cash</option>
       {bankAccounts.map(b => (
-        <option key={b.id} value={b.name}>{b.name}</option>
+        <option key={b.id} value={bankAccountLabel(b)}>{bankAccountLabel(b)}</option>
       ))}
       <option value={ADD_NEW}>+ Add new account</option>
     </select>
