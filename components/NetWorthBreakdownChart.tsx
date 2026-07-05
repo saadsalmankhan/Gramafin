@@ -14,9 +14,12 @@ import {
   LabelList,
 } from 'recharts'
 
+// Order and hues validated with the dataviz palette script (CVD-safe
+// adjacent pairs); don't reorder without re-running validate_palette.js.
 const COLORS = {
   'Cash & assets': '#2a78d6',
   'Investments': '#1baf7a',
+  'Bank accounts': '#6f42c1',
   'Mutual funds': '#eda100',
   'Net savings': '#008037',
   'Liabilities': '#e34948',
@@ -74,6 +77,7 @@ export default function NetWorthBreakdownChart({ breakdown }: { breakdown: NetWo
   const data = [
     { name: 'Cash & assets', value: breakdown.cashAndAssets },
     { name: 'Investments', value: breakdown.investments },
+    { name: 'Bank accounts', value: breakdown.bankAccounts },
     { name: 'Mutual funds', value: breakdown.mutualFunds },
     { name: 'Net savings', value: breakdown.netSavings },
     { name: 'Liabilities', value: -breakdown.liabilities },
@@ -83,7 +87,7 @@ export default function NetWorthBreakdownChart({ breakdown }: { breakdown: NetWo
   if (allZero) {
     return (
       <div className="h-48 flex items-center justify-center text-sm text-ink-muted text-center px-6">
-        Add assets, investments, or income to see your net worth breakdown
+        Add assets, bank accounts, investments, or income to see your net worth breakdown
       </div>
     )
   }

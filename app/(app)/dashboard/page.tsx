@@ -2,7 +2,7 @@
 
 import { useStore, useThisMonth } from '@/lib/store'
 import { fmt, fmtCompact, gainPct, daysUntil } from '@/lib/utils'
-import { CATEGORY_COLORS, EXPENSE_CATEGORIES, ExpenseCategory } from '@/types'
+import { CATEGORY_COLORS, EXPENSE_CATEGORIES, ExpenseCategory, bankAccountLabel } from '@/types'
 import { computeNetWorth } from '@/lib/networth'
 import MetricCard from '@/components/MetricCard'
 import CategoryBadge from '@/components/CategoryBadge'
@@ -48,10 +48,14 @@ export default function Dashboard() {
 
   const recent = state.expenses.slice(0, 8)
 
-  const cardReminders = state.assets
+  const assetCardReminders = state.assets
     .filter(a => a.category === 'Credit card' && a.dueDate)
-    .map(a => ({ ...a, days: daysUntil(a.dueDate!) }))
-    .filter(a => a.days <= REMINDER_WINDOW_DAYS)
+    .map(a => ({ id: a.id, name: a.name, minimumPayment: a.minimumPayment, days: daysUntil(a.dueDate!) }))
+  const bankCardReminders = state.bankAccounts
+    .filter(b => b.type === 'Credit Card' && b.dueDate)
+    .map(b => ({ id: b.id, name: bankAccountLabel(b), minimumPayment: undefined as number | undefined, days: daysUntil(b.dueDate!) }))
+  const cardReminders = [...assetCardReminders, ...bankCardReminders]
+    .filter(c => c.days <= REMINDER_WINDOW_DAYS)
     .sort((a, b) => a.days - b.days)
 
   return (
@@ -67,7 +71,10 @@ export default function Dashboard() {
           <div className="flex items-center gap-2 mb-3">
             <AlertTriangle className="w-4 h-4 text-danger" />
             <h2 className="text-sm font-medium text-ink-primary">Payment reminders</h2>
-            <Link href="/assets" className="text-xs text-brand-600 hover:text-brand-700 flex items-center gap-1 ml-auto">
+            <Link
+              href={bankCardReminders.length > 0 && assetCardReminders.length === 0 ? '/settings' : '/assets'}
+              className="text-xs text-brand-600 hover:text-brand-700 flex items-center gap-1 ml-auto"
+            >
               Manage <ArrowRight className="w-3 h-3" />
             </Link>
           </div>
@@ -131,19 +138,34 @@ export default function Dashboard() {
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        <div className="card">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-medium text-ink-primary">Net worth over time</h2>
-            <Link href="/assets" className="text-xs text-brand-600 hover:text-brand-700 flex items-center gap-1">
-              Manage <ArrowRight className="w-3 h-3" />
+      <div id="net-worth" className="scroll-mt-6">
+        <div className="flex items-center gap-2 mb-3 flex-wrap">
+          <span className="text-[11px] text-ink-muted">Rolls up:</span>
+          {[
+            { label: 'Assets', href: '/assets' },
+            { label: 'Investments', href: '/investments' },
+            { label: 'Bank accounts', href: '/settings' },
+            { label: 'Mutual funds', href: '/mutual-funds' },
+            { label: 'Income & expenses', href: '/income' },
+          ].map(s => (
+            <Link
+              key={s.href}
+              href={s.href}
+              className="text-[11px] px-2 py-0.5 rounded-full bg-surface-1 text-ink-secondary hover:bg-surface-0 hover:text-brand-700 transition-colors"
+            >
+              {s.label}
             </Link>
-          </div>
-          <NetWorthTrendChart history={state.netWorthHistory} />
+          ))}
         </div>
-        <div className="card">
-          <h2 className="text-sm font-medium text-ink-primary mb-4">Net worth breakdown</h2>
-          <NetWorthBreakdownChart breakdown={netWorthBreakdown} />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <div className="card">
+            <h2 className="text-sm font-medium text-ink-primary mb-4">Net worth over time</h2>
+            <NetWorthTrendChart history={state.netWorthHistory} />
+          </div>
+          <div className="card">
+            <h2 className="text-sm font-medium text-ink-primary mb-4">Net worth breakdown</h2>
+            <NetWorthBreakdownChart breakdown={netWorthBreakdown} />
+          </div>
         </div>
       </div>
 

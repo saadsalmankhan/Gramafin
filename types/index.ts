@@ -102,6 +102,7 @@ export interface BankAccount {
   nickname: string
   type: BankAccountType
   startingBalance: number
+  dueDate?: string // Credit Card only — ISO date of next payment due
 }
 
 // Loaded data from before this field set existed may be missing fields —

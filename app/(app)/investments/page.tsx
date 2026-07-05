@@ -4,8 +4,10 @@ import { useState } from 'react'
 import { useStore } from '@/lib/store'
 import { Investment, INVESTMENT_TYPES, InvestmentType } from '@/types'
 import { fmt, fmtCompact, gainPct, uid } from '@/lib/utils'
+import { computeNetWorth } from '@/lib/networth'
 import MetricCard from '@/components/MetricCard'
 import PageHeader from '@/components/PageHeader'
+import NetWorthContribution from '@/components/NetWorthContribution'
 import { Plus, Trash2, TrendingUp, TrendingDown } from 'lucide-react'
 import {
   PieChart,
@@ -35,6 +37,7 @@ export default function InvestmentsPage() {
   const totalCurrent = state.investments.reduce((s, i) => s + i.currentValue, 0)
   const totalGain = totalCurrent - totalCost
   const overallReturn = gainPct(totalCost, totalCurrent)
+  const overallNetWorth = computeNetWorth(state).netWorth
 
   // Pie data by type
   const byType = INVESTMENT_TYPES.map(t => ({
@@ -67,6 +70,8 @@ export default function InvestmentsPage() {
   return (
     <div>
       <PageHeader title="Investments" subtitle="Monitor your portfolio performance" />
+
+      <NetWorthContribution label="Investments" amount={totalCurrent} netWorth={overallNetWorth} />
 
       <div className="grid grid-cols-3 gap-4 mb-8">
         <MetricCard label="Portfolio value" value={fmtCompact(totalCurrent)} />

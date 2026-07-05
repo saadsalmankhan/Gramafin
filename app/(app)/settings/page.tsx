@@ -3,8 +3,10 @@
 import { useState } from 'react'
 import { useStore } from '@/lib/store'
 import { BankAccount, BankAccountType, BANK_ACCOUNT_TYPES, PAKISTANI_BANKS, bankAccountLabel } from '@/types'
-import { fmt, uid } from '@/lib/utils'
+import { fmt, uid, daysUntil } from '@/lib/utils'
+import { computeNetWorth } from '@/lib/networth'
 import PageHeader from '@/components/PageHeader'
+import NetWorthContribution from '@/components/NetWorthContribution'
 import { Plus, Trash2, Landmark, CreditCard } from 'lucide-react'
 import clsx from 'clsx'
 
@@ -14,7 +16,11 @@ export default function SettingsPage() {
   const [nickname, setNickname] = useState('')
   const [type, setType] = useState<BankAccountType>('Checking')
   const [startingBalance, setStartingBalance] = useState('')
+  const [dueDate, setDueDate] = useState('')
   const [error, setError] = useState('')
+
+  const netWorthBreakdown = computeNetWorth(state)
+  const isCreditCardForm = type === 'Credit Card'
 
   function addAccount() {
     const balance = parseFloat(startingBalance)
@@ -26,17 +32,25 @@ export default function SettingsPage() {
       nickname: nickname.trim(),
       type,
       startingBalance: isNaN(balance) ? 0 : balance,
+      ...(isCreditCardForm && dueDate && { dueDate }),
     }
     dispatch({ type: 'ADD_BANK_ACCOUNT', payload: account })
     setBank(PAKISTANI_BANKS[0])
     setNickname('')
     setType('Checking')
     setStartingBalance('')
+    setDueDate('')
   }
 
   return (
     <div>
       <PageHeader title="Settings" subtitle="Manage bank accounts used across Income and Expenses" />
+
+      <NetWorthContribution
+        label="Bank accounts"
+        amount={netWorthBreakdown.bankAccounts}
+        netWorth={netWorthBreakdown.netWorth}
+      />
 
       <div className="card mb-6">
         <h2 className="text-sm font-medium text-ink-primary mb-4">Add bank account</h2>
@@ -79,11 +93,23 @@ export default function SettingsPage() {
             <Plus className="w-4 h-4" /> Add account
           </button>
         </div>
-        {type === 'Credit Card' && (
-          <p className="text-[11px] text-ink-muted mt-3">
-            For credit cards, a positive balance means you owe that amount (shown in red).
-            Enter a negative number (e.g. −100) if you've overpaid and the card owes you money instead.
-          </p>
+        {isCreditCardForm && (
+          <>
+            <div className="flex gap-3 flex-wrap mt-3">
+              <input
+                className="input flex-1 min-w-40"
+                type="date"
+                placeholder="Payment due date"
+                value={dueDate}
+                onChange={e => setDueDate(e.target.value)}
+              />
+            </div>
+            <p className="text-[11px] text-ink-muted mt-3">
+              For credit cards, a positive balance means you owe that amount (shown in red).
+              Enter a negative number (e.g. −100) if you've overpaid and the card owes you money instead.
+              Set a due date to get a payment reminder on the Dashboard.
+            </p>
+          </>
         )}
       </div>
 
@@ -117,7 +143,18 @@ export default function SettingsPage() {
                     </div>
                     <div className="min-w-0">
                       <p className="text-sm text-ink-primary truncate">{bankAccountLabel(b)}</p>
-                      <p className="text-[11px] text-ink-muted">{b.bank} · {b.type}</p>
+                      <p className="text-[11px] text-ink-muted">
+                        {b.bank} · {b.type}
+                        {isCreditCard && b.dueDate && (() => {
+                          const d = daysUntil(b.dueDate)
+                          const label = d < 0 ? `Overdue ${Math.abs(d)}d` : d === 0 ? 'Due today' : `Due in ${d}d`
+                          return (
+                            <span className={clsx('ml-1 font-medium', d <= 3 ? 'text-danger' : d <= 7 ? 'text-warning' : 'text-ink-muted')}>
+                              · {label}
+                            </span>
+                          )
+                        })()}
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3 flex-shrink-0">

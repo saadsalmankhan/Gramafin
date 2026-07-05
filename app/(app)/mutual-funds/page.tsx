@@ -5,8 +5,10 @@ import { useStore } from '@/lib/store'
 import { MutualFund, MUTUAL_FUND_TYPES, MutualFundType } from '@/types'
 import { fmt, fmtCompact, uid } from '@/lib/utils'
 import { fetchNav, clearNavCache } from '@/lib/fetchNav'
+import { computeNetWorth } from '@/lib/networth'
 import MetricCard from '@/components/MetricCard'
 import PageHeader from '@/components/PageHeader'
+import NetWorthContribution from '@/components/NetWorthContribution'
 import {
   Plus, Trash2, TrendingUp, TrendingDown,
   RefreshCw, AlertCircle, CheckCircle, Edit2, X, Save,
@@ -76,6 +78,7 @@ export default function MutualFundsPage() {
     ? (((totalCurrent - totalCost) / totalCost) * 100).toFixed(2)
     : '0.00'
   const totalRealizedGains = funds.reduce((s, f) => s + f.realizedGains, 0)
+  const overallNetWorth = computeNetWorth(state).netWorth
 
   // Pie data
   const byType = MUTUAL_FUND_TYPES.map(t => ({
@@ -178,6 +181,8 @@ export default function MutualFundsPage() {
   return (
     <div>
       <PageHeader title="Mutual Funds" subtitle="Pakistani mutual funds — units, NAV, and performance" />
+
+      <NetWorthContribution label="Mutual funds" amount={totalCurrent} netWorth={overallNetWorth} />
 
       {/* Metrics */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">

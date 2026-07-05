@@ -16,8 +16,7 @@ import MetricCard from '@/components/MetricCard'
 import IncomeCategoryBadge from '@/components/IncomeCategoryBadge'
 import AccountSelect from '@/components/AccountSelect'
 import PageHeader from '@/components/PageHeader'
-import NetWorthTrendChart from '@/components/NetWorthTrendChart'
-import NetWorthBreakdownChart from '@/components/NetWorthBreakdownChart'
+import NetWorthContribution from '@/components/NetWorthContribution'
 import { Plus, Trash2, RefreshCw } from 'lucide-react'
 import clsx from 'clsx'
 
@@ -90,6 +89,12 @@ export default function IncomePage() {
   return (
     <div>
       <PageHeader title="Income" subtitle="Log one-off income or set up salary to auto-track it every period" />
+
+      <NetWorthContribution
+        label="Unspent income (net savings)"
+        amount={netWorthBreakdown.netSavings}
+        netWorth={netWorthBreakdown.netWorth}
+      />
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
         <MetricCard label="This month" value={fmt(monthTotal)} variant="positive" />
@@ -257,18 +262,6 @@ export default function IncomePage() {
             </div>
           </div>
         )}
-      </div>
-
-      {/* Net worth */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-        <div className="card">
-          <h2 className="text-sm font-medium text-ink-primary mb-4">Net worth over time</h2>
-          <NetWorthTrendChart history={state.netWorthHistory} />
-        </div>
-        <div className="card">
-          <h2 className="text-sm font-medium text-ink-primary mb-4">Net worth breakdown</h2>
-          <NetWorthBreakdownChart breakdown={netWorthBreakdown} />
-        </div>
       </div>
     </div>
   )

@@ -4,8 +4,10 @@ import { useState } from 'react'
 import { useStore } from '@/lib/store'
 import { Asset, ASSET_CATEGORIES, AssetCategory, isLiabilityCategory } from '@/types'
 import { fmt, pct, uid, daysUntil } from '@/lib/utils'
+import { computeNetWorth } from '@/lib/networth'
 import MetricCard from '@/components/MetricCard'
 import PageHeader from '@/components/PageHeader'
+import NetWorthContribution from '@/components/NetWorthContribution'
 import { Plus, Trash2, TrendingUp, TrendingDown, CreditCard } from 'lucide-react'
 
 const ASSET_COLORS: Record<AssetCategory, string> = {
@@ -40,6 +42,7 @@ export default function AssetsPage() {
   const totalAssets = assets.reduce((s, a) => s + a.value, 0)
   const totalLiab = liabilities.reduce((s, a) => s + a.value, 0)
   const netWorth = totalAssets - totalLiab
+  const overallNetWorth = computeNetWorth(state).netWorth
 
   function add() {
     if (!name.trim()) { setError('Name is required'); return }
@@ -173,6 +176,8 @@ export default function AssetsPage() {
   return (
     <div>
       <PageHeader title="Net worth" subtitle="Assets, liabilities, and your financial position" />
+
+      <NetWorthContribution label="Assets & liabilities" amount={netWorth} netWorth={overallNetWorth} />
 
       <div className="grid grid-cols-3 gap-4 mb-8">
         <MetricCard label="Total assets" value={fmt(totalAssets)} variant="positive" />
