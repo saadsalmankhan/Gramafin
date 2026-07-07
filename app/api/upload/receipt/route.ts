@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { put, del, get } from '@vercel/blob'
 import { authOptions } from '@/lib/auth/options'
+import { apiRatelimit } from '@/lib/ratelimit'
 
 const MAX_SIZE_BYTES = 5 * 1024 * 1024
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic']
@@ -14,6 +15,10 @@ export async function GET(req: Request) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  const { success } = await apiRatelimit.limit(`receipt-get:${session.user.id}`)
+  if (!success) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
   }
 
   const url = new URL(req.url).searchParams.get('url')
@@ -39,6 +44,10 @@ export async function POST(req: Request) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  const { success } = await apiRatelimit.limit(`receipt-post:${session.user.id}`)
+  if (!success) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
   }
 
   const form = await req.formData().catch(() => null)
@@ -68,6 +77,10 @@ export async function DELETE(req: Request) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  const { success } = await apiRatelimit.limit(`receipt-delete:${session.user.id}`)
+  if (!success) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
   }
 
   const body = await req.json().catch(() => null)

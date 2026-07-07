@@ -2,10 +2,16 @@ import { NextResponse } from 'next/server'
 import { createUser } from '@/lib/auth/users'
 import { createVerificationToken } from '@/lib/auth/verification'
 import { sendVerificationEmail } from '@/lib/email'
+import { authRatelimit, clientIp } from '@/lib/ratelimit'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export async function POST(req: Request) {
+  const { success } = await authRatelimit.limit(`signup:${clientIp(req)}`)
+  if (!success) {
+    return NextResponse.json({ error: 'Too many attempts. Please try again in a minute.' }, { status: 429 })
+  }
+
   const body = await req.json().catch(() => null)
   const email = typeof body?.email === 'string' ? body.email.trim() : ''
   const password = typeof body?.password === 'string' ? body.password : ''

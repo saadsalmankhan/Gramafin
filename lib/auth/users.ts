@@ -33,7 +33,7 @@ export async function createUser(params: {
     id: crypto.randomUUID(),
     email: email.trim().toLowerCase(),
     name: name.trim(),
-    passwordHash: await bcrypt.hash(password, 10),
+    passwordHash: await bcrypt.hash(password, 12),
     emailVerified: false,
     createdAt: new Date().toISOString(),
   }
@@ -52,7 +52,7 @@ export async function markEmailVerified(email: string): Promise<void> {
 export async function updateUserPassword(email: string, newPassword: string): Promise<void> {
   const user = await getUserByEmail(email)
   if (!user) return
-  user.passwordHash = await bcrypt.hash(newPassword, 10)
+  user.passwordHash = await bcrypt.hash(newPassword, 12)
   // Resetting via a mailed link proves email ownership just as well as the
   // original verification link would have, so clear up any unverified state.
   user.emailVerified = true

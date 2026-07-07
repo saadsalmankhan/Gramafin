@@ -1,6 +1,9 @@
 import Link from 'next/link'
 import Image from 'next/image'
 
+// See app/(auth)/layout.tsx — the CSP nonce is per-request.
+export const dynamic = 'force-dynamic'
+
 export default function HelpLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-white flex flex-col">
@@ -26,8 +29,13 @@ export default function HelpLayout({ children }: { children: React.ReactNode }) 
       <main className="flex-1">{children}</main>
 
       <footer className="border-t border-gray-100 py-8">
-        <div className="max-w-3xl mx-auto px-6 text-center">
+        <div className="max-w-3xl mx-auto px-6 flex flex-col items-center gap-3">
           <p className="text-xs text-ink-muted">Gramafin — personal finance in PKR</p>
+          <div className="flex items-center gap-4 text-xs text-ink-muted">
+            <Link href="/privacy" className="hover:text-ink-primary transition-colors">Privacy</Link>
+            <Link href="/terms" className="hover:text-ink-primary transition-colors">Terms</Link>
+            <Link href="/legal" className="hover:text-ink-primary transition-colors">Legal</Link>
+          </div>
         </div>
       </footer>
     </div>

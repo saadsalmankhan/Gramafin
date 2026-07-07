@@ -1,5 +1,9 @@
 import Sidebar from '@/components/Sidebar'
 
+// See app/(auth)/layout.tsx — same reasoning: the CSP nonce is per-request,
+// so this subtree can't be statically optimized.
+export const dynamic = 'force-dynamic'
+
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen">

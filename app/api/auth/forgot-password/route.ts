@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getUserByEmail } from '@/lib/auth/users'
 import { createPasswordResetToken } from '@/lib/auth/passwordReset'
 import { sendPasswordResetEmail } from '@/lib/email'
+import { authRatelimit, clientIp } from '@/lib/ratelimit'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -10,11 +11,23 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const GENERIC_RESPONSE = { message: "If an account exists for that email, we've sent a password reset link." }
 
 export async function POST(req: Request) {
+  const { success } = await authRatelimit.limit(`forgot-password:${clientIp(req)}`)
+  if (!success) {
+    return NextResponse.json({ error: 'Too many attempts. Please try again in a minute.' }, { status: 429 })
+  }
+
   const body = await req.json().catch(() => null)
-  const email = typeof body?.email === 'string' ? body.email.trim() : ''
+  const email = typeof body?.email === 'string' ? body.email.trim().toLowerCase() : ''
 
   if (!EMAIL_RE.test(email)) {
     return NextResponse.json({ error: 'Enter a valid email address' }, { status: 400 })
+  }
+
+  // Also rate-limit per target email, independent of the caller's IP, so an
+  // attacker can't email-bomb one victim's inbox by rotating IP addresses.
+  const { success: emailOk } = await authRatelimit.limit(`forgot-password-email:${email}`)
+  if (!emailOk) {
+    return NextResponse.json(GENERIC_RESPONSE, { status: 200 })
   }
 
   try {

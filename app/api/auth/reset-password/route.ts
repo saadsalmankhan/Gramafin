@@ -2,8 +2,14 @@ import { NextResponse } from 'next/server'
 import { getUserByEmail, updateUserPassword } from '@/lib/auth/users'
 import { consumePasswordResetToken } from '@/lib/auth/passwordReset'
 import { sendPasswordChangedEmail } from '@/lib/email'
+import { authRatelimit, clientIp } from '@/lib/ratelimit'
 
 export async function POST(req: Request) {
+  const { success } = await authRatelimit.limit(`reset-password:${clientIp(req)}`)
+  if (!success) {
+    return NextResponse.json({ error: 'Too many attempts. Please try again in a minute.' }, { status: 429 })
+  }
+
   const body = await req.json().catch(() => null)
   const token = typeof body?.token === 'string' ? body.token : ''
   const password = typeof body?.password === 'string' ? body.password : ''

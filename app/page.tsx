@@ -284,6 +284,11 @@ export default async function HomePage() {
         <div className="max-w-6xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <Image src="/logo-full.png" alt="Gramafin" width={505} height={126} className="h-5 w-auto" />
           <p className="text-xs text-ink-muted">Personal finance in PKR — free, forever.</p>
+          <div className="flex items-center gap-4 text-xs text-ink-muted">
+            <Link href="/privacy" className="hover:text-ink-primary transition-colors">Privacy</Link>
+            <Link href="/terms" className="hover:text-ink-primary transition-colors">Terms</Link>
+            <Link href="/legal" className="hover:text-ink-primary transition-colors">Legal</Link>
+          </div>
         </div>
       </footer>
     </div>
