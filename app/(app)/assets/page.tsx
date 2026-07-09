@@ -184,7 +184,7 @@ export default function AssetsPage() {
       {/* Add form */}
       <div className="card mb-6">
         <h2 className="text-sm font-medium text-ink-primary mb-4">Add asset or liability</h2>
-        {error && <p className="text-xs text-danger mb-3 bg-red-50 px-3 py-2 rounded">{error}</p>}
+        {error && <p className="text-xs text-danger mb-3 bg-red-50 dark:bg-danger/10 px-3 py-2 rounded">{error}</p>}
         <div className="flex gap-3 flex-wrap mb-3">
           <input
             className="input flex-1 min-w-40"
@@ -254,7 +254,7 @@ export default function AssetsPage() {
         {assets.length === 0 ? (
           <p className="text-sm text-ink-muted text-center py-6">No assets added yet</p>
         ) : (
-          <div className="divide-y divide-gray-50">
+          <div className="divide-y divide-gray-50 dark:divide-white/5">
             {assets.map(a => <AssetRow key={a.id} a={a} />)}
           </div>
         )}
@@ -270,7 +270,7 @@ export default function AssetsPage() {
         {liabilities.length === 0 ? (
           <p className="text-sm text-ink-muted text-center py-6">No liabilities added yet</p>
         ) : (
-          <div className="divide-y divide-gray-50">
+          <div className="divide-y divide-gray-50 dark:divide-white/5">
             {liabilities.map(a =>
               a.category === 'Credit card'
                 ? <CreditCardRow key={a.id} a={a} />

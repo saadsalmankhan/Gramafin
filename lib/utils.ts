@@ -1,10 +1,21 @@
+// Read by fmt()/fmtCompact() everywhere without threading a currency prop
+// through ~65 call sites across the app — set once from the user's saved
+// preference (see lib/store.tsx) whenever it loads or changes. Values are
+// still stored and computed in raw numbers throughout; this only changes
+// the displayed symbol, not any conversion — see the Preferences tab copy.
+let currencySymbol = 'Rs'
+
+export function setCurrencySymbol(symbol: string) {
+  currencySymbol = symbol
+}
+
 export function fmt(n: number): string {
-  return 'Rs ' + Math.round(n).toLocaleString('en-PK')
+  return currencySymbol + ' ' + Math.round(n).toLocaleString('en-PK')
 }
 
 export function fmtCompact(n: number): string {
-  if (n >= 1_000_000) return 'Rs ' + (n / 1_000_000).toFixed(1) + 'M'
-  if (n >= 1_000) return 'Rs ' + (n / 1_000).toFixed(0) + 'K'
+  if (n >= 1_000_000) return currencySymbol + ' ' + (n / 1_000_000).toFixed(1) + 'M'
+  if (n >= 1_000) return currencySymbol + ' ' + (n / 1_000).toFixed(0) + 'K'
   return fmt(n)
 }
 

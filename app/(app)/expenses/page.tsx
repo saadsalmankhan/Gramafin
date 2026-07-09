@@ -100,7 +100,7 @@ export default function ExpensesPage() {
       <div className="card mb-6">
         <h2 className="text-sm font-medium text-ink-primary mb-4">Add expense</h2>
         {error && (
-          <p className="text-xs text-danger mb-3 bg-red-50 px-3 py-2 rounded">{error}</p>
+          <p className="text-xs text-danger mb-3 bg-red-50 dark:bg-danger/10 px-3 py-2 rounded">{error}</p>
         )}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
           <input
@@ -181,12 +181,12 @@ export default function ExpensesPage() {
         ) : (
           <div>
             {/* Header */}
-            <div className="grid grid-cols-[1fr_120px_140px_100px_40px] gap-2 px-2 pb-2 border-b border-gray-100">
+            <div className="grid grid-cols-[1fr_120px_140px_100px_40px] gap-2 px-2 pb-2 border-b border-gray-100 dark:border-white/10">
               {['Description', 'Category', 'Date', 'Amount', ''].map(h => (
                 <p key={h} className="section-label">{h}</p>
               ))}
             </div>
-            <div className="divide-y divide-gray-50">
+            <div className="divide-y divide-gray-50 dark:divide-white/5">
               {visible.map(e => (
                 <div key={e.id} className="grid grid-cols-[1fr_120px_140px_100px_40px] gap-2 items-center px-2 py-3 hover:bg-surface-0 rounded-lg transition-colors">
                   <div className="flex items-center gap-2.5 min-w-0">
@@ -229,7 +229,7 @@ export default function ExpensesPage() {
               ))}
             </div>
             {visible.length > 0 && (
-              <div className="flex justify-end pt-4 border-t border-gray-100 mt-2">
+              <div className="flex justify-end pt-4 border-t border-gray-100 dark:border-white/10 mt-2">
                 <div className="text-right">
                   <p className="text-xs text-ink-muted mb-0.5">
                     {filter === 'all' ? 'Total' : `Total — ${filter}`}

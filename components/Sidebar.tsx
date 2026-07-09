@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation'
 import { useLayoutEffect, useRef, useState } from 'react'
 import { useSession, signOut } from 'next-auth/react'
 import { useStore } from '@/lib/store'
+import { CURRENCIES } from '@/types'
 import {
   LayoutDashboard,
   Receipt,
@@ -48,7 +49,8 @@ function setCssWidth(px: number) {
 export default function Sidebar() {
   const path = usePathname()
   const { data: session } = useSession()
-  const { syncError } = useStore()
+  const { state, syncError } = useStore()
+  const currencyLabel = CURRENCIES.find(c => c.code === state.preferences.currency)?.code ?? 'PKR'
   const initial = session?.user?.name?.trim()?.[0]?.toUpperCase() ?? '?'
   const [collapsed, setCollapsed] = useState(false)
   const [dragging, setDragging] = useState(false)
@@ -110,13 +112,13 @@ export default function Sidebar() {
   return (
     <aside
       className={clsx(
-        'fixed left-0 top-0 h-screen bg-white border-r border-gray-100 flex flex-col',
+        'fixed left-0 top-0 h-screen bg-white dark:bg-surface-2 border-r border-gray-100 dark:border-white/10 flex flex-col',
         !dragging && 'transition-[width] duration-200 ease-in-out'
       )}
       style={{ width: 'var(--sidebar-w)' }}
     >
       {/* Logo */}
-      <div className="px-4 py-6 border-b border-gray-100 flex items-center justify-between">
+      <div className="px-4 py-6 border-b border-gray-100 dark:border-white/10 flex items-center justify-between">
         <div className="flex items-center gap-2.5 overflow-hidden">
           <Image src="/logo-mark.png" alt="Gramafin" width={314} height={295} className="w-8 h-auto shrink-0" priority />
           {!collapsed && (
@@ -192,7 +194,7 @@ export default function Sidebar() {
 
       {/* User + footer */}
       {collapsed ? (
-        <div className="px-3 pb-3 flex flex-col items-center gap-2 border-t border-gray-100 pt-3">
+        <div className="px-3 pb-3 flex flex-col items-center gap-2 border-t border-gray-100 dark:border-white/10 pt-3">
           {syncError && (
             <span title="Sync failed — changes aren't saving">
               <CloudOff className="w-4 h-4 text-danger" />
@@ -213,7 +215,7 @@ export default function Sidebar() {
           </button>
         </div>
       ) : (
-        <div className="px-3 py-3 border-t border-gray-100">
+        <div className="px-3 py-3 border-t border-gray-100 dark:border-white/10">
           <div className="flex items-center gap-2.5 px-2 py-1.5">
             <div className="w-7 h-7 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center text-xs font-semibold shrink-0">
               {initial}
@@ -235,7 +237,7 @@ export default function Sidebar() {
               <CloudOff className="w-3 h-3" /> Sync failed — check your connection
             </p>
           ) : (
-            <p className="text-[10px] text-ink-muted px-2 mt-2">All amounts in PKR</p>
+            <p className="text-[10px] text-ink-muted px-2 mt-2">All amounts in {currencyLabel}</p>
           )}
         </div>
       )}

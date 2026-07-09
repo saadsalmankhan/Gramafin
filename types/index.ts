@@ -239,6 +239,40 @@ export interface PsxSymbol {
 
 export type Budgets = Record<ExpenseCategory, number>
 
+export type CurrencyCode = 'PKR' | 'USD' | 'EUR' | 'GBP' | 'AED' | 'SAR'
+
+export const CURRENCIES: { code: CurrencyCode; symbol: string; label: string }[] = [
+  { code: 'PKR', symbol: 'Rs',  label: 'Pakistani Rupee (PKR)' },
+  { code: 'USD', symbol: '$',   label: 'US Dollar (USD)' },
+  { code: 'EUR', symbol: '€',   label: 'Euro (EUR)' },
+  { code: 'GBP', symbol: '£',   label: 'British Pound (GBP)' },
+  { code: 'AED', symbol: 'AED', label: 'UAE Dirham (AED)' },
+  { code: 'SAR', symbol: 'SAR', label: 'Saudi Riyal (SAR)' },
+]
+
+export type StockMarketCode = 'PK' | 'US' | 'UK' | 'IN'
+
+// `available` reflects real, wired-up data coverage — only PSX (Pakistan)
+// has a live price source (see app/api/psx/*) as of this writing. The
+// others are listed so the preference exists ahead of that work landing,
+// not hidden behind a fake "coming soon" that looks broken if selected.
+export const STOCK_MARKETS: { code: StockMarketCode; label: string; available: boolean }[] = [
+  { code: 'PK', label: 'Pakistan — PSX', available: true },
+  { code: 'US', label: 'United States — NYSE / NASDAQ', available: false },
+  { code: 'UK', label: 'United Kingdom — LSE', available: false },
+  { code: 'IN', label: 'India — NSE / BSE', available: false },
+]
+
+export interface Preferences {
+  currency: CurrencyCode
+  stockMarket: StockMarketCode
+}
+
+export const DEFAULT_PREFERENCES: Preferences = {
+  currency: 'PKR',
+  stockMarket: 'PK',
+}
+
 export interface AppState {
   expenses: Expense[]
   assets: Asset[]
@@ -249,6 +283,7 @@ export interface AppState {
   recurringIncomes: RecurringIncome[]
   bankAccounts: BankAccount[]
   netWorthHistory: NetWorthSnapshot[]
+  preferences: Preferences
 }
 
 export const EXPENSE_CATEGORIES: ExpenseCategory[] = [

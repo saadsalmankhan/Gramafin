@@ -1,6 +1,7 @@
 import type { Config } from 'tailwindcss'
 
 const config: Config = {
+  darkMode: 'class',
   content: [
     './pages/**/*.{js,ts,jsx,tsx,mdx}',
     './components/**/*.{js,ts,jsx,tsx,mdx}',
@@ -9,27 +10,30 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        // RGB triplets (not hex) so opacity modifiers like bg-brand-200/60
+        // keep working — actual light/dark values live in globals.css as
+        // CSS custom properties, swapped by the .dark class on <html>.
         brand: {
-          50:  '#effaf4',
-          100: '#d6f5e3',
-          200: '#a5e9c2',
-          500: '#0eaa51',
-          600: '#008037',
-          700: '#00612a',
+          50:  'rgb(var(--brand-50) / <alpha-value>)',
+          100: 'rgb(var(--brand-100) / <alpha-value>)',
+          200: 'rgb(var(--brand-200) / <alpha-value>)',
+          500: 'rgb(var(--brand-500) / <alpha-value>)',
+          600: 'rgb(var(--brand-600) / <alpha-value>)',
+          700: 'rgb(var(--brand-700) / <alpha-value>)',
         },
         surface: {
-          0: '#f8f7f4',
-          1: '#f0efe9',
-          2: '#ffffff',
+          0: 'rgb(var(--surface-0) / <alpha-value>)',
+          1: 'rgb(var(--surface-1) / <alpha-value>)',
+          2: 'rgb(var(--surface-2) / <alpha-value>)',
         },
         ink: {
-          primary:   '#0f0f0e',
-          secondary: '#4a4945',
-          muted:     '#8a8880',
+          primary:   'rgb(var(--ink-primary) / <alpha-value>)',
+          secondary: 'rgb(var(--ink-secondary) / <alpha-value>)',
+          muted:     'rgb(var(--ink-muted) / <alpha-value>)',
         },
-        success: '#15803d',
-        danger:  '#dc2626',
-        warning: '#d97706',
+        success: 'rgb(var(--success) / <alpha-value>)',
+        danger:  'rgb(var(--danger) / <alpha-value>)',
+        warning: 'rgb(var(--warning) / <alpha-value>)',
       },
       fontFamily: {
         sans:    ['Inter', 'system-ui', 'sans-serif'],

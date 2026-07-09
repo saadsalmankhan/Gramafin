@@ -12,9 +12,56 @@
   font-display: swap;
 }
 
+/* RGB triplets (space-separated, no commas) so Tailwind's rgb(var(--x) /
+   <alpha-value>) opacity-modifier pattern works. Dark values aren't a
+   straight invert — surfaces step up from near-black, ink steps down from
+   near-white, and success/danger/warning are lightened so they still read
+   against a dark surface instead of the light-mode shades going muddy. */
 :root {
+  --brand-50:  239 250 244;
+  --brand-100: 214 245 227;
+  --brand-200: 165 233 194;
+  --brand-500: 14 170 81;
+  --brand-600: 0 128 55;
+  --brand-700: 0 97 42;
+
+  --surface-0: 248 247 244;
+  --surface-1: 240 239 233;
+  --surface-2: 255 255 255;
+
+  --ink-primary:   15 15 14;
+  --ink-secondary: 74 73 69;
+  --ink-muted:     138 136 128;
+
+  --success: 21 128 61;
+  --danger:  220 38 38;
+  --warning: 217 119 6;
+
   --scrollbar-color: #d4d2cb;
   --sidebar-w: 240px;
+}
+
+.dark {
+  --brand-50:  24 43 33;
+  --brand-100: 27 58 42;
+  --brand-200: 42 89 62;
+  --brand-500: 34 187 105;
+  --brand-600: 42 168 99;
+  --brand-700: 74 195 138;
+
+  --surface-0: 19 19 18;
+  --surface-1: 28 28 26;
+  --surface-2: 32 32 30;
+
+  --ink-primary:   244 244 242;
+  --ink-secondary: 176 174 168;
+  --ink-muted:     126 124 118;
+
+  --success: 74 222 128;
+  --danger:  248 113 113;
+  --warning: 251 191 36;
+
+  --scrollbar-color: #4a4945;
 }
 
 * {
@@ -22,8 +69,8 @@
 }
 
 body {
-  background-color: #f8f7f4;
-  color: #0f0f0e;
+  background-color: rgb(var(--surface-0));
+  color: rgb(var(--ink-primary));
   font-family: 'Inter', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
@@ -39,13 +86,13 @@ input[type='number']::-webkit-outer-spin-button {
 
 @layer components {
   .input {
-    @apply w-full h-9 rounded border border-gray-200 bg-white px-3 text-sm text-ink-primary
+    @apply w-full h-9 rounded border border-gray-200 dark:border-white/10 bg-white dark:bg-surface-1 px-3 text-sm text-ink-primary
            placeholder:text-ink-muted focus:outline-none focus:ring-2 focus:ring-brand-500/30
            focus:border-brand-500 transition-colors;
   }
 
   .select {
-    @apply h-9 rounded border border-gray-200 bg-white px-3 text-sm text-ink-primary
+    @apply h-9 rounded border border-gray-200 dark:border-white/10 bg-white dark:bg-surface-1 px-3 text-sm text-ink-primary
            focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500
            transition-colors cursor-pointer;
   }
@@ -57,19 +104,19 @@ input[type='number']::-webkit-outer-spin-button {
   }
 
   .btn-ghost {
-    @apply h-9 px-3 rounded border border-gray-200 bg-white text-sm text-ink-secondary
+    @apply h-9 px-3 rounded border border-gray-200 dark:border-white/10 bg-white dark:bg-surface-1 text-sm text-ink-secondary
            hover:bg-surface-1 active:scale-[.98] transition-all duration-100
            flex items-center gap-1.5 whitespace-nowrap;
   }
 
   .btn-danger {
-    @apply h-8 px-2.5 rounded border border-red-200 text-red-500 text-xs
-           hover:bg-red-50 active:scale-[.98] transition-all duration-100
+    @apply h-8 px-2.5 rounded border border-red-200 dark:border-danger/30 text-red-500 dark:text-danger text-xs
+           hover:bg-red-50 dark:hover:bg-danger/10 active:scale-[.98] transition-all duration-100
            flex items-center gap-1;
   }
 
   .card {
-    @apply bg-white border border-gray-100 rounded-card p-5 shadow-sm;
+    @apply bg-white dark:bg-surface-2 border border-gray-100 dark:border-white/10 rounded-card p-5 shadow-sm dark:shadow-none;
   }
 
   .metric-card {

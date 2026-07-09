@@ -2,6 +2,7 @@
 
 import { NetWorthSnapshot } from '@/types'
 import { fmt, fmtCompact } from '@/lib/utils'
+import { useChartColors } from '@/lib/theme'
 import {
   AreaChart,
   Area,
@@ -14,6 +15,8 @@ import {
 const LINE_COLOR = '#008037' // brand-600
 
 export default function NetWorthTrendChart({ history }: { history: NetWorthSnapshot[] }) {
+  const chartColors = useChartColors()
+
   if (history.length < 2) {
     return (
       <div className="h-48 flex items-center justify-center text-sm text-ink-muted text-center px-6">
@@ -35,13 +38,13 @@ export default function NetWorthTrendChart({ history }: { history: NetWorthSnaps
         </defs>
         <XAxis
           dataKey="date"
-          tick={{ fontSize: 11, fill: '#8a8880' }}
+          tick={{ fontSize: 11, fill: chartColors.axisText }}
           axisLine={false}
           tickLine={false}
           minTickGap={24}
         />
         <YAxis
-          tick={{ fontSize: 11, fill: '#8a8880' }}
+          tick={{ fontSize: 11, fill: chartColors.axisText }}
           axisLine={false}
           tickLine={false}
           tickFormatter={v => fmtCompact(v)}
@@ -51,9 +54,10 @@ export default function NetWorthTrendChart({ history }: { history: NetWorthSnaps
           formatter={(val: number) => [fmt(val), 'Net worth']}
           contentStyle={{
             fontSize: 12,
-            border: '1px solid #e5e5e5',
+            border: `1px solid ${chartColors.tooltipBorder}`,
             borderRadius: 8,
-            background: '#fff',
+            background: chartColors.tooltipBg,
+            color: chartColors.mutedText,
           }}
         />
         <Area

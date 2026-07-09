@@ -49,7 +49,7 @@ export default function BudgetPage() {
         <p className="text-xs text-ink-muted mb-5">Changes save automatically</p>
         <div className="space-y-2">
           {/* Header */}
-          <div className="grid grid-cols-[1fr_140px] gap-4 px-2 pb-2 border-b border-gray-100">
+          <div className="grid grid-cols-[1fr_140px] gap-4 px-2 pb-2 border-b border-gray-100 dark:border-white/10">
             <p className="section-label">Category</p>
             <p className="section-label text-right">Monthly limit (PKR)</p>
           </div>
@@ -84,7 +84,7 @@ export default function BudgetPage() {
             const limit = state.budgets[cat] ?? 0
             const p = limit > 0 ? Math.min(100, Math.round((spent / limit) * 100)) : 0
             const over = spent > limit && limit > 0
-            const barColor = p < 70 ? '#15803d' : p < 90 ? '#d97706' : '#dc2626'
+            const barColor = p < 70 ? 'rgb(var(--success))' : p < 90 ? 'rgb(var(--warning))' : 'rgb(var(--danger))'
 
             return (
               <div key={cat}>
@@ -96,7 +96,7 @@ export default function BudgetPage() {
                     />
                     <span className="text-sm text-ink-secondary">{cat}</span>
                     {over && (
-                      <span className="text-[10px] font-medium text-danger bg-red-50 px-1.5 py-0.5 rounded">
+                      <span className="text-[10px] font-medium text-danger bg-red-50 dark:bg-danger/10 px-1.5 py-0.5 rounded">
                         over limit
                       </span>
                     )}

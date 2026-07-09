@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useContext, useEffect, useReducer, useRef, useState, ReactNode } from 'react'
+import React, { createContext, useCallback, useContext, useEffect, useReducer, useRef, useState, ReactNode } from 'react'
 import { useSession } from 'next-auth/react'
 import {
   AppState,
@@ -13,10 +13,13 @@ import {
   Income,
   BankAccount,
   DEFAULT_BUDGETS,
+  Preferences,
+  DEFAULT_PREFERENCES,
+  CURRENCIES,
 } from '@/types'
 import { applyDueIncome } from '@/lib/income'
 import { computeNetWorth } from '@/lib/networth'
-import { today } from '@/lib/utils'
+import { today, setCurrencySymbol } from '@/lib/utils'
 
 const LEGACY_STORAGE_KEY = 'wm_state_v2'
 
@@ -44,6 +47,7 @@ const initialState: AppState = {
   recurringIncomes: [],
   bankAccounts: [],
   netWorthHistory: [],
+  preferences: DEFAULT_PREFERENCES,
 }
 
 type Action =
@@ -64,6 +68,7 @@ type Action =
   | { type: 'DELETE_INCOME'; payload: string }
   | { type: 'ADD_BANK_ACCOUNT'; payload: BankAccount }
   | { type: 'DELETE_BANK_ACCOUNT'; payload: string }
+  | { type: 'SET_PREFERENCES'; payload: Partial<Preferences> }
   | { type: 'LOAD'; payload: AppState }
 
 // Keeps a running daily history of net worth so it can be charted over time,
@@ -144,6 +149,8 @@ function baseReducer(state: AppState, action: Action): AppState {
       return { ...state, bankAccounts: [...state.bankAccounts, action.payload] }
     case 'DELETE_BANK_ACCOUNT':
       return { ...state, bankAccounts: state.bankAccounts.filter(b => b.id !== action.payload) }
+    case 'SET_PREFERENCES':
+      return { ...state, preferences: { ...state.preferences, ...action.payload } }
     default:
       return state
   }
@@ -165,6 +172,29 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [hydrated, setHydrated] = useState(false)
   const [syncError, setSyncError] = useState(false)
 
+  // The initial cloud fetch below is async, so a fast interaction (or a slow
+  // network) can land a dispatch before it resolves. Recording those actions
+  // here lets the load() below replay them on top of the cloud snapshot
+  // instead of the LOAD silently discarding them.
+  const hydratedRef = useRef(false)
+  const pendingActionsRef = useRef<Action[]>([])
+
+  const guardedDispatch = useCallback((action: Action) => {
+    if (!hydratedRef.current && action.type !== 'LOAD') {
+      pendingActionsRef.current.push(action)
+    }
+    dispatch(action)
+  }, [])
+
+  // Keep fmt()/fmtCompact()'s currency symbol in sync with the saved
+  // preference. Set synchronously during render (not in a useEffect) so
+  // descendants — which render after this in the same pass — pick up the
+  // new symbol immediately. An effect would run one commit too late: it
+  // fires after children have already rendered with the stale symbol, and
+  // mutating a plain variable doesn't trigger the second render needed to
+  // pick up the fix.
+  setCurrencySymbol(CURRENCIES.find(c => c.code === state.preferences.currency)?.symbol ?? 'Rs')
+
   // Load this user's data from the cloud after auth resolves. Falls back to
   // migrating any pre-existing browser-local data on the very first load.
   useEffect(() => {
@@ -180,8 +210,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         if (data) {
           const merged = { ...initialState, ...data }
           const { incomes, recurring } = applyDueIncome(merged.recurringIncomes, merged.incomes)
+          let finalState: AppState = { ...merged, incomes, recurringIncomes: recurring }
+          for (const action of pendingActionsRef.current) {
+            finalState = reducer(finalState, action)
+          }
           if (!cancelled) {
-            dispatch({ type: 'LOAD', payload: { ...merged, incomes, recurringIncomes: recurring } })
+            dispatch({ type: 'LOAD', payload: finalState })
           }
         } else {
           try {
@@ -189,8 +223,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             if (raw) {
               const legacy = { ...initialState, ...(JSON.parse(raw) as AppState) }
               const { incomes, recurring } = applyDueIncome(legacy.recurringIncomes, legacy.incomes)
+              let finalState: AppState = { ...legacy, incomes, recurringIncomes: recurring }
+              for (const action of pendingActionsRef.current) {
+                finalState = reducer(finalState, action)
+              }
               if (!cancelled) {
-                dispatch({ type: 'LOAD', payload: { ...legacy, incomes, recurringIncomes: recurring } })
+                dispatch({ type: 'LOAD', payload: finalState })
               }
             }
           } catch {}
@@ -200,7 +238,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         console.error('Failed to load cloud data:', err)
         if (!cancelled) setSyncError(true)
       } finally {
-        if (!cancelled) setHydrated(true)
+        if (!cancelled) {
+          hydratedRef.current = true
+          pendingActionsRef.current = []
+          setHydrated(true)
+        }
       }
     }
 
@@ -226,7 +268,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const toSave = pendingSaveRef.current
       pendingSaveRef.current = null
       if (!toSave) return
-      persistData(toSave)
+      // keepalive so a navigation landing in the gap between the debounce
+      // firing and the response arriving can't get the request aborted —
+      // the explicit beforeunload/visibilitychange flush below only covers
+      // saves that are still pending, not ones already in flight.
+      persistData(toSave, true)
         .then(res => {
           if (!res.ok) throw new Error(`Failed to save data (${res.status})`)
           setSyncError(false)
@@ -264,7 +310,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [])
 
   return (
-    <StoreContext.Provider value={{ state, dispatch, syncError }}>
+    <StoreContext.Provider value={{ state, dispatch: guardedDispatch, syncError }}>
       {children}
     </StoreContext.Provider>
   )

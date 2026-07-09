@@ -111,7 +111,7 @@ export default function IncomePage() {
       <div className="card mb-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-sm font-medium text-ink-primary">Add income</h2>
-          <div className="flex rounded-lg border border-gray-200 p-0.5">
+          <div className="flex rounded-lg border border-gray-200 dark:border-white/10 p-0.5">
             {(['one-time', 'recurring'] as const).map(m => (
               <button
                 key={m}
@@ -127,7 +127,7 @@ export default function IncomePage() {
           </div>
         </div>
         {error && (
-          <p className="text-xs text-danger mb-3 bg-red-50 px-3 py-2 rounded">{error}</p>
+          <p className="text-xs text-danger mb-3 bg-red-50 dark:bg-danger/10 px-3 py-2 rounded">{error}</p>
         )}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
           <select
@@ -185,7 +185,7 @@ export default function IncomePage() {
       {state.recurringIncomes.length > 0 && (
         <div className="card mb-6">
           <h2 className="text-sm font-medium text-ink-primary mb-4">Recurring income</h2>
-          <div className="divide-y divide-gray-50">
+          <div className="divide-y divide-gray-50 dark:divide-white/5">
             {state.recurringIncomes.map(r => (
               <div key={r.id} className="flex items-center justify-between py-2.5 gap-3">
                 <div className="flex items-center gap-2.5 min-w-0">
@@ -239,12 +239,12 @@ export default function IncomePage() {
           <p className="text-sm text-ink-muted text-center py-10">No income logged yet</p>
         ) : (
           <div>
-            <div className="grid grid-cols-[1fr_150px_120px_140px_100px_40px] gap-2 px-2 pb-2 border-b border-gray-100">
+            <div className="grid grid-cols-[1fr_150px_120px_140px_100px_40px] gap-2 px-2 pb-2 border-b border-gray-100 dark:border-white/10">
               {['Source', 'Category', 'Account', 'Date', 'Amount', ''].map(h => (
                 <p key={h} className="section-label">{h}</p>
               ))}
             </div>
-            <div className="divide-y divide-gray-50">
+            <div className="divide-y divide-gray-50 dark:divide-white/5">
               {sortedIncomes.map(i => (
                 <div key={i.id} className="grid grid-cols-[1fr_150px_120px_140px_100px_40px] gap-2 items-center px-2 py-3 hover:bg-surface-0 rounded-lg transition-colors">
                   <span className="text-sm text-ink-primary truncate">{i.source}</span>

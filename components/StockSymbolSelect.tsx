@@ -61,7 +61,7 @@ export default function StockSymbolSelect({ value, onChange, onSelect, placehold
         autoComplete="off"
       />
       {open && matches.length > 0 && (
-        <div className="absolute z-20 mt-1 w-full max-h-64 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg">
+        <div className="absolute z-20 mt-1 w-full max-h-64 overflow-y-auto bg-white dark:bg-surface-2 border border-gray-200 dark:border-white/10 rounded-lg shadow-lg">
           {matches.map(s => (
             <button
               key={s.symbol}

@@ -4,6 +4,7 @@ import { useStore, useThisMonth } from '@/lib/store'
 import { fmt, fmtCompact, gainPct, daysUntil } from '@/lib/utils'
 import { CATEGORY_COLORS, EXPENSE_CATEGORIES, ExpenseCategory, bankAccountLabel } from '@/types'
 import { computeNetWorth } from '@/lib/networth'
+import { useChartColors } from '@/lib/theme'
 import MetricCard from '@/components/MetricCard'
 import Badge from '@/components/Badge'
 import PageHeader from '@/components/PageHeader'
@@ -26,6 +27,7 @@ const REMINDER_WINDOW_DAYS = 7
 export default function Dashboard() {
   const { state } = useStore()
   const monthExpenses = useThisMonth()
+  const chartColors = useChartColors()
 
   const totalSpend = monthExpenses.reduce((s, e) => s + e.amount, 0)
   const netWorthBreakdown = computeNetWorth(state)
@@ -82,7 +84,7 @@ export default function Dashboard() {
             {cardReminders.map(c => {
               const urgent = c.days <= 3
               const color = urgent ? 'text-danger' : 'text-warning'
-              const bg = urgent ? 'bg-red-50' : 'bg-amber-50'
+              const bg = urgent ? 'bg-red-50 dark:bg-danger/10' : 'bg-amber-50 dark:bg-warning/10'
               return (
                 <div key={c.id} className={`flex items-center justify-between px-3 py-2 rounded-lg ${bg}`}>
                   <div className="flex items-center gap-2.5 min-w-0">
@@ -187,12 +189,12 @@ export default function Dashboard() {
               <BarChart data={catTotals} barSize={28}>
                 <XAxis
                   dataKey="name"
-                  tick={{ fontSize: 11, fill: '#8a8880' }}
+                  tick={{ fontSize: 11, fill: chartColors.axisText }}
                   axisLine={false}
                   tickLine={false}
                 />
                 <YAxis
-                  tick={{ fontSize: 11, fill: '#8a8880' }}
+                  tick={{ fontSize: 11, fill: chartColors.axisText }}
                   axisLine={false}
                   tickLine={false}
                   tickFormatter={v => 'Rs ' + Math.round(v / 1000) + 'K'}
@@ -205,9 +207,10 @@ export default function Dashboard() {
                   ]}
                   contentStyle={{
                     fontSize: 12,
-                    border: '1px solid #e5e5e5',
+                    border: `1px solid ${chartColors.tooltipBorder}`,
                     borderRadius: 8,
-                    background: '#fff',
+                    background: chartColors.tooltipBg,
+                    color: chartColors.mutedText,
                   }}
                 />
                 <Bar dataKey="total" radius={[4, 4, 0, 0]}>
@@ -276,7 +279,7 @@ export default function Dashboard() {
             No transactions yet — <Link href="/expenses" className="text-brand-600 hover:underline">add your first expense</Link>
           </p>
         ) : (
-          <div className="divide-y divide-gray-50">
+          <div className="divide-y divide-gray-50 dark:divide-white/5">
             {recent.map(e => (
               <div key={e.id} className="flex items-center justify-between py-3">
                 <div className="flex items-center gap-3 min-w-0">

@@ -6,6 +6,7 @@ import { Investment, INVESTMENT_TYPES, InvestmentType, INVESTMENT_TYPE_COLORS, P
 import { fmt, fmtCompact, gainPct, uid } from '@/lib/utils'
 import { computeNetWorth } from '@/lib/networth'
 import { fetchStockPrice } from '@/lib/fetchStockPrice'
+import { useChartColors } from '@/lib/theme'
 import MetricCard from '@/components/MetricCard'
 import PageHeader from '@/components/PageHeader'
 import NetWorthContribution from '@/components/NetWorthContribution'
@@ -25,6 +26,7 @@ type PriceStatus = Record<string, 'idle' | 'loading' | 'live' | 'eod' | 'failed'
 
 export default function InvestmentsPage() {
   const { state, dispatch } = useStore()
+  const chartColors = useChartColors()
   const [name, setName] = useState('')
   const [symbol, setSymbol] = useState<string | null>(null)
   const [type, setType] = useState<InvestmentType>('Stocks')
@@ -188,7 +190,7 @@ export default function InvestmentsPage() {
       {/* Add form */}
       <div className="card mb-6">
         <h2 className="text-sm font-medium text-ink-primary mb-4">Add investment</h2>
-        {error && <p className="text-xs text-danger mb-3 bg-red-50 px-3 py-2 rounded">{error}</p>}
+        {error && <p className="text-xs text-danger mb-3 bg-red-50 dark:bg-danger/10 px-3 py-2 rounded">{error}</p>}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
           {type === 'Stocks' ? (
             <StockSymbolSelect
@@ -281,12 +283,12 @@ export default function InvestmentsPage() {
             <p className="text-sm text-ink-muted text-center py-8">No investments added yet</p>
           ) : (
             <div>
-              <div className="grid grid-cols-[1fr_80px_100px_100px_90px_36px] gap-2 px-2 pb-2 border-b border-gray-100">
+              <div className="grid grid-cols-[1fr_80px_100px_100px_90px_36px] gap-2 px-2 pb-2 border-b border-gray-100 dark:border-white/10">
                 {['Name', 'Type', 'Invested', 'Current', 'Gain/Loss', ''].map(h => (
                   <p key={h} className="section-label">{h}</p>
                 ))}
               </div>
-              <div className="divide-y divide-gray-50">
+              <div className="divide-y divide-gray-50 dark:divide-white/5">
                 {state.investments.map(inv => {
                   const gain = inv.currentValue - inv.amountInvested
                   const gp = gainPct(inv.amountInvested, inv.currentValue)
@@ -379,13 +381,19 @@ export default function InvestmentsPage() {
                 </Pie>
                 <Tooltip
                   formatter={(val: number) => [fmt(val), '']}
-                  contentStyle={{ fontSize: 12, border: '1px solid #e5e5e5', borderRadius: 8 }}
+                  contentStyle={{
+                    fontSize: 12,
+                    border: `1px solid ${chartColors.tooltipBorder}`,
+                    borderRadius: 8,
+                    background: chartColors.tooltipBg,
+                    color: chartColors.mutedText,
+                  }}
                 />
                 <Legend
                   iconType="circle"
                   iconSize={8}
                   formatter={(value) => (
-                    <span style={{ fontSize: 11, color: '#4a4945' }}>{value}</span>
+                    <span style={{ fontSize: 11, color: chartColors.mutedText }}>{value}</span>
                   )}
                 />
               </PieChart>

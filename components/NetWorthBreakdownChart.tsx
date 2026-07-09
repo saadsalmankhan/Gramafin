@@ -2,6 +2,7 @@
 
 import { NetWorthBreakdown } from '@/lib/networth'
 import { fmt, fmtCompact } from '@/lib/utils'
+import { useChartColors, ChartColors } from '@/lib/theme'
 import {
   BarChart,
   Bar,
@@ -31,6 +32,7 @@ interface ValueLabelProps {
   width?: number
   height?: number
   value?: number
+  chartColors?: ChartColors
 }
 
 // A bar's tip sits at a distance from the Y-axis that depends on the data
@@ -38,7 +40,7 @@ interface ValueLabelProps {
 // text for a large-magnitude or negative bar. The zero-side edge doesn't have
 // that problem — it's always in the chart's open middle — so that's the one
 // safe place for a label that doesn't fit inside the fill.
-function ValueLabel({ x = 0, y = 0, width = 0, height = 0, value = 0 }: ValueLabelProps) {
+function ValueLabel({ x = 0, y = 0, width = 0, height = 0, value = 0, chartColors }: ValueLabelProps) {
   const isNegative = value < 0
   const label = fmtCompact(Math.abs(value))
   // Rough px-per-character at 11px system-ui, plus 8px padding on each side.
@@ -66,7 +68,7 @@ function ValueLabel({ x = 0, y = 0, width = 0, height = 0, value = 0 }: ValueLab
       dy={4}
       textAnchor="start"
       fontSize={11}
-      fill="#52514e"
+      fill={chartColors?.mutedText ?? '#52514e'}
     >
       {label}
     </text>
@@ -74,6 +76,7 @@ function ValueLabel({ x = 0, y = 0, width = 0, height = 0, value = 0 }: ValueLab
 }
 
 export default function NetWorthBreakdownChart({ breakdown }: { breakdown: NetWorthBreakdown }) {
+  const chartColors = useChartColors()
   const data = [
     { name: 'Cash & assets', value: breakdown.cashAndAssets },
     { name: 'Investments', value: breakdown.investments },
@@ -100,26 +103,27 @@ export default function NetWorthBreakdownChart({ breakdown }: { breakdown: NetWo
           type="category"
           dataKey="name"
           width={90}
-          tick={{ fontSize: 11, fill: '#52514e' }}
+          tick={{ fontSize: 11, fill: chartColors.mutedText }}
           axisLine={false}
           tickLine={false}
         />
-        <ReferenceLine x={0} stroke="#c3c2b7" />
+        <ReferenceLine x={0} stroke={chartColors.gridStroke} />
         <Tooltip
           formatter={(val: number) => [fmt(Math.abs(val)), '']}
           labelFormatter={(label: string) => label}
           contentStyle={{
             fontSize: 12,
-            border: '1px solid #e5e5e5',
+            border: `1px solid ${chartColors.tooltipBorder}`,
             borderRadius: 8,
-            background: '#fff',
+            background: chartColors.tooltipBg,
+            color: chartColors.mutedText,
           }}
         />
         <Bar dataKey="value" radius={4} barSize={20}>
           {data.map(d => (
             <Cell key={d.name} fill={COLORS[d.name as keyof typeof COLORS]} />
           ))}
-          <LabelList dataKey="value" content={<ValueLabel />} />
+          <LabelList dataKey="value" content={<ValueLabel chartColors={chartColors} />} />
         </Bar>
       </BarChart>
     </ResponsiveContainer>
