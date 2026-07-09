@@ -10,6 +10,7 @@ import MetricCard from '@/components/MetricCard'
 import PageHeader from '@/components/PageHeader'
 import NetWorthContribution from '@/components/NetWorthContribution'
 import StockSymbolSelect from '@/components/StockSymbolSelect'
+import ConfirmDialog from '@/components/ConfirmDialog'
 import { Plus, Trash2, TrendingUp, TrendingDown, RefreshCw, CheckCircle, AlertCircle } from 'lucide-react'
 import {
   PieChart,
@@ -34,6 +35,7 @@ export default function InvestmentsPage() {
   const [error, setError] = useState('')
   const [adding, setAdding] = useState(false)
   const [priceStatus, setPriceStatus] = useState<PriceStatus>({})
+  const [deleteTarget, setDeleteTarget] = useState<Investment | null>(null)
 
   const totalCost = state.investments.reduce((s, i) => s + i.amountInvested, 0)
   const totalCurrent = state.investments.reduce((s, i) => s + i.currentValue, 0)
@@ -338,7 +340,7 @@ export default function InvestmentsPage() {
                         )}
                         <button
                           className="btn-danger"
-                          onClick={() => dispatch({ type: 'DELETE_INVESTMENT', payload: inv.id })}
+                          onClick={() => setDeleteTarget(inv)}
                           aria-label="Delete"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -391,6 +393,17 @@ export default function InvestmentsPage() {
           )}
         </div>
       </div>
+
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        title={`Delete "${deleteTarget?.name}"?`}
+        message="This will permanently remove this investment from your portfolio. This can't be undone."
+        onConfirm={() => {
+          if (deleteTarget) dispatch({ type: 'DELETE_INVESTMENT', payload: deleteTarget.id })
+          setDeleteTarget(null)
+        }}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   )
 }

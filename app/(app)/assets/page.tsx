@@ -8,6 +8,7 @@ import { computeNetWorth } from '@/lib/networth'
 import MetricCard from '@/components/MetricCard'
 import PageHeader from '@/components/PageHeader'
 import NetWorthContribution from '@/components/NetWorthContribution'
+import ConfirmDialog from '@/components/ConfirmDialog'
 import { Plus, Trash2, TrendingUp, TrendingDown, CreditCard } from 'lucide-react'
 
 function utilizationColor(p: number): string {
@@ -23,6 +24,7 @@ export default function AssetsPage() {
   const [dueDate, setDueDate] = useState('')
   const [minimumPayment, setMinimumPayment] = useState('')
   const [error, setError] = useState('')
+  const [deleteTarget, setDeleteTarget] = useState<Asset | null>(null)
 
   const isCreditCard = category === 'Credit card'
 
@@ -99,7 +101,7 @@ export default function AssetsPage() {
         </span>
         <button
           className="btn-danger flex-shrink-0"
-          onClick={() => dispatch({ type: 'DELETE_ASSET', payload: a.id })}
+          onClick={() => setDeleteTarget(a)}
           aria-label="Delete"
         >
           <Trash2 className="w-3.5 h-3.5" />
@@ -152,7 +154,7 @@ export default function AssetsPage() {
           </span>
           <button
             className="btn-danger flex-shrink-0"
-            onClick={() => dispatch({ type: 'DELETE_ASSET', payload: a.id })}
+            onClick={() => setDeleteTarget(a)}
             aria-label="Delete"
           >
             <Trash2 className="w-3.5 h-3.5" />
@@ -277,6 +279,17 @@ export default function AssetsPage() {
           </div>
         )}
       </div>
+
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        title={`Delete "${deleteTarget?.name}"?`}
+        message={`This will permanently remove this ${deleteTarget && isLiabilityCategory(deleteTarget.category) ? 'liability' : 'asset'} from your net worth. This can't be undone.`}
+        onConfirm={() => {
+          if (deleteTarget) dispatch({ type: 'DELETE_ASSET', payload: deleteTarget.id })
+          setDeleteTarget(null)
+        }}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   )
 }

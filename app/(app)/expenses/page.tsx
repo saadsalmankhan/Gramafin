@@ -8,6 +8,7 @@ import MetricCard from '@/components/MetricCard'
 import Badge from '@/components/Badge'
 import AccountSelect from '@/components/AccountSelect'
 import PageHeader from '@/components/PageHeader'
+import ConfirmDialog from '@/components/ConfirmDialog'
 import { Plus, Trash2, Paperclip } from 'lucide-react'
 
 export default function ExpensesPage() {
@@ -21,6 +22,7 @@ export default function ExpensesPage() {
   const [filter, setFilter] = useState<'all' | ExpenseCategory>('all')
   const [error, setError] = useState('')
   const [uploading, setUploading] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<Expense | null>(null)
 
   const month = new Date().toISOString().slice(0, 7)
   const monthTotal = state.expenses
@@ -218,7 +220,7 @@ export default function ExpensesPage() {
                   </span>
                   <button
                     className="btn-danger"
-                    onClick={() => removeExpense(e)}
+                    onClick={() => setDeleteTarget(e)}
                     aria-label="Delete expense"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -241,6 +243,17 @@ export default function ExpensesPage() {
           </div>
         )}
       </div>
+
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        title="Delete this expense?"
+        message={`This will permanently remove "${deleteTarget?.description}"${deleteTarget?.receiptUrl ? ' and its attached receipt' : ''}. This can't be undone.`}
+        onConfirm={() => {
+          if (deleteTarget) removeExpense(deleteTarget)
+          setDeleteTarget(null)
+        }}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   )
 }

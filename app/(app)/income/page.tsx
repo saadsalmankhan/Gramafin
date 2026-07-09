@@ -18,6 +18,7 @@ import Badge from '@/components/Badge'
 import AccountSelect from '@/components/AccountSelect'
 import PageHeader from '@/components/PageHeader'
 import NetWorthContribution from '@/components/NetWorthContribution'
+import ConfirmDialog from '@/components/ConfirmDialog'
 import { Plus, Trash2, RefreshCw } from 'lucide-react'
 import clsx from 'clsx'
 
@@ -32,6 +33,8 @@ export default function IncomePage() {
   const [date, setDate] = useState(today())
   const [filter, setFilter] = useState<'all' | IncomeCategory>('all')
   const [error, setError] = useState('')
+  const [deleteRecurringTarget, setDeleteRecurringTarget] = useState<RecurringIncome | null>(null)
+  const [deleteIncomeTarget, setDeleteIncomeTarget] = useState<Income | null>(null)
 
   const netWorthBreakdown = computeNetWorth(state)
 
@@ -201,7 +204,7 @@ export default function IncomePage() {
                   <span className="text-sm font-mono font-medium text-success">+{fmt(r.amount)}</span>
                   <button
                     className="btn-danger"
-                    onClick={() => dispatch({ type: 'DELETE_RECURRING_INCOME', payload: r.id })}
+                    onClick={() => setDeleteRecurringTarget(r)}
                     aria-label="Delete recurring income"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -253,7 +256,7 @@ export default function IncomePage() {
                   </span>
                   <button
                     className="btn-danger"
-                    onClick={() => dispatch({ type: 'DELETE_INCOME', payload: i.id })}
+                    onClick={() => setDeleteIncomeTarget(i)}
                     aria-label="Delete income"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -264,6 +267,28 @@ export default function IncomePage() {
           </div>
         )}
       </div>
+
+      <ConfirmDialog
+        open={deleteRecurringTarget !== null}
+        title={`Stop recurring income "${deleteRecurringTarget?.source}"?`}
+        message="This stops future auto-generated entries for this recurring income. Entries already logged from it will stay in your income log. This can't be undone."
+        confirmLabel="Stop recurring"
+        onConfirm={() => {
+          if (deleteRecurringTarget) dispatch({ type: 'DELETE_RECURRING_INCOME', payload: deleteRecurringTarget.id })
+          setDeleteRecurringTarget(null)
+        }}
+        onCancel={() => setDeleteRecurringTarget(null)}
+      />
+      <ConfirmDialog
+        open={deleteIncomeTarget !== null}
+        title={`Delete "${deleteIncomeTarget?.source}"?`}
+        message="This will permanently remove this income entry. This can't be undone."
+        onConfirm={() => {
+          if (deleteIncomeTarget) dispatch({ type: 'DELETE_INCOME', payload: deleteIncomeTarget.id })
+          setDeleteIncomeTarget(null)
+        }}
+        onCancel={() => setDeleteIncomeTarget(null)}
+      />
     </div>
   )
 }

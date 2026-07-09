@@ -9,6 +9,7 @@ import { computeNetWorth } from '@/lib/networth'
 import MetricCard from '@/components/MetricCard'
 import PageHeader from '@/components/PageHeader'
 import NetWorthContribution from '@/components/NetWorthContribution'
+import ConfirmDialog from '@/components/ConfirmDialog'
 import {
   Plus, Trash2, TrendingUp, TrendingDown,
   RefreshCw, AlertCircle, CheckCircle, Edit2, X, Save,
@@ -53,6 +54,7 @@ export default function MutualFundsPage() {
   const [editBuyNav, setEditBuyNav] = useState('')
   const [editOverride, setEditOverride] = useState('')
   const [editNotes, setEditNotes] = useState('')
+  const [deleteTarget, setDeleteTarget] = useState<MutualFund | null>(null)
 
   // Derived totals
   const funds = state.mutualFunds
@@ -317,7 +319,7 @@ export default function MutualFundsPage() {
                             </button>
                             <button
                               className="btn-danger h-7"
-                              onClick={() => dispatch({ type: 'DELETE_MUTUAL_FUND', payload: f.id })}
+                              onClick={() => setDeleteTarget(f)}
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
@@ -442,6 +444,17 @@ export default function MutualFundsPage() {
           </div>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        title={`Delete "${deleteTarget?.name}"?`}
+        message="This will permanently remove this fund and its unit history from your portfolio. This can't be undone."
+        onConfirm={() => {
+          if (deleteTarget) dispatch({ type: 'DELETE_MUTUAL_FUND', payload: deleteTarget.id })
+          setDeleteTarget(null)
+        }}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   )
 }

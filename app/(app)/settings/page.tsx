@@ -7,6 +7,7 @@ import { fmt, uid, daysUntil } from '@/lib/utils'
 import { computeNetWorth } from '@/lib/networth'
 import PageHeader from '@/components/PageHeader'
 import NetWorthContribution from '@/components/NetWorthContribution'
+import ConfirmDialog from '@/components/ConfirmDialog'
 import { Plus, Trash2, Landmark, CreditCard } from 'lucide-react'
 import clsx from 'clsx'
 
@@ -18,6 +19,7 @@ export default function SettingsPage() {
   const [startingBalance, setStartingBalance] = useState('')
   const [dueDate, setDueDate] = useState('')
   const [error, setError] = useState('')
+  const [deleteTarget, setDeleteTarget] = useState<BankAccount | null>(null)
 
   const netWorthBreakdown = computeNetWorth(state)
   const isCreditCardForm = type === 'Credit Card'
@@ -169,7 +171,7 @@ export default function SettingsPage() {
                     </span>
                     <button
                       className="btn-danger"
-                      onClick={() => dispatch({ type: 'DELETE_BANK_ACCOUNT', payload: b.id })}
+                      onClick={() => setDeleteTarget(b)}
                       aria-label="Delete bank account"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -181,6 +183,17 @@ export default function SettingsPage() {
           </div>
         )}
       </div>
+
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        title={`Delete "${deleteTarget ? bankAccountLabel(deleteTarget) : ''}"?`}
+        message="This will remove the account and its balance from your net worth. Any expenses or income already logged against it will keep the account's name as plain text. This can't be undone."
+        onConfirm={() => {
+          if (deleteTarget) dispatch({ type: 'DELETE_BANK_ACCOUNT', payload: deleteTarget.id })
+          setDeleteTarget(null)
+        }}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   )
 }
