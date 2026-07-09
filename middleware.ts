@@ -40,7 +40,12 @@ function buildCsp(nonce: string): string {
     `default-src 'self'`,
     scriptSrc,
     `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`,
-    `img-src 'self' data: blob: https://cdn.sanity.io`,
+    // Vercel's Next.js image optimizer redirects /_next/image requests to the
+    // project's canonical domain (app.gramafin.com) to fetch local images when
+    // a request comes in on one of the other attached domains (gramafin.com,
+    // www.gramafin.com) — so it has to be an allowed img-src everywhere, not
+    // just 'self', or that redirect gets CSP-blocked and images break.
+    `img-src 'self' https://app.gramafin.com data: blob: https://cdn.sanity.io`,
     `font-src 'self' https://fonts.gstatic.com`,
     `connect-src 'self' https://*.sanity.io`,
     `frame-ancestors 'none'`,
