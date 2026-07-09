@@ -222,6 +222,18 @@ export interface Investment {
   type: InvestmentType
   amountInvested: number
   currentValue: number
+  // Stocks only — when a PSX symbol + share count is set, currentValue is
+  // kept in sync with the live/last-traded price instead of entered by hand.
+  symbol?: string
+  sharesHeld?: number
+  priceOverride?: number | null
+  lastPriceUpdate?: string | null
+}
+
+export interface PsxSymbol {
+  symbol: string
+  name: string
+  sectorName: string
 }
 
 export type Budgets = Record<ExpenseCategory, number>

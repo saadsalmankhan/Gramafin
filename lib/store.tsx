@@ -52,6 +52,7 @@ type Action =
   | { type: 'ADD_ASSET'; payload: Asset }
   | { type: 'DELETE_ASSET'; payload: string }
   | { type: 'ADD_INVESTMENT'; payload: Investment }
+  | { type: 'UPDATE_INVESTMENT'; payload: Investment }
   | { type: 'DELETE_INVESTMENT'; payload: string }
   | { type: 'ADD_MUTUAL_FUND'; payload: MutualFund }
   | { type: 'UPDATE_MUTUAL_FUND'; payload: MutualFund }
@@ -98,6 +99,13 @@ function baseReducer(state: AppState, action: Action): AppState {
       return { ...state, assets: state.assets.filter(a => a.id !== action.payload) }
     case 'ADD_INVESTMENT':
       return { ...state, investments: [action.payload, ...state.investments] }
+    case 'UPDATE_INVESTMENT':
+      return {
+        ...state,
+        investments: state.investments.map(i =>
+          i.id === action.payload.id ? action.payload : i
+        ),
+      }
     case 'DELETE_INVESTMENT':
       return { ...state, investments: state.investments.filter(i => i.id !== action.payload) }
     case 'ADD_MUTUAL_FUND':
