@@ -30,6 +30,7 @@ export default function InvestmentsPage() {
   const [cost, setCost] = useState('')
   const [current, setCurrent] = useState('')
   const [shares, setShares] = useState('')
+  const [buyPrice, setBuyPrice] = useState('')
   const [error, setError] = useState('')
   const [adding, setAdding] = useState(false)
   const [priceStatus, setPriceStatus] = useState<PriceStatus>({})
@@ -54,6 +55,7 @@ export default function InvestmentsPage() {
     setCost('')
     setCurrent('')
     setShares('')
+    setBuyPrice('')
   }
 
   function selectStock(s: PsxSymbol) {
@@ -61,30 +63,32 @@ export default function InvestmentsPage() {
     setName(s.name)
   }
 
+  const isTrackedStock = type === 'Stocks' && symbol !== null
+
   async function add() {
     if (!name.trim()) { setError('Name is required'); return }
-    const c = parseFloat(cost)
-    if (isNaN(c) || c <= 0) { setError('Enter a valid invested amount'); return }
-
-    const isTrackedStock = type === 'Stocks' && symbol !== null
 
     if (isTrackedStock) {
       const sh = parseFloat(shares)
+      const bp = parseFloat(buyPrice)
       if (isNaN(sh) || sh <= 0) { setError('Enter the number of shares held'); return }
+      if (isNaN(bp) || bp <= 0) { setError('Enter the buy price per share'); return }
       setError('')
       setAdding(true)
 
       const id = uid()
+      const amountInvested = sh * bp
       // Insert immediately with cost as a placeholder so the row appears
       // right away, then fetch the live price and correct currentValue.
       const inv: Investment = {
         id,
         name: name.trim(),
         type,
-        amountInvested: c,
-        currentValue: c,
+        amountInvested,
+        currentValue: amountInvested,
         symbol: symbol!,
         sharesHeld: sh,
+        buyPrice: bp,
         priceOverride: null,
         lastPriceUpdate: null,
       }
@@ -95,6 +99,8 @@ export default function InvestmentsPage() {
       return
     }
 
+    const c = parseFloat(cost)
+    if (isNaN(c) || c <= 0) { setError('Enter a valid invested amount'); return }
     const v = parseFloat(current)
     if (isNaN(v) || v <= 0) { setError('Enter a valid current value'); return }
     setError('')
@@ -206,37 +212,54 @@ export default function InvestmentsPage() {
           </select>
         </div>
         <div className="flex gap-3 flex-wrap">
-          <input
-            className="input flex-1 font-mono"
-            type="number"
-            placeholder="Amount invested (PKR)"
-            value={cost}
-            onChange={e => setCost(e.target.value)}
-          />
           {symbol ? (
-            <input
-              className="input flex-1 font-mono"
-              type="number"
-              placeholder="Shares held"
-              value={shares}
-              onChange={e => setShares(e.target.value)}
-            />
+            <>
+              <input
+                className="input flex-1 font-mono"
+                type="number"
+                placeholder="Buy price per share (PKR)"
+                value={buyPrice}
+                onChange={e => setBuyPrice(e.target.value)}
+              />
+              <input
+                className="input flex-1 font-mono"
+                type="number"
+                placeholder="Shares held"
+                value={shares}
+                onChange={e => setShares(e.target.value)}
+              />
+            </>
           ) : (
-            <input
-              className="input flex-1 font-mono"
-              type="number"
-              placeholder="Current value (PKR)"
-              value={current}
-              onChange={e => setCurrent(e.target.value)}
-            />
+            <>
+              <input
+                className="input flex-1 font-mono"
+                type="number"
+                placeholder="Amount invested (PKR)"
+                value={cost}
+                onChange={e => setCost(e.target.value)}
+              />
+              <input
+                className="input flex-1 font-mono"
+                type="number"
+                placeholder="Current value (PKR)"
+                value={current}
+                onChange={e => setCurrent(e.target.value)}
+              />
+            </>
           )}
           <button className="btn-primary" onClick={add} disabled={adding}>
             <Plus className="w-4 h-4" /> Add
           </button>
         </div>
-        {symbol && (
+        {symbol && buyPrice && shares && !isNaN(parseFloat(buyPrice)) && !isNaN(parseFloat(shares)) && (
           <p className="text-[11px] text-ink-muted mt-3">
-            {symbol} — the current value will be fetched from PSX automatically (live price × shares held) once added.
+            {symbol} — total invested {fmt(parseFloat(buyPrice) * parseFloat(shares))}. Current value will be fetched
+            from PSX automatically (live price × shares held) once added.
+          </p>
+        )}
+        {symbol && !(buyPrice && shares) && (
+          <p className="text-[11px] text-ink-muted mt-3">
+            {symbol} — enter your buy price per share and shares held; total invested is calculated automatically.
           </p>
         )}
       </div>
@@ -275,7 +298,9 @@ export default function InvestmentsPage() {
                         <p className="text-sm font-medium text-ink-primary truncate">{inv.name}</p>
                         {isTracked && (
                           <div className="flex items-center gap-1.5">
-                            <p className="text-[11px] text-ink-muted">{inv.symbol} · {inv.sharesHeld} shares</p>
+                            <p className="text-[11px] text-ink-muted">
+                              {inv.symbol} · {inv.sharesHeld} shares{inv.buyPrice ? ` @ ${fmt(inv.buyPrice)}` : ''}
+                            </p>
                             {priceBadge(inv.id)}
                           </div>
                         )}

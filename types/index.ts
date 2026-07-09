@@ -226,6 +226,7 @@ export interface Investment {
   // kept in sync with the live/last-traded price instead of entered by hand.
   symbol?: string
   sharesHeld?: number
+  buyPrice?: number // PKR per share at purchase — amountInvested is sharesHeld * buyPrice
   priceOverride?: number | null
   lastPriceUpdate?: string | null
 }
