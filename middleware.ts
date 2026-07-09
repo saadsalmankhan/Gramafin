@@ -47,7 +47,13 @@ function buildCsp(nonce: string): string {
     // just 'self', or that redirect gets CSP-blocked and images break.
     `img-src 'self' https://app.gramafin.com data: blob: https://cdn.sanity.io`,
     `font-src 'self' https://fonts.gstatic.com`,
-    `connect-src 'self' https://*.sanity.io`,
+    // Same reasoning as img-src above: on the marketing domains, Next's
+    // client-side Link prefetching/RSC fetches for any path other than "/"
+    // target app.gramafin.com (where middleware redirects them), so it has
+    // to be an allowed connect-src too, or those fetches get CSP-blocked —
+    // Next falls back to a full page reload when that happens, so nothing
+    // was actually broken, just noisy and slower than it should be.
+    `connect-src 'self' https://app.gramafin.com https://*.sanity.io`,
     `frame-ancestors 'none'`,
     `base-uri 'self'`,
     `form-action 'self'`,
