@@ -297,11 +297,11 @@ export default function InvestmentsPage() {
                       <div className="min-w-0">
                         <p className="text-sm font-medium text-ink-primary truncate">{inv.name}</p>
                         {isTracked && (
-                          <div className="flex items-center gap-1.5">
-                            <p className="text-[11px] text-ink-muted">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <p className="text-[11px] text-ink-muted truncate">
                               {inv.symbol} · {inv.sharesHeld} shares{inv.buyPrice ? ` @ ${fmt(inv.buyPrice)}` : ''}
                             </p>
-                            {priceBadge(inv.id)}
+                            <span className="flex-shrink-0">{priceBadge(inv.id)}</span>
                           </div>
                         )}
                       </div>
