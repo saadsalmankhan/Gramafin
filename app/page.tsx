@@ -3,6 +3,7 @@ import Image from 'next/image'
 import { getServerSession } from 'next-auth/next'
 import { redirect } from 'next/navigation'
 import { authOptions } from '@/lib/auth/options'
+import CompoundInterestCalculator from '@/components/CompoundInterestCalculator'
 import {
   Receipt,
   Building2,
@@ -14,6 +15,17 @@ import {
   Sparkles,
   Lock,
 } from 'lucide-react'
+
+const BENEFITS: { feature: string; benefit: string }[] = [
+  { feature: 'Expense tracking', benefit: 'Log every rupee you spend, categorized automatically, with monthly budgets per category.' },
+  { feature: 'Net worth', benefit: 'Assets, liabilities, credit cards, investments, mutual funds, and bank accounts — combined into one real number.' },
+  { feature: 'Income tracking', benefit: 'One-off and recurring salary, Pakistan-specific income sources, and Jul–Jun tax-year reporting.' },
+  { feature: 'Investments', benefit: 'Track stocks, crypto, and bonds with live gain/loss and portfolio allocation.' },
+  { feature: 'Mutual funds', benefit: 'Pakistani mutual funds with NAV tracking, so this calculator’s projections meet your real portfolio.' },
+  { feature: 'Bank accounts', benefit: 'Checking, savings, and credit cards in PKR — credit card debt subtracts from your net worth automatically.' },
+  { feature: 'Privacy', benefit: 'No bank-account linking required. Every number is one you entered — nothing is sold to third parties.' },
+  { feature: 'Cost', benefit: 'Free, forever. No credit card to sign up.' },
+]
 
 const bigFeatures = [
   {
@@ -65,7 +77,7 @@ export default async function HomePage() {
           <nav className="hidden sm:flex items-center gap-8 text-sm text-ink-secondary">
             <a href="#features" className="hover:text-ink-primary transition-colors">Features</a>
             <a href="#how-it-works" className="hover:text-ink-primary transition-colors">How it works</a>
-            <Link href="/compound-interest-calculator" className="hover:text-ink-primary transition-colors">Calculator</Link>
+            <a href="#calculator" className="hover:text-ink-primary transition-colors">Calculator</a>
             <Link href="/help" className="hover:text-ink-primary transition-colors">Help Centre</Link>
           </nav>
           <div className="flex items-center gap-4">
@@ -215,6 +227,51 @@ export default async function HomePage() {
               <p className="text-xs text-ink-muted leading-relaxed">{desc}</p>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* Compound interest calculator + benefits */}
+      <section id="calculator" className="max-w-6xl mx-auto px-6 pb-24">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight">
+            <span className="bg-gradient-to-r from-brand-700 to-brand-500 bg-clip-text text-transparent">
+              Compound interest
+            </span>{' '}
+            <span className="text-ink-primary">calculator</span>
+          </h2>
+          <p className="text-sm text-ink-muted mt-3">
+            See how a starting amount and monthly contributions grow over time, in PKR.
+          </p>
+        </div>
+
+        <CompoundInterestCalculator />
+
+        <div className="mt-16">
+          <h3 className="text-xl font-semibold text-ink-primary tracking-tight mb-2 text-center">
+            Why track it with Gramafin
+          </h3>
+          <p className="text-sm text-ink-muted mb-6 max-w-xl mx-auto text-center">
+            A calculator shows you where you could end up. Gramafin shows you where you actually are.
+          </p>
+
+          <div className="card overflow-x-auto p-0">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-100">
+                  <th className="text-left section-label px-5 py-3 whitespace-nowrap">Feature</th>
+                  <th className="text-left section-label px-5 py-3">Benefit</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {BENEFITS.map(row => (
+                  <tr key={row.feature}>
+                    <td className="px-5 py-3.5 font-medium text-ink-primary whitespace-nowrap align-top">{row.feature}</td>
+                    <td className="px-5 py-3.5 text-ink-secondary align-top">{row.benefit}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </section>
 
