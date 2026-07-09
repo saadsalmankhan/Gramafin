@@ -14,17 +14,19 @@ import {
   ShieldCheck,
   Sparkles,
   Lock,
+  Wallet,
+  Landmark,
 } from 'lucide-react'
 
-const BENEFITS: { feature: string; benefit: string }[] = [
-  { feature: 'Expense tracking', benefit: 'Log every rupee you spend, categorized automatically, with monthly budgets per category.' },
-  { feature: 'Net worth', benefit: 'Assets, liabilities, credit cards, investments, mutual funds, and bank accounts — combined into one real number.' },
-  { feature: 'Income tracking', benefit: 'One-off and recurring salary, Pakistan-specific income sources, and Jul–Jun tax-year reporting.' },
-  { feature: 'Investments', benefit: 'Track stocks, crypto, and bonds with live gain/loss and portfolio allocation.' },
-  { feature: 'Mutual funds', benefit: 'Pakistani mutual funds with NAV tracking, so this calculator’s projections meet your real portfolio.' },
-  { feature: 'Bank accounts', benefit: 'Checking, savings, and credit cards in PKR — credit card debt subtracts from your net worth automatically.' },
-  { feature: 'Privacy', benefit: 'No bank-account linking required. Every number is one you entered — nothing is sold to third parties.' },
-  { feature: 'Cost', benefit: 'Free, forever. No credit card to sign up.' },
+const BENEFITS: { feature: string; benefit: string; icon: typeof Receipt }[] = [
+  { feature: 'Expense tracking', benefit: 'Log every rupee you spend, categorized automatically, with monthly budgets per category.', icon: Receipt },
+  { feature: 'Net worth', benefit: 'Assets, liabilities, credit cards, investments, mutual funds, and bank accounts — combined into one real number.', icon: Building2 },
+  { feature: 'Income tracking', benefit: 'One-off and recurring salary, Pakistan-specific income sources, and Jul–Jun tax-year reporting.', icon: Wallet },
+  { feature: 'Investments', benefit: 'Track stocks, crypto, and bonds with live gain/loss and portfolio allocation.', icon: TrendingUp },
+  { feature: 'Mutual funds', benefit: 'Pakistani mutual funds with NAV tracking, so this calculator’s projections meet your real portfolio.', icon: PieChart },
+  { feature: 'Bank accounts', benefit: 'Checking, savings, and credit cards in PKR — credit card debt subtracts from your net worth automatically.', icon: Landmark },
+  { feature: 'Privacy', benefit: 'No bank-account linking required. Every number is one you entered — nothing is sold to third parties.', icon: Lock },
+  { feature: 'Cost', benefit: 'Free, forever. No credit card to sign up.', icon: Sparkles },
 ]
 
 const bigFeatures = [
@@ -255,18 +257,24 @@ export default async function HomePage() {
           </p>
 
           <div className="card overflow-x-auto p-0">
-            <table className="w-full text-sm">
+            <table className="w-full text-sm border-collapse">
               <thead>
                 <tr className="border-b border-gray-100">
-                  <th className="text-left section-label px-5 py-3 whitespace-nowrap">Feature</th>
+                  <th className="w-16 px-5 py-3" aria-hidden="true" />
+                  <th className="text-left section-label px-0 py-3 whitespace-nowrap">Feature</th>
                   <th className="text-left section-label px-5 py-3">Benefit</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {BENEFITS.map(row => (
-                  <tr key={row.feature}>
-                    <td className="px-5 py-3.5 font-medium text-ink-primary whitespace-nowrap align-top">{row.feature}</td>
-                    <td className="px-5 py-3.5 text-ink-secondary align-top">{row.benefit}</td>
+                  <tr key={row.feature} className="hover:bg-surface-0 transition-colors">
+                    <td className="pl-5 pr-3 py-4 align-middle">
+                      <div className="w-9 h-9 rounded-lg bg-brand-50 flex items-center justify-center">
+                        <row.icon className="w-4 h-4 text-brand-600" />
+                      </div>
+                    </td>
+                    <td className="pr-4 py-4 font-medium text-ink-primary whitespace-nowrap align-middle">{row.feature}</td>
+                    <td className="px-5 py-4 text-ink-secondary leading-relaxed align-middle">{row.benefit}</td>
                   </tr>
                 ))}
               </tbody>
