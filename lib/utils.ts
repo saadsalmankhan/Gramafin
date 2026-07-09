@@ -20,9 +20,9 @@ export function pct(part: number, total: number): number {
   return total === 0 ? 0 : Math.round((part / total) * 100)
 }
 
-export function gainPct(cost: number, current: number): string {
-  if (cost === 0) return '0.0'
-  return (((current - cost) / cost) * 100).toFixed(1)
+export function gainPct(cost: number, current: number, decimals = 1): string {
+  if (cost === 0) return (0).toFixed(decimals)
+  return (((current - cost) / cost) * 100).toFixed(decimals)
 }
 
 export function daysUntil(dateStr: string): number {

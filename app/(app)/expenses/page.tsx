@@ -5,7 +5,7 @@ import { useStore } from '@/lib/store'
 import { Expense, EXPENSE_CATEGORIES, ExpenseCategory, CATEGORY_COLORS } from '@/types'
 import { fmt, today, uid } from '@/lib/utils'
 import MetricCard from '@/components/MetricCard'
-import CategoryBadge from '@/components/CategoryBadge'
+import Badge from '@/components/Badge'
 import AccountSelect from '@/components/AccountSelect'
 import PageHeader from '@/components/PageHeader'
 import { Plus, Trash2, Paperclip } from 'lucide-react'
@@ -211,7 +211,7 @@ export default function ExpensesPage() {
                       </a>
                     )}
                   </div>
-                  <CategoryBadge category={e.category} />
+                  <Badge category={e.category} colorMap={CATEGORY_COLORS} />
                   <span className="text-xs text-ink-muted font-mono">{e.date}</span>
                   <span className="text-sm font-mono font-medium text-danger">
                     −{fmt(e.amount)}

@@ -2,24 +2,13 @@
 
 import { useState } from 'react'
 import { useStore } from '@/lib/store'
-import { Asset, ASSET_CATEGORIES, AssetCategory, isLiabilityCategory } from '@/types'
+import { Asset, ASSET_CATEGORIES, AssetCategory, isLiabilityCategory, ASSET_COLORS } from '@/types'
 import { fmt, pct, uid, daysUntil } from '@/lib/utils'
 import { computeNetWorth } from '@/lib/networth'
 import MetricCard from '@/components/MetricCard'
 import PageHeader from '@/components/PageHeader'
 import NetWorthContribution from '@/components/NetWorthContribution'
 import { Plus, Trash2, TrendingUp, TrendingDown, CreditCard } from 'lucide-react'
-
-const ASSET_COLORS: Record<AssetCategory, string> = {
-  'Cash / Bank':      '#2a78d6',
-  'Real estate':      '#1baf7a',
-  'Stocks':           '#4a3aa7',
-  'Mutual funds':     '#eda100',
-  'Gold / Jewelry':   '#eb6834',
-  'Tangible assets':  '#e87ba4',
-  'Credit card':      '#c026d3',
-  'Liability':        '#e34948',
-}
 
 function utilizationColor(p: number): string {
   return p < 70 ? '#15803d' : p < 90 ? '#d97706' : '#dc2626'

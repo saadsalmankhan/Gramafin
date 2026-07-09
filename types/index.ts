@@ -278,6 +278,34 @@ export const CATEGORY_COLORS: Record<ExpenseCategory, string> = {
   'Custom':           '#73726c',
 }
 
+export const ASSET_COLORS: Record<AssetCategory, string> = {
+  'Cash / Bank':      '#2a78d6',
+  'Real estate':      '#1baf7a',
+  'Stocks':           '#4a3aa7',
+  'Mutual funds':     '#eda100',
+  'Gold / Jewelry':   '#eb6834',
+  'Tangible assets':  '#e87ba4',
+  'Credit card':      '#c026d3',
+  'Liability':        '#e34948',
+}
+
+export const INVESTMENT_TYPE_COLORS: Record<InvestmentType, string> = {
+  'Stocks': '#2a78d6',
+  'Crypto': '#eda100',
+  'Bonds':  '#4a3aa7',
+  'Other':  '#73726c',
+}
+
+export const MUTUAL_FUND_TYPE_COLORS: Record<MutualFundType, string> = {
+  'Money Market': '#2a78d6',
+  'Equity':       '#1baf7a',
+  'Income':       '#eda100',
+  'Balanced':     '#4a3aa7',
+  'Index':        '#eb6834',
+  'Islamic':      '#e87ba4',
+  'Other':        '#73726c',
+}
+
 export const DEFAULT_BUDGETS: Budgets = {
   'Food & Dining':     50000,
   'Transport':         20000,

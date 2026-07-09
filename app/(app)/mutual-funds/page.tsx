@@ -2,8 +2,8 @@
 
 import { useState, useCallback } from 'react'
 import { useStore } from '@/lib/store'
-import { MutualFund, MUTUAL_FUND_TYPES, MutualFundType } from '@/types'
-import { fmt, fmtCompact, uid } from '@/lib/utils'
+import { MutualFund, MUTUAL_FUND_TYPES, MutualFundType, MUTUAL_FUND_TYPE_COLORS } from '@/types'
+import { fmt, fmtCompact, uid, gainPct } from '@/lib/utils'
 import { fetchNav, clearNavCache } from '@/lib/fetchNav'
 import { computeNetWorth } from '@/lib/networth'
 import MetricCard from '@/components/MetricCard'
@@ -16,16 +16,6 @@ import {
 import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts'
-
-const TYPE_COLORS: Record<MutualFundType, string> = {
-  'Money Market': '#2a78d6',
-  'Equity':       '#1baf7a',
-  'Income':       '#eda100',
-  'Balanced':     '#4a3aa7',
-  'Index':        '#eb6834',
-  'Islamic':      '#e87ba4',
-  'Other':        '#73726c',
-}
 
 type NavStatus = Record<string, 'idle' | 'loading' | 'live' | 'override' | 'failed'>
 
@@ -40,11 +30,6 @@ function currentValue(f: MutualFund): number {
 
 function costBasis(f: MutualFund): number {
   return f.unitsHeld * f.buyNav
-}
-
-function gainPctStr(cost: number, current: number): string {
-  if (cost === 0) return '0.0'
-  return (((current - cost) / cost) * 100).toFixed(2)
 }
 
 export default function MutualFundsPage() {
@@ -74,9 +59,7 @@ export default function MutualFundsPage() {
   const totalCurrent = funds.reduce((s, f) => s + currentValue(f), 0)
   const totalCost = funds.reduce((s, f) => s + costBasis(f), 0)
   const totalGain = totalCurrent - totalCost
-  const totalGainPct = totalCost > 0
-    ? (((totalCurrent - totalCost) / totalCost) * 100).toFixed(2)
-    : '0.00'
+  const totalGainPct = gainPct(totalCost, totalCurrent, 2)
   const totalRealizedGains = funds.reduce((s, f) => s + f.realizedGains, 0)
   const overallNetWorth = computeNetWorth(state).netWorth
 
@@ -289,7 +272,7 @@ export default function MutualFundsPage() {
                 const cv = currentValue(f)
                 const cb = costBasis(f)
                 const gain = cv - cb
-                const gp = gainPctStr(cb, cv)
+                const gp = gainPct(cb, cv, 2)
                 const isEditing = editId === f.id
                 const nav = effectiveNav(f)
 
@@ -302,7 +285,7 @@ export default function MutualFundsPage() {
                           <p className="text-sm font-medium text-ink-primary">{f.name}</p>
                           <span
                             className="text-[10px] font-medium px-2 py-0.5 rounded-full"
-                            style={{ background: TYPE_COLORS[f.fundType] + '18', color: TYPE_COLORS[f.fundType] }}
+                            style={{ background: MUTUAL_FUND_TYPE_COLORS[f.fundType] + '18', color: MUTUAL_FUND_TYPE_COLORS[f.fundType] }}
                           >
                             {f.fundType}
                           </span>
@@ -423,7 +406,7 @@ export default function MutualFundsPage() {
                 <PieChart>
                   <Pie data={byType} cx="50%" cy="50%" innerRadius={45} outerRadius={70} paddingAngle={3} dataKey="value">
                     {byType.map(entry => (
-                      <Cell key={entry.name} fill={TYPE_COLORS[entry.name as MutualFundType] ?? '#888'} />
+                      <Cell key={entry.name} fill={MUTUAL_FUND_TYPE_COLORS[entry.name as MutualFundType] ?? '#888'} />
                     ))}
                   </Pie>
                   <Tooltip

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useStore } from '@/lib/store'
-import { Investment, INVESTMENT_TYPES, InvestmentType } from '@/types'
+import { Investment, INVESTMENT_TYPES, InvestmentType, INVESTMENT_TYPE_COLORS } from '@/types'
 import { fmt, fmtCompact, gainPct, uid } from '@/lib/utils'
 import { computeNetWorth } from '@/lib/networth'
 import MetricCard from '@/components/MetricCard'
@@ -17,13 +17,6 @@ import {
   ResponsiveContainer,
   Legend,
 } from 'recharts'
-
-const TYPE_COLORS: Record<InvestmentType, string> = {
-  'Stocks': '#2a78d6',
-  'Crypto': '#eda100',
-  'Bonds':  '#4a3aa7',
-  'Other':  '#73726c',
-}
 
 export default function InvestmentsPage() {
   const { state, dispatch } = useStore()
@@ -152,8 +145,8 @@ export default function InvestmentsPage() {
                       <span
                         className="text-[10px] font-medium px-2 py-0.5 rounded-full inline-block"
                         style={{
-                          background: TYPE_COLORS[inv.type] + '18',
-                          color: TYPE_COLORS[inv.type],
+                          background: INVESTMENT_TYPE_COLORS[inv.type] + '18',
+                          color: INVESTMENT_TYPE_COLORS[inv.type],
                         }}
                       >
                         {inv.type}
@@ -204,7 +197,7 @@ export default function InvestmentsPage() {
                   dataKey="value"
                 >
                   {byType.map(entry => (
-                    <Cell key={entry.name} fill={TYPE_COLORS[entry.name as InvestmentType] ?? '#888'} />
+                    <Cell key={entry.name} fill={INVESTMENT_TYPE_COLORS[entry.name as InvestmentType] ?? '#888'} />
                   ))}
                 </Pie>
                 <Tooltip

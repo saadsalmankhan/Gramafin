@@ -5,7 +5,7 @@ import { fmt, fmtCompact, gainPct, daysUntil } from '@/lib/utils'
 import { CATEGORY_COLORS, EXPENSE_CATEGORIES, ExpenseCategory, bankAccountLabel } from '@/types'
 import { computeNetWorth } from '@/lib/networth'
 import MetricCard from '@/components/MetricCard'
-import CategoryBadge from '@/components/CategoryBadge'
+import Badge from '@/components/Badge'
 import PageHeader from '@/components/PageHeader'
 import NetWorthTrendChart from '@/components/NetWorthTrendChart'
 import NetWorthBreakdownChart from '@/components/NetWorthBreakdownChart'
@@ -295,7 +295,7 @@ export default function Dashboard() {
                   </div>
                 </div>
                 <div className="flex items-center gap-3 flex-shrink-0 ml-4">
-                  <CategoryBadge category={e.category} />
+                  <Badge category={e.category} colorMap={CATEGORY_COLORS} />
                   <span className="text-sm font-mono font-medium text-danger">
                     −{fmt(e.amount)}
                   </span>

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useContext, useEffect, useReducer, useState, ReactNode } from 'react'
+import React, { createContext, useContext, useEffect, useReducer, useRef, useState, ReactNode } from 'react'
 import { useSession } from 'next-auth/react'
 import {
   AppState,
@@ -19,6 +19,20 @@ import { computeNetWorth } from '@/lib/networth'
 import { today } from '@/lib/utils'
 
 const LEGACY_STORAGE_KEY = 'wm_state_v2'
+
+// Every dispatch changes state, and the whole app blob gets re-saved — a
+// short debounce coalesces bursts of edits (e.g. deleting several items in a
+// row) into one request instead of one per action.
+const SAVE_DEBOUNCE_MS = 1000
+
+function persistData(data: AppState, keepalive = false) {
+  return fetch('/api/data', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+    keepalive,
+  })
+}
 
 const initialState: AppState = {
   expenses: [],
@@ -188,25 +202,58 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
   }, [status, userId])
 
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const pendingSaveRef = useRef<AppState | null>(null)
+
   // Persist to the cloud whenever state changes post-hydration (covers both
-  // normal edits and the one-time migration load above).
+  // normal edits and the one-time migration load above). Debounced so a burst
+  // of quick edits coalesces into a single request.
   useEffect(() => {
     if (!hydrated || status !== 'authenticated' || !userId) return
 
-    fetch('/api/data', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(state),
-    })
-      .then(res => {
-        if (!res.ok) throw new Error(`Failed to save data (${res.status})`)
-        setSyncError(false)
-      })
-      .catch(err => {
-        console.error('Failed to save data:', err)
-        setSyncError(true)
-      })
+    pendingSaveRef.current = state
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
+
+    saveTimeoutRef.current = setTimeout(() => {
+      const toSave = pendingSaveRef.current
+      pendingSaveRef.current = null
+      if (!toSave) return
+      persistData(toSave)
+        .then(res => {
+          if (!res.ok) throw new Error(`Failed to save data (${res.status})`)
+          setSyncError(false)
+        })
+        .catch(err => {
+          console.error('Failed to save data:', err)
+          setSyncError(true)
+        })
+    }, SAVE_DEBOUNCE_MS)
+
+    return () => {
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
+    }
   }, [state, hydrated, status, userId])
+
+  // A debounced save can still be pending when the tab closes or backgrounds —
+  // flush it immediately with `keepalive` so the request survives unload
+  // instead of silently dropping the last edit.
+  useEffect(() => {
+    function flush() {
+      if (!pendingSaveRef.current) return
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
+      persistData(pendingSaveRef.current, true).catch(() => {})
+      pendingSaveRef.current = null
+    }
+    function handleVisibilityChange() {
+      if (document.visibilityState === 'hidden') flush()
+    }
+    window.addEventListener('beforeunload', flush)
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => {
+      window.removeEventListener('beforeunload', flush)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
+  }, [])
 
   return (
     <StoreContext.Provider value={{ state, dispatch, syncError }}>

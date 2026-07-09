@@ -9,11 +9,12 @@ import {
   IncomeFrequency,
   INCOME_CATEGORIES,
   IncomeCategory,
+  INCOME_CATEGORY_COLORS,
 } from '@/types'
 import { fmt, today, uid, fiscalYearRange, inFiscalYear } from '@/lib/utils'
 import { computeNetWorth } from '@/lib/networth'
 import MetricCard from '@/components/MetricCard'
-import IncomeCategoryBadge from '@/components/IncomeCategoryBadge'
+import Badge from '@/components/Badge'
 import AccountSelect from '@/components/AccountSelect'
 import PageHeader from '@/components/PageHeader'
 import NetWorthContribution from '@/components/NetWorthContribution'
@@ -196,7 +197,7 @@ export default function IncomePage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-3 flex-shrink-0">
-                  <IncomeCategoryBadge category={r.category} />
+                  <Badge category={r.category} colorMap={INCOME_CATEGORY_COLORS} />
                   <span className="text-sm font-mono font-medium text-success">+{fmt(r.amount)}</span>
                   <button
                     className="btn-danger"
@@ -244,7 +245,7 @@ export default function IncomePage() {
               {sortedIncomes.map(i => (
                 <div key={i.id} className="grid grid-cols-[1fr_150px_120px_140px_100px_40px] gap-2 items-center px-2 py-3 hover:bg-surface-0 rounded-lg transition-colors">
                   <span className="text-sm text-ink-primary truncate">{i.source}</span>
-                  <IncomeCategoryBadge category={i.category} />
+                  <Badge category={i.category} colorMap={INCOME_CATEGORY_COLORS} />
                   <span className="text-xs text-ink-muted truncate">{i.account}</span>
                   <span className="text-xs text-ink-muted font-mono">{i.date}</span>
                   <span className="text-sm font-mono font-medium text-success">
