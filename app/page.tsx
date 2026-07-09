@@ -99,7 +99,7 @@ export default async function HomePage() {
       {/* Hero */}
       <section className="max-w-6xl mx-auto px-6 pt-16 sm:pt-20 pb-16 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
         <div>
-          <h1 className="text-5xl sm:text-6xl font-semibold leading-[1.05] tracking-tight">
+          <h1 className="font-display text-5xl sm:text-6xl leading-[1.05] tracking-tight">
             <span className="bg-gradient-to-r from-brand-700 to-brand-500 bg-clip-text text-transparent">
               All-in-One
             </span>
@@ -189,7 +189,7 @@ export default async function HomePage() {
       {/* Bento features */}
       <section id="features" className="max-w-6xl mx-auto px-6 py-24">
         <div className="text-center mb-12">
-          <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight">
+          <h2 className="font-display text-3xl sm:text-4xl tracking-tight">
             <span className="bg-gradient-to-r from-brand-700 to-brand-500 bg-clip-text text-transparent">
               Take control
             </span>{' '}
@@ -235,7 +235,7 @@ export default async function HomePage() {
       {/* Compound interest calculator + benefits */}
       <section id="calculator" className="max-w-6xl mx-auto px-6 pb-24">
         <div className="text-center mb-12">
-          <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight">
+          <h2 className="font-display text-3xl sm:text-4xl tracking-tight">
             <span className="bg-gradient-to-r from-brand-700 to-brand-500 bg-clip-text text-transparent">
               Compound interest
             </span>{' '}
@@ -249,7 +249,7 @@ export default async function HomePage() {
         <CompoundInterestCalculator />
 
         <div className="mt-16">
-          <h3 className="text-xl font-semibold text-ink-primary tracking-tight mb-2 text-center">
+          <h3 className="font-display text-xl text-ink-primary tracking-tight mb-2 text-center">
             Why track it with Gramafin
           </h3>
           <p className="text-sm text-ink-muted mb-6 max-w-xl mx-auto text-center">
@@ -288,7 +288,7 @@ export default async function HomePage() {
         <div className="card grid grid-cols-1 lg:grid-cols-2 gap-8 items-center p-10">
           <div>
             <p className="section-label mb-3">How it works</p>
-            <h3 className="text-2xl font-semibold text-ink-primary mb-3">
+            <h3 className="font-display text-2xl text-ink-primary mb-3">
               One dashboard, your whole financial picture.
             </h3>
             <p className="text-sm text-ink-muted leading-relaxed max-w-md">
@@ -332,7 +332,7 @@ export default async function HomePage() {
       {/* Final CTA */}
       <section className="max-w-6xl mx-auto px-6 py-20">
         <div className="bg-ink-primary rounded-card p-10 sm:p-14 text-center">
-          <h3 className="text-2xl sm:text-3xl font-semibold text-white mb-3">
+          <h3 className="font-display text-2xl sm:text-3xl text-white mb-3">
             Get your finances in order.
           </h3>
           <p className="text-sm text-gray-400 mb-8">Free forever. Set up in under a minute.</p>

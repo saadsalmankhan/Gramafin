@@ -32,8 +32,11 @@ const config: Config = {
         warning: '#d97706',
       },
       fontFamily: {
-        sans:  ['Inter', 'system-ui', 'sans-serif'],
-        mono:  ['JetBrains Mono', 'monospace'],
+        sans:    ['Inter', 'system-ui', 'sans-serif'],
+        mono:    ['JetBrains Mono', 'monospace'],
+        // Bold slab-serif display face for headlines only — not a body/UI
+        // face, so it's applied selectively via font-display, not globally.
+        display: ['ChunkFive', 'Georgia', 'serif'],
       },
       borderRadius: {
         DEFAULT: '8px',

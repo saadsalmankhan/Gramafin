@@ -30,7 +30,7 @@ export default function LegalPageLayout({ title, lastUpdated, children }: Props)
             ))}
           </div>
 
-          <h1 className="text-2xl sm:text-3xl font-semibold text-ink-primary tracking-tight mb-2">{title}</h1>
+          <h1 className="font-display text-2xl sm:text-3xl text-ink-primary tracking-tight mb-2">{title}</h1>
           <p className="text-xs text-ink-muted mb-10">Last updated {lastUpdated}</p>
 
           <div className="space-y-8">{children}</div>

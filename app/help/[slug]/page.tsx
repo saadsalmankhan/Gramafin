@@ -44,7 +44,7 @@ export default async function HelpArticlePage({ params }: { params: { slug: stri
       </Link>
 
       <p className="section-label mb-2">{categoryLabel(article.category)}</p>
-      <h1 className="text-2xl sm:text-3xl font-semibold text-ink-primary tracking-tight mb-6">{article.title}</h1>
+      <h1 className="font-display text-2xl sm:text-3xl text-ink-primary tracking-tight mb-6">{article.title}</h1>
 
       {article.mainImage && (
         <figure className="mb-8">

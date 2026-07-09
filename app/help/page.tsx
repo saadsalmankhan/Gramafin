@@ -32,7 +32,7 @@ export default async function HelpIndexPage() {
   return (
     <div className="max-w-3xl mx-auto px-6 py-16">
       <div className="text-center mb-12">
-        <h1 className="text-3xl sm:text-4xl font-semibold text-ink-primary tracking-tight">Help Center</h1>
+        <h1 className="font-display text-3xl sm:text-4xl text-ink-primary tracking-tight">Help Center</h1>
         <p className="text-sm text-ink-muted mt-3">Answers to common questions about using Gramafin.</p>
       </div>
 

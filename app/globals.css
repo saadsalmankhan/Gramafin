@@ -3,6 +3,15 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Self-hosted (not Google Fonts) — see public/fonts/ChunkFive-LICENSE.txt, SIL OFL. */
+@font-face {
+  font-family: 'ChunkFive';
+  src: url('/fonts/ChunkFive-Regular.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   --scrollbar-color: #d4d2cb;
   --sidebar-w: 240px;
