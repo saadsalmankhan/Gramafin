@@ -167,6 +167,7 @@ export default function MarketChart({ symbol, label, unit = 'index', defaultRang
             <Tooltip
               labelFormatter={t => new Date(t as number).toLocaleString('en-PK')}
               formatter={(val: number) => [formatValue(val, unit), label]}
+              cursor={{ stroke: chartColors.gridStroke }}
               contentStyle={{
                 fontSize: 12,
                 border: `1px solid ${chartColors.tooltipBorder}`,
@@ -174,6 +175,8 @@ export default function MarketChart({ symbol, label, unit = 'index', defaultRang
                 background: chartColors.tooltipBg,
                 color: chartColors.mutedText,
               }}
+              labelStyle={{ color: chartColors.mutedText }}
+              itemStyle={{ color: chartColors.mutedText }}
             />
             <Area
               type="monotone"

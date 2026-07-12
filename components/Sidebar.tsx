@@ -15,7 +15,6 @@ import {
   Target,
   TrendingUp,
   PanelLeftClose,
-  PanelLeftOpen,
   LogOut,
   CloudOff,
   HelpCircle,
@@ -115,17 +114,39 @@ export default function Sidebar() {
       )}
       style={{ width: 'var(--sidebar-w)' }}
     >
-      {/* Logo */}
+      {/* Logo + collapse toggle. The toggle lives here, next to the brand
+          mark, rather than anywhere in the nav/footer stack below — it's
+          chrome for the sidebar itself, not a destination or account
+          control, so it shouldn't compete visually with either group. */}
       <div className="px-4 py-6 border-b border-gray-100 dark:border-white/10 flex items-center justify-between">
-        <div className="flex items-center gap-2.5 overflow-hidden">
-          <Image src="/logo-mark.png" alt="Gramafin" width={314} height={295} className="w-8 h-auto shrink-0" priority />
-          {!collapsed && (
-            <div className="whitespace-nowrap">
-              <p className="text-sm font-semibold text-ink-primary leading-none">Gramafin</p>
-              <p className="text-[10px] text-ink-muted mt-0.5">Personal Finance</p>
+        {collapsed ? (
+          <button
+            onClick={toggle}
+            title="Expand sidebar"
+            aria-label="Expand sidebar"
+            className="mx-auto rounded-lg transition-opacity hover:opacity-70"
+          >
+            <Image src="/logo-mark.png" alt="Gramafin" width={314} height={295} className="w-8 h-auto shrink-0" priority />
+          </button>
+        ) : (
+          <>
+            <div className="flex items-center gap-2.5 overflow-hidden">
+              <Image src="/logo-mark.png" alt="Gramafin" width={314} height={295} className="w-8 h-auto shrink-0" priority />
+              <div className="whitespace-nowrap">
+                <p className="text-sm font-semibold text-ink-primary leading-none">Gramafin</p>
+                <p className="text-[10px] text-ink-muted mt-0.5">Personal Finance</p>
+              </div>
             </div>
-          )}
-        </div>
+            <button
+              onClick={toggle}
+              title="Collapse sidebar"
+              aria-label="Collapse sidebar"
+              className="p-1.5 rounded-md text-ink-muted hover:bg-surface-0 hover:text-ink-primary transition-colors shrink-0"
+            >
+              <PanelLeftClose className="w-4 h-4" />
+            </button>
+          </>
+        )}
       </div>
 
       {/* Nav */}
@@ -177,19 +198,6 @@ export default function Sidebar() {
           <HelpCircle className="w-4 h-4 shrink-0" />
           {!collapsed && 'Help Centre'}
         </Link>
-      </div>
-
-      {/* Toggle — a utility control, not a nav destination, so it's deliberately
-          icon-only and right-aligned rather than styled like the rows above it. */}
-      <div className={clsx('px-3 pb-2 flex', collapsed ? 'justify-center' : 'justify-end')}>
-        <button
-          onClick={toggle}
-          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          className="p-2 rounded-lg text-ink-muted hover:bg-surface-0 hover:text-ink-primary transition-colors"
-        >
-          {collapsed ? <PanelLeftOpen className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
-        </button>
       </div>
 
       {/* User + footer */}

@@ -52,6 +52,7 @@ export default function NetWorthTrendChart({ history }: { history: NetWorthSnaps
         />
         <Tooltip
           formatter={(val: number) => [fmt(val), 'Net worth']}
+          cursor={{ stroke: chartColors.gridStroke }}
           contentStyle={{
             fontSize: 12,
             border: `1px solid ${chartColors.tooltipBorder}`,
@@ -59,6 +60,8 @@ export default function NetWorthTrendChart({ history }: { history: NetWorthSnaps
             background: chartColors.tooltipBg,
             color: chartColors.mutedText,
           }}
+          labelStyle={{ color: chartColors.mutedText }}
+          itemStyle={{ color: chartColors.mutedText }}
         />
         <Area
           type="monotone"

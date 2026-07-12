@@ -204,6 +204,7 @@ export default function Dashboard() {
                     fmt(val),
                     props.payload?.fullName ?? '',
                   ]}
+                  cursor={{ fill: chartColors.gridStroke, opacity: 0.3 }}
                   contentStyle={{
                     fontSize: 12,
                     border: `1px solid ${chartColors.tooltipBorder}`,
@@ -211,6 +212,8 @@ export default function Dashboard() {
                     background: chartColors.tooltipBg,
                     color: chartColors.mutedText,
                   }}
+                  labelStyle={{ color: chartColors.mutedText }}
+                  itemStyle={{ color: chartColors.mutedText }}
                 />
                 <Bar dataKey="total" radius={[4, 4, 0, 0]}>
                   {catTotals.map((c) => (

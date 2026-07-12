@@ -111,6 +111,7 @@ export default function NetWorthBreakdownChart({ breakdown }: { breakdown: NetWo
         <Tooltip
           formatter={(val: number) => [fmt(Math.abs(val)), '']}
           labelFormatter={(label: string) => label}
+          cursor={{ fill: chartColors.gridStroke, opacity: 0.3 }}
           contentStyle={{
             fontSize: 12,
             border: `1px solid ${chartColors.tooltipBorder}`,
@@ -118,6 +119,8 @@ export default function NetWorthBreakdownChart({ breakdown }: { breakdown: NetWo
             background: chartColors.tooltipBg,
             color: chartColors.mutedText,
           }}
+          labelStyle={{ color: chartColors.mutedText }}
+          itemStyle={{ color: chartColors.mutedText }}
         />
         <Bar dataKey="value" radius={4} barSize={20}>
           {data.map(d => (

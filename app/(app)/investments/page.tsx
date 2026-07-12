@@ -473,6 +473,8 @@ export default function InvestmentsPage() {
                     <Tooltip
                       formatter={(val: number) => [fmt(val), '']}
                       contentStyle={{ fontSize: 12, border: `1px solid ${chartColors.tooltipBorder}`, borderRadius: 8, background: chartColors.tooltipBg, color: chartColors.mutedText }}
+                      labelStyle={{ color: chartColors.mutedText }}
+                      itemStyle={{ color: chartColors.mutedText }}
                     />
                     <Legend iconType="circle" iconSize={8} formatter={(value) => <span style={{ fontSize: 11, color: chartColors.mutedText }}>{value}</span>} />
                   </PieChart>
@@ -690,7 +692,12 @@ export default function InvestmentsPage() {
                           <Cell key={entry.name} fill={MUTUAL_FUND_TYPE_COLORS[entry.name as MutualFundType] ?? '#888'} />
                         ))}
                       </Pie>
-                      <Tooltip formatter={(val: number) => [fmt(val), '']} contentStyle={{ fontSize: 12, border: `1px solid ${chartColors.tooltipBorder}`, borderRadius: 8, background: chartColors.tooltipBg, color: chartColors.mutedText }} />
+                      <Tooltip
+                        formatter={(val: number) => [fmt(val), '']}
+                        contentStyle={{ fontSize: 12, border: `1px solid ${chartColors.tooltipBorder}`, borderRadius: 8, background: chartColors.tooltipBg, color: chartColors.mutedText }}
+                        labelStyle={{ color: chartColors.mutedText }}
+                        itemStyle={{ color: chartColors.mutedText }}
+                      />
                       <Legend iconType="circle" iconSize={8} formatter={v => <span style={{ fontSize: 11, color: chartColors.mutedText }}>{v}</span>} />
                     </PieChart>
                   </ResponsiveContainer>
