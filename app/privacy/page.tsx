@@ -21,7 +21,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 export default function PrivacyPolicyPage() {
   return (
-    <LegalPageLayout title="Privacy Policy" lastUpdated="July 7, 2026">
+    <LegalPageLayout title="Privacy Policy" lastUpdated="July 12, 2026">
       <Section title="Overview">
         <p>
           Gramafin (&ldquo;we&rdquo;, &ldquo;us&rdquo;) provides a personal finance tracking tool for expenses,
@@ -72,13 +72,56 @@ export default function PrivacyPolicyPage() {
           <li><strong className="text-ink-primary">Resend</strong> — delivery of transactional email (verification, password reset)</li>
           <li><strong className="text-ink-primary">Sanity</strong> — content for the public Help Centre only; it does not receive your account or financial data</li>
         </ul>
-        <p>Each of these providers processes data only as needed to deliver their part of the service to us.</p>
+        <p>
+          None of these providers receive your data for advertising, analytics, or resale — each processes data
+          only as needed to deliver their specific part of the service (hosting, storage, or email delivery).
+        </p>
       </Section>
 
-      <Section title="Cookies">
+      <Section title="Market data we display">
         <p>
-          Gramafin sets a single session cookie (managed by our authentication system) so you stay logged in. We
-          do not use third-party advertising or tracking cookies.
+          If you track PSX-listed stocks or Pakistani mutual funds, Gramafin fetches public price and NAV data
+          from the Pakistan Stock Exchange&apos;s data portal and MUFAP (Mutual Funds Association of Pakistan) to
+          display alongside your holdings. This is a one-way, read-only lookup — your portfolio details (what you
+          hold, at what price) are never sent to PSX or MUFAP; we only ask them for the current price of a symbol
+          or fund name.
+        </p>
+      </Section>
+
+      <Section title="No analytics, no ad tracking">
+        <p>
+          Gramafin does not use Google Analytics, Meta/Facebook Pixel, or any other third-party analytics or
+          advertising tracker. We don&apos;t build an advertising profile from your usage, and nothing you do in
+          the app is sold or shared for marketing purposes — by us or anyone we work with.
+        </p>
+      </Section>
+
+      <Section title="Cookies and local storage">
+        <p>
+          Gramafin sets a single session cookie (managed by our authentication system) so you stay logged in — it
+          identifies your session only and isn&apos;t used for tracking across other sites. We also use your
+          browser&apos;s local storage for two device-level preferences: your dark/light mode choice and sidebar
+          layout — these stay on your device, aren&apos;t sent to us, and don&apos;t sync across devices. We do
+          not use third-party advertising or tracking cookies.
+        </p>
+      </Section>
+
+      <Section title="Your rights over your data">
+        <p>You can, at any time, by emailing <a href="mailto:saad@gramafin.com" className="text-brand-600 hover:underline">saad@gramafin.com</a> from your account&apos;s address:</p>
+        <ul className="list-disc pl-5 space-y-1">
+          <li><strong className="text-ink-primary">Access</strong> — request a copy of the data we hold on your account</li>
+          <li><strong className="text-ink-primary">Correction</strong> — most of your data is editable directly in the app; anything that isn&apos;t, we&apos;ll fix on request</li>
+          <li><strong className="text-ink-primary">Deletion</strong> — permanently delete your account and all associated data</li>
+          <li><strong className="text-ink-primary">Portability</strong> — request an export of your financial data in a machine-readable format</li>
+        </ul>
+        <p>Gramafin is a small, single-operator service — these requests are handled by a person, not a self-serve portal, and we aim to respond within a few days.</p>
+      </Section>
+
+      <Section title="Where your data is processed">
+        <p>
+          Our infrastructure providers (Vercel, Upstash, Resend) operate global networks that may process or
+          store data outside Pakistan. All data in transit is encrypted (HTTPS); at rest, financial records are
+          stored in our database with no public access path.
         </p>
       </Section>
 

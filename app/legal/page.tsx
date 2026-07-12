@@ -21,7 +21,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 export default function LegalPage() {
   return (
-    <LegalPageLayout title="Legal" lastUpdated="July 7, 2026">
+    <LegalPageLayout title="Legal" lastUpdated="July 12, 2026">
       <Section title="No affiliation">
         <p>
           Gramafin is an independent, standalone personal finance tool. It is not a bank, not a licensed
@@ -37,6 +37,17 @@ export default function LegalPage() {
           figures — constitutes investment, tax, or legal advice. Figures are derived from information you enter
           or from third-party data sources, and may be incomplete or out of date. Consult a licensed financial
           professional before making financial decisions.
+        </p>
+      </Section>
+
+      <Section title="Market data">
+        <p>
+          Stock prices, index values, and mutual fund NAVs shown in Gramafin are sourced from the Pakistan Stock
+          Exchange (PSX) and MUFAP (Mutual Funds Association of Pakistan) for display within your own personal
+          portfolio view. Gramafin is not endorsed by, affiliated with, or a licensed redistributor of PSX or
+          MUFAP data, and this data is not republished, resold, or made available in bulk. Market data may be
+          delayed, incomplete, or temporarily unavailable and should not be relied on for time-sensitive trading
+          decisions.
         </p>
       </Section>
 

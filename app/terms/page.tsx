@@ -21,7 +21,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 export default function TermsOfUsePage() {
   return (
-    <LegalPageLayout title="Terms of Use" lastUpdated="July 7, 2026">
+    <LegalPageLayout title="Terms of Use" lastUpdated="July 12, 2026">
       <Section title="Acceptance">
         <p>
           By creating a Gramafin account or otherwise using the service, you agree to these Terms of Use. If you
@@ -75,9 +75,11 @@ export default function TermsOfUsePage() {
       <Section title="Data accuracy">
         <p>
           Figures you enter (balances, investment values, mutual fund units) and any values fetched from
-          third-party sources (such as mutual fund NAVs) may be incomplete, delayed, or inaccurate. Gramafin
-          displays this information as a convenience; verify anything important against your bank, brokerage, or
-          fund manager directly.
+          third-party sources — PSX stock and index prices, MUFAP mutual fund NAVs — may be incomplete, delayed,
+          or inaccurate. These are sourced from public data feeds we don&apos;t control, refreshed on a best-effort
+          basis (stock prices during market hours; NAVs once daily on trading days). Gramafin displays this
+          information as a convenience, not a guarantee; verify anything important against your bank, brokerage,
+          PSX, or fund manager directly.
         </p>
       </Section>
 
@@ -99,6 +101,13 @@ export default function TermsOfUsePage() {
 
       <Section title="Governing law">
         <p>These terms are governed by the laws of Pakistan.</p>
+      </Section>
+
+      <Section title="Severability">
+        <p>
+          If any provision of these terms is found unenforceable, the rest remain in full effect — only that
+          provision is limited or removed to the extent required.
+        </p>
       </Section>
 
       <Section title="Changes to these terms">
