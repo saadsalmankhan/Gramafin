@@ -183,10 +183,14 @@ export default function Sidebar() {
       <div className="px-3 pb-2">
         <button
           onClick={toggle}
-          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          className="w-full flex items-center justify-center px-3 py-2 rounded-lg text-ink-muted hover:bg-surface-0 hover:text-ink-primary transition-colors"
+          title={collapsed ? 'Expand sidebar' : undefined}
+          className={clsx(
+            'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-ink-muted hover:bg-surface-0 hover:text-ink-primary transition-colors',
+            collapsed && 'justify-center'
+          )}
         >
-          {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+          {collapsed ? <ChevronRight className="w-4 h-4 shrink-0" /> : <ChevronLeft className="w-4 h-4 shrink-0" />}
+          {!collapsed && 'Collapse sidebar'}
         </button>
       </div>
 
