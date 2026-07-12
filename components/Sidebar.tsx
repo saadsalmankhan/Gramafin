@@ -14,8 +14,6 @@ import {
   Building2,
   Target,
   TrendingUp,
-  PieChart,
-  LineChart,
   ChevronLeft,
   ChevronRight,
   LogOut,
@@ -32,8 +30,6 @@ const nav = [
   { href: '/assets',       label: 'Net worth',    icon: Building2 },
   { href: '/budget',       label: 'Budget',       icon: Target },
   { href: '/investments',  label: 'Investments',  icon: TrendingUp },
-  { href: '/mutual-funds', label: 'Mutual Funds', icon: PieChart },
-  { href: '/markets',      label: 'Markets',      icon: LineChart },
 ]
 
 const COLLAPSE_KEY = 'wm_sidebar_collapsed'

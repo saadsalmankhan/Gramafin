@@ -3,9 +3,30 @@ import CredentialsProvider from 'next-auth/providers/credentials'
 import { getUserByEmail, verifyPassword } from '@/lib/auth/users'
 import { authRatelimit } from '@/lib/ratelimit'
 
+// Login happens on app.gramafin.com, but gramafin.com (marketing) needs to
+// read the same session to redirect an already-logged-in visitor straight to
+// their dashboard instead of showing the pitch again. Without an explicit
+// Domain, the cookie defaults to the exact host that set it and never
+// reaches gramafin.com/www.gramafin.com even though they share a registrable
+// domain — this widens it to the whole *.gramafin.com family. Only applied
+// in production: a Domain attribute doesn't work sensibly against localhost.
+const useSecureCookies = process.env.NODE_ENV === 'production'
+
 export const authOptions: NextAuthOptions = {
   session: { strategy: 'jwt' },
   pages: { signIn: '/login' },
+  cookies: {
+    sessionToken: {
+      name: useSecureCookies ? '__Secure-next-auth.session-token' : 'next-auth.session-token',
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: useSecureCookies,
+        ...(useSecureCookies ? { domain: '.gramafin.com' } : {}),
+      },
+    },
+  },
   providers: [
     CredentialsProvider({
       name: 'Credentials',

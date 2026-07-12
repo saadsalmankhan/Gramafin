@@ -16,6 +16,7 @@ interface Props {
 export default function IndexTicker({ code, label, onClick, active }: Props) {
   const [value, setValue] = useState<number | null>(null)
   const [changePct, setChangePct] = useState<number | null>(null)
+  const [isLive, setIsLive] = useState(false)
   const [failed, setFailed] = useState(false)
 
   useEffect(() => {
@@ -32,6 +33,7 @@ export default function IndexTicker({ code, label, onClick, active }: Props) {
       const last = result.points[result.points.length - 1].v
       setValue(last)
       setChangePct(first ? ((last - first) / first) * 100 : 0)
+      setIsLive(result.source === 'intraday')
       setFailed(false)
     }
 
@@ -55,7 +57,15 @@ export default function IndexTicker({ code, label, onClick, active }: Props) {
           : 'border-gray-100 dark:border-white/10 bg-white dark:bg-surface-2 hover:border-gray-200 dark:hover:border-white/20'
       )}
     >
-      <p className="text-[11px] text-ink-muted truncate">{label}</p>
+      <div className="flex items-center gap-1">
+        <p className="text-[11px] text-ink-muted truncate">{label}</p>
+        {value !== null && !failed && (
+          <span
+            className={clsx('w-1.5 h-1.5 rounded-full flex-shrink-0', isLive ? 'bg-success animate-pulse' : 'bg-ink-muted')}
+            title={isLive ? 'Live' : 'Market closed'}
+          />
+        )}
+      </div>
       {failed ? (
         <p className="text-xs text-ink-muted mt-0.5">Unavailable</p>
       ) : value === null ? (

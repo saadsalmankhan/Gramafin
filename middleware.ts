@@ -1,21 +1,12 @@
 import { NextResponse } from 'next/server'
 import { getToken } from 'next-auth/jwt'
 import type { NextRequest } from 'next/server'
+import { APP_ROUTE_PREFIXES } from '@/lib/routes'
 
 const APP_HOST = 'app.gramafin.com'
 const MARKETING_HOSTS = ['gramafin.com', 'www.gramafin.com']
 
-const PROTECTED_PREFIXES = [
-  '/dashboard',
-  '/income',
-  '/expenses',
-  '/assets',
-  '/budget',
-  '/investments',
-  '/mutual-funds',
-  '/markets',
-  '/settings',
-]
+const PROTECTED_PREFIXES = APP_ROUTE_PREFIXES
 
 function hostMatches(host: string, target: string) {
   return host === target || host.startsWith(`${target}:`)
@@ -82,9 +73,20 @@ export async function middleware(req: NextRequest) {
   const { pathname, search } = req.nextUrl
   const nonce = btoa(crypto.randomUUID())
 
-  if (MARKETING_HOSTS.some(h => hostMatches(host, h)) && pathname !== '/') {
-    const res = NextResponse.redirect(new URL(`https://${APP_HOST}${pathname}${search}`))
-    return applySecurityHeaders(res, pathname, nonce)
+  if (MARKETING_HOSTS.some(h => hostMatches(host, h))) {
+    if (pathname !== '/') {
+      const res = NextResponse.redirect(new URL(`https://${APP_HOST}${pathname}${search}`))
+      return applySecurityHeaders(res, pathname, nonce)
+    }
+
+    // The session cookie is shared across *.gramafin.com (see cookies.sessionToken
+    // in lib/auth/options.ts), so a logged-in visitor hitting the marketing
+    // homepage should land on their dashboard instead of seeing the pitch again.
+    const token = await getToken({ req })
+    if (token) {
+      const res = NextResponse.redirect(new URL(`https://${APP_HOST}/dashboard`))
+      return applySecurityHeaders(res, pathname, nonce)
+    }
   }
 
   if (hostMatches(host, APP_HOST)) {

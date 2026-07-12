@@ -96,6 +96,11 @@ export default function MarketChart({ symbol, label, unit = 'index', defaultRang
                 <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" /> Live
               </span>
             )}
+            {source === 'eod' && range === '1d' && (
+              <span className="flex items-center gap-1 text-[10px] text-ink-muted">
+                <span className="w-1.5 h-1.5 rounded-full bg-ink-muted" /> Market closed
+              </span>
+            )}
           </div>
           {status === 'ready' && last !== undefined && (
             <div className="flex items-baseline gap-2 mt-1">

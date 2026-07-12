@@ -145,9 +145,8 @@ export default function Dashboard() {
           <span className="text-[11px] text-ink-muted">Rolls up:</span>
           {[
             { label: 'Assets', href: '/assets' },
-            { label: 'Investments', href: '/investments' },
+            { label: 'Investments & mutual funds', href: '/investments' },
             { label: 'Bank accounts', href: '/settings' },
-            { label: 'Mutual funds', href: '/mutual-funds' },
             { label: 'Income & expenses', href: '/income' },
           ].map(s => (
             <Link
