@@ -13,6 +13,7 @@ const PROTECTED_PREFIXES = [
   '/budget',
   '/investments',
   '/mutual-funds',
+  '/markets',
   '/settings',
 ]
 

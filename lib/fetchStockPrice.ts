@@ -1,9 +1,20 @@
 import { PsxSymbol } from '@/types'
+import { ChartRange } from '@/lib/psxIndices'
 
 export interface StockPriceResult {
   price: number
   source: 'live' | 'eod' | 'failed'
   fetchedAt: string
+}
+
+export interface TimeseriesPoint {
+  t: number // epoch ms
+  v: number
+}
+
+export interface TimeseriesResult {
+  points: TimeseriesPoint[]
+  source: 'intraday' | 'eod' | 'failed'
 }
 
 // Session cache so re-fetching the same symbol repeatedly (e.g. re-rendering
@@ -27,6 +38,21 @@ export async function fetchStockPrice(symbol: string): Promise<StockPriceResult>
     // network error or timeout — fall through to failed
   }
   return { price: 0, source: 'failed', fetchedAt: new Date().toISOString() }
+}
+
+export async function fetchTimeseries(symbol: string, range: ChartRange): Promise<TimeseriesResult> {
+  try {
+    const res = await fetch(`/api/psx/timeseries/${encodeURIComponent(symbol.toUpperCase())}?range=${range}`, {
+      signal: AbortSignal.timeout(10000),
+    })
+    if (res.ok) {
+      const data = (await res.json()) as { points: TimeseriesPoint[]; source: 'intraday' | 'eod' }
+      return data
+    }
+  } catch {
+    // network error or timeout — fall through to failed
+  }
+  return { points: [], source: 'failed' }
 }
 
 export async function fetchPsxSymbols(): Promise<PsxSymbol[]> {
