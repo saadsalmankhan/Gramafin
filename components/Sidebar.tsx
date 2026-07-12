@@ -14,8 +14,8 @@ import {
   Building2,
   Target,
   TrendingUp,
-  ChevronLeft,
-  ChevronRight,
+  PanelLeftClose,
+  PanelLeftOpen,
   LogOut,
   CloudOff,
   HelpCircle,
@@ -179,18 +179,16 @@ export default function Sidebar() {
         </Link>
       </div>
 
-      {/* Toggle */}
-      <div className="px-3 pb-2">
+      {/* Toggle — a utility control, not a nav destination, so it's deliberately
+          icon-only and right-aligned rather than styled like the rows above it. */}
+      <div className={clsx('px-3 pb-2 flex', collapsed ? 'justify-center' : 'justify-end')}>
         <button
           onClick={toggle}
-          title={collapsed ? 'Expand sidebar' : undefined}
-          className={clsx(
-            'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-ink-muted hover:bg-surface-0 hover:text-ink-primary transition-colors',
-            collapsed && 'justify-center'
-          )}
+          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          className="p-2 rounded-lg text-ink-muted hover:bg-surface-0 hover:text-ink-primary transition-colors"
         >
-          {collapsed ? <ChevronRight className="w-4 h-4 shrink-0" /> : <ChevronLeft className="w-4 h-4 shrink-0" />}
-          {!collapsed && 'Collapse sidebar'}
+          {collapsed ? <PanelLeftOpen className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
         </button>
       </div>
 
