@@ -56,6 +56,20 @@ function buildCsp(nonce: string): string {
   ].join('; ')
 }
 
+// The session cookie moved from host-only (app.gramafin.com) to shared
+// across *.gramafin.com (see lib/auth/options.ts) so a logged-in visitor
+// could be recognized on the marketing domain too. Anyone who was already
+// logged in before that change has a lingering host-only cookie with the
+// same name that sign-out's Set-Cookie (scoped to the new Domain) never
+// touches — it stays valid and can silently re-authenticate them after they
+// "log out". This clears that legacy cookie shape on every response until
+// it's had time to flush out of active sessions.
+function clearLegacyHostOnlyCookie(res: NextResponse) {
+  if (process.env.NODE_ENV === 'production') {
+    res.headers.append('Set-Cookie', '__Secure-next-auth.session-token=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax')
+  }
+}
+
 function applySecurityHeaders(res: NextResponse, pathname: string, nonce: string) {
   res.headers.set('X-Content-Type-Options', 'nosniff')
   res.headers.set('X-Frame-Options', 'DENY')
@@ -65,6 +79,7 @@ function applySecurityHeaders(res: NextResponse, pathname: string, nonce: string
   if (!isStudioPath(pathname)) {
     res.headers.set('Content-Security-Policy', buildCsp(nonce))
   }
+  clearLegacyHostOnlyCookie(res)
   return res
 }
 

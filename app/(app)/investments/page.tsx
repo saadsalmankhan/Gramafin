@@ -31,8 +31,8 @@ import clsx from 'clsx'
 type PriceStatus = Record<string, 'idle' | 'loading' | 'live' | 'eod' | 'failed'>
 type NavStatus = Record<string, 'idle' | 'loading' | 'live' | 'override' | 'failed'>
 
-type Tab = InvestmentType | 'Mutual Funds' | 'Markets'
-const TABS: Tab[] = [...INVESTMENT_TYPES, 'Mutual Funds', 'Markets']
+type Tab = InvestmentType | 'Mutual Funds'
+const TABS: Tab[] = [...INVESTMENT_TYPES, 'Mutual Funds']
 
 function effectiveNav(f: MutualFund): number {
   return f.navOverride !== null && f.navOverride > 0 ? f.navOverride : f.currentNav
@@ -483,6 +483,57 @@ export default function InvestmentsPage() {
         </>
       )}
 
+      {/* ---------------- Market data (Stocks tab only) ---------------- */}
+      {tab === 'Stocks' && (
+        <div className="mt-8">
+          <p className="section-label mb-3">Market data</p>
+          <p className="text-[11px] text-ink-muted -mt-1 mb-4">
+            Sourced from PSX's own data portal — during trading hours prices update every minute,
+            outside market hours the last close is shown.
+          </p>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <div className="card"><MarketChart symbol={OverallKSE100.code} label={OverallKSE100.label} unit="index" /></div>
+            <div className="card"><MarketChart symbol={OverallKSE30.code} label={OverallKSE30.label} unit="index" /></div>
+          </div>
+
+          <div className="mb-6">
+            <p className="section-label mb-2.5">Other indices</p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {otherIndices.map(idx => (
+                <IndexTicker key={idx.code} code={idx.code} label={idx.label} active={selectedIndex?.code === idx.code} onClick={() => setSelectedIndex(idx)} />
+              ))}
+            </div>
+          </div>
+
+          {selectedIndex && (
+            <div className="card mb-6">
+              <MarketChart symbol={selectedIndex.code} label={selectedIndex.label} unit="index" />
+            </div>
+          )}
+
+          <div className="card">
+            <div className="flex items-center gap-2 mb-4">
+              <Search className="w-4 h-4 text-ink-muted" />
+              <h2 className="text-sm font-medium text-ink-primary">Look up a stock</h2>
+            </div>
+            <div className="max-w-md mb-4">
+              <StockSymbolSelect
+                value={stockQuery}
+                onChange={setStockQuery}
+                onSelect={s => { setSelectedMarketStock(s); setStockQuery(s.name) }}
+                placeholder="Search PSX symbol or company (e.g. LUCK, Engro)"
+              />
+            </div>
+            {selectedMarketStock ? (
+              <MarketChart key={selectedMarketStock.symbol} symbol={selectedMarketStock.symbol} label={`${selectedMarketStock.symbol} — ${selectedMarketStock.name}`} unit="PKR" />
+            ) : (
+              <div className="h-40 flex items-center justify-center text-sm text-ink-muted">Search for a stock above to see its price chart</div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* ---------------- Mutual Funds ---------------- */}
       {tab === 'Mutual Funds' && (
         <>
@@ -664,56 +715,6 @@ export default function InvestmentsPage() {
                 </div>
               </div>
             </div>
-          </div>
-        </>
-      )}
-
-      {/* ---------------- Markets ---------------- */}
-      {tab === 'Markets' && (
-        <>
-          <p className="text-[11px] text-ink-muted -mt-2 mb-6">
-            Sourced from PSX's own data portal — during trading hours prices update every minute,
-            outside market hours the last close is shown.
-          </p>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            <div className="card"><MarketChart symbol={OverallKSE100.code} label={OverallKSE100.label} unit="index" /></div>
-            <div className="card"><MarketChart symbol={OverallKSE30.code} label={OverallKSE30.label} unit="index" /></div>
-          </div>
-
-          <div className="mb-6">
-            <p className="section-label mb-2.5">Other indices</p>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {otherIndices.map(idx => (
-                <IndexTicker key={idx.code} code={idx.code} label={idx.label} active={selectedIndex?.code === idx.code} onClick={() => setSelectedIndex(idx)} />
-              ))}
-            </div>
-          </div>
-
-          {selectedIndex && (
-            <div className="card mb-6">
-              <MarketChart symbol={selectedIndex.code} label={selectedIndex.label} unit="index" />
-            </div>
-          )}
-
-          <div className="card">
-            <div className="flex items-center gap-2 mb-4">
-              <Search className="w-4 h-4 text-ink-muted" />
-              <h2 className="text-sm font-medium text-ink-primary">Look up a stock</h2>
-            </div>
-            <div className="max-w-md mb-4">
-              <StockSymbolSelect
-                value={stockQuery}
-                onChange={setStockQuery}
-                onSelect={s => { setSelectedMarketStock(s); setStockQuery(s.name) }}
-                placeholder="Search PSX symbol or company (e.g. LUCK, Engro)"
-              />
-            </div>
-            {selectedMarketStock ? (
-              <MarketChart key={selectedMarketStock.symbol} symbol={selectedMarketStock.symbol} label={`${selectedMarketStock.symbol} — ${selectedMarketStock.name}`} unit="PKR" />
-            ) : (
-              <div className="h-40 flex items-center justify-center text-sm text-ink-muted">Search for a stock above to see its price chart</div>
-            )}
           </div>
         </>
       )}
