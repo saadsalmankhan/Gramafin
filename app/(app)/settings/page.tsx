@@ -19,7 +19,8 @@ import { useTheme } from '@/lib/theme'
 import PageHeader from '@/components/PageHeader'
 import NetWorthContribution from '@/components/NetWorthContribution'
 import ConfirmDialog from '@/components/ConfirmDialog'
-import { Plus, Trash2, Landmark, CreditCard, Moon, Sun } from 'lucide-react'
+import PayCreditCardModal from '@/components/PayCreditCardModal'
+import { Plus, Trash2, Landmark, CreditCard, Moon, Sun, CheckCircle } from 'lucide-react'
 import clsx from 'clsx'
 
 type Tab = 'accounts' | 'preferences'
@@ -34,6 +35,7 @@ export default function SettingsPage() {
   const [dueDate, setDueDate] = useState('')
   const [error, setError] = useState('')
   const [deleteTarget, setDeleteTarget] = useState<BankAccount | null>(null)
+  const [payTarget, setPayTarget] = useState<BankAccount | null>(null)
   const { theme, toggle: toggleTheme } = useTheme()
 
   const netWorthBreakdown = computeNetWorth(state)
@@ -204,6 +206,14 @@ export default function SettingsPage() {
                           {displayText}
                           {isCreditCard && balance < 0 && ' credit'}
                         </span>
+                        {isCreditCard && isDebt && (
+                          <button
+                            className="btn-ghost h-8 px-2.5 text-xs"
+                            onClick={() => setPayTarget(b)}
+                          >
+                            <CheckCircle className="w-3.5 h-3.5" /> Pay
+                          </button>
+                        )}
                         <button
                           className="btn-danger"
                           onClick={() => setDeleteTarget(b)}
@@ -302,6 +312,20 @@ export default function SettingsPage() {
           setDeleteTarget(null)
         }}
         onCancel={() => setDeleteTarget(null)}
+      />
+
+      <PayCreditCardModal
+        open={payTarget !== null}
+        cardLabel={payTarget ? bankAccountLabel(payTarget) : ''}
+        balanceOwed={payTarget ? Math.max(0, payTarget.startingBalance) : 0}
+        payFromOptions={state.bankAccounts.filter(b => b.type !== 'Credit Card')}
+        onConfirm={(amount, fromAccountId) => {
+          if (payTarget) {
+            dispatch({ type: 'PAY_CREDIT_CARD', payload: { cardKind: 'bankAccount', cardId: payTarget.id, amount, fromAccountId } })
+          }
+          setPayTarget(null)
+        }}
+        onCancel={() => setPayTarget(null)}
       />
     </div>
   )

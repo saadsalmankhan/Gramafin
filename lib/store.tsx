@@ -68,6 +68,10 @@ type Action =
   | { type: 'DELETE_INCOME'; payload: string }
   | { type: 'ADD_BANK_ACCOUNT'; payload: BankAccount }
   | { type: 'DELETE_BANK_ACCOUNT'; payload: string }
+  | {
+      type: 'PAY_CREDIT_CARD'
+      payload: { cardKind: 'asset' | 'bankAccount'; cardId: string; amount: number; fromAccountId: string | null }
+    }
   | { type: 'SET_PREFERENCES'; payload: Partial<Preferences> }
   | { type: 'LOAD'; payload: AppState }
 
@@ -130,11 +134,12 @@ function baseReducer(state: AppState, action: Action): AppState {
         budgets: { ...state.budgets, [action.payload.category]: action.payload.amount },
       }
     case 'ADD_RECURRING_INCOME': {
-      const { incomes, recurring } = applyDueIncome(
+      const { incomes, recurring, bankAccounts } = applyDueIncome(
         [...state.recurringIncomes, action.payload],
-        state.incomes
+        state.incomes,
+        state.bankAccounts
       )
-      return { ...state, recurringIncomes: recurring, incomes }
+      return { ...state, recurringIncomes: recurring, incomes, bankAccounts }
     }
     case 'DELETE_RECURRING_INCOME':
       return {
@@ -149,6 +154,33 @@ function baseReducer(state: AppState, action: Action): AppState {
       return { ...state, bankAccounts: [...state.bankAccounts, action.payload] }
     case 'DELETE_BANK_ACCOUNT':
       return { ...state, bankAccounts: state.bankAccounts.filter(b => b.id !== action.payload) }
+    case 'PAY_CREDIT_CARD': {
+      const { cardKind, cardId, amount, fromAccountId } = action.payload
+      let next = state
+      if (cardKind === 'asset') {
+        // Asset-based cards have no "overpaid = credit" convention in their
+        // UI (always shown as a positive liability), so payments floor at 0
+        // rather than going negative.
+        next = {
+          ...next,
+          assets: next.assets.map(a => a.id === cardId ? { ...a, value: Math.max(0, a.value - amount) } : a),
+        }
+      } else {
+        // BankAccount-type cards already use "negative balance = credit" as
+        // their documented convention (see Settings), so this can go negative.
+        next = {
+          ...next,
+          bankAccounts: next.bankAccounts.map(b => b.id === cardId ? { ...b, startingBalance: b.startingBalance - amount } : b),
+        }
+      }
+      if (fromAccountId) {
+        next = {
+          ...next,
+          bankAccounts: next.bankAccounts.map(b => b.id === fromAccountId ? { ...b, startingBalance: b.startingBalance - amount } : b),
+        }
+      }
+      return next
+    }
     case 'SET_PREFERENCES':
       return { ...state, preferences: { ...state.preferences, ...action.payload } }
     default:
@@ -209,8 +241,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
         if (data) {
           const merged = { ...initialState, ...data }
-          const { incomes, recurring } = applyDueIncome(merged.recurringIncomes, merged.incomes)
-          let finalState: AppState = { ...merged, incomes, recurringIncomes: recurring }
+          const { incomes, recurring, bankAccounts } = applyDueIncome(merged.recurringIncomes, merged.incomes, merged.bankAccounts)
+          let finalState: AppState = { ...merged, incomes, recurringIncomes: recurring, bankAccounts }
           for (const action of pendingActionsRef.current) {
             finalState = reducer(finalState, action)
           }
@@ -222,8 +254,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             const raw = localStorage.getItem(LEGACY_STORAGE_KEY)
             if (raw) {
               const legacy = { ...initialState, ...(JSON.parse(raw) as AppState) }
-              const { incomes, recurring } = applyDueIncome(legacy.recurringIncomes, legacy.incomes)
-              let finalState: AppState = { ...legacy, incomes, recurringIncomes: recurring }
+              const { incomes, recurring, bankAccounts } = applyDueIncome(legacy.recurringIncomes, legacy.incomes, legacy.bankAccounts)
+              let finalState: AppState = { ...legacy, incomes, recurringIncomes: recurring, bankAccounts }
               for (const action of pendingActionsRef.current) {
                 finalState = reducer(finalState, action)
               }

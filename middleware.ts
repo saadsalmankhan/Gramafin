@@ -65,7 +65,11 @@ function buildCsp(nonce: string): string {
 // "log out". This clears that legacy cookie shape on every response until
 // it's had time to flush out of active sessions.
 function clearLegacyHostOnlyCookie(res: NextResponse) {
-  if (process.env.NODE_ENV === 'production') {
+  // Matches the isOnVercel check in lib/auth/options.ts — that's what decides
+  // whether the real session cookie uses the __Secure- prefixed name this is
+  // cleaning up after. NODE_ENV would be 'production' on local `npm run
+  // start` too, where this cookie name was never in use.
+  if (process.env.VERCEL) {
     res.headers.append('Set-Cookie', '__Secure-next-auth.session-token=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax')
   }
 }

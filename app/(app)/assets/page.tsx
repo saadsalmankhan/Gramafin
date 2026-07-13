@@ -9,7 +9,8 @@ import MetricCard from '@/components/MetricCard'
 import PageHeader from '@/components/PageHeader'
 import NetWorthContribution from '@/components/NetWorthContribution'
 import ConfirmDialog from '@/components/ConfirmDialog'
-import { Plus, Trash2, TrendingUp, TrendingDown, CreditCard } from 'lucide-react'
+import PayCreditCardModal from '@/components/PayCreditCardModal'
+import { Plus, Trash2, TrendingUp, TrendingDown, CreditCard, CheckCircle } from 'lucide-react'
 
 function utilizationColor(p: number): string {
   return p < 70 ? '#15803d' : p < 90 ? '#d97706' : '#dc2626'
@@ -25,6 +26,7 @@ export default function AssetsPage() {
   const [minimumPayment, setMinimumPayment] = useState('')
   const [error, setError] = useState('')
   const [deleteTarget, setDeleteTarget] = useState<Asset | null>(null)
+  const [payTarget, setPayTarget] = useState<Asset | null>(null)
 
   const isCreditCard = category === 'Credit card'
 
@@ -152,6 +154,14 @@ export default function AssetsPage() {
           <span className="text-sm font-mono font-medium text-danger flex-shrink-0">
             {fmt(a.value)}
           </span>
+          {a.value > 0 && (
+            <button
+              className="btn-ghost h-8 px-2.5 text-xs flex-shrink-0"
+              onClick={() => setPayTarget(a)}
+            >
+              <CheckCircle className="w-3.5 h-3.5" /> Pay
+            </button>
+          )}
           <button
             className="btn-danger flex-shrink-0"
             onClick={() => setDeleteTarget(a)}
@@ -289,6 +299,20 @@ export default function AssetsPage() {
           setDeleteTarget(null)
         }}
         onCancel={() => setDeleteTarget(null)}
+      />
+
+      <PayCreditCardModal
+        open={payTarget !== null}
+        cardLabel={payTarget?.name ?? ''}
+        balanceOwed={payTarget?.value ?? 0}
+        payFromOptions={state.bankAccounts.filter(b => b.type !== 'Credit Card')}
+        onConfirm={(amount, fromAccountId) => {
+          if (payTarget) {
+            dispatch({ type: 'PAY_CREDIT_CARD', payload: { cardKind: 'asset', cardId: payTarget.id, amount, fromAccountId } })
+          }
+          setPayTarget(null)
+        }}
+        onCancel={() => setPayTarget(null)}
       />
     </div>
   )

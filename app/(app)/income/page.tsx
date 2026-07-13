@@ -19,7 +19,7 @@ import AccountSelect from '@/components/AccountSelect'
 import PageHeader from '@/components/PageHeader'
 import NetWorthContribution from '@/components/NetWorthContribution'
 import ConfirmDialog from '@/components/ConfirmDialog'
-import { Plus, Trash2, RefreshCw } from 'lucide-react'
+import { Plus, Trash2, RefreshCw, CheckCircle2 } from 'lucide-react'
 import clsx from 'clsx'
 
 export default function IncomePage() {
@@ -249,7 +249,17 @@ export default function IncomePage() {
                 <div key={i.id} className="grid grid-cols-[1fr_150px_120px_140px_100px_40px] gap-2 items-center px-2 py-3 hover:bg-surface-0 rounded-lg transition-colors">
                   <span className="text-sm text-ink-primary truncate">{i.source}</span>
                   <Badge category={i.category} colorMap={INCOME_CATEGORY_COLORS} />
-                  <span className="text-xs text-ink-muted truncate">{i.account}</span>
+                  <span className="text-xs text-ink-muted truncate flex items-center gap-1 min-w-0">
+                    <span className="truncate">{i.account}</span>
+                    {i.depositedToAccountId && (
+                      <CheckCircle2
+                        className="w-3 h-3 text-success flex-shrink-0"
+                        aria-label="Deposited to this account's balance"
+                      >
+                        <title>Deposited to this account&apos;s balance — counted there, not in net savings</title>
+                      </CheckCircle2>
+                    )}
+                  </span>
                   <span className="text-xs text-ink-muted font-mono">{i.date}</span>
                   <span className="text-sm font-mono font-medium text-success">
                     +{fmt(i.amount)}

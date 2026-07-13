@@ -3,27 +3,42 @@ import CredentialsProvider from 'next-auth/providers/credentials'
 import { getUserByEmail, verifyPassword } from '@/lib/auth/users'
 import { authRatelimit } from '@/lib/ratelimit'
 
+// `next start` sets NODE_ENV=production regardless of hostname — including
+// on localhost — so gating cookie behavior on NODE_ENV was wrong on two
+// counts: (1) the `__Secure-` name prefix and `secure: true` flag are
+// browser-ENFORCED to require an actual HTTPS origin (localhost's "secure
+// context" exception for other web APIs doesn't extend to this), so the
+// cookie was silently rejected outright over plain http://localhost; (2) the
+// `.gramafin.com` Domain attribute doesn't apply to *any* other host either.
+// Both broke every local `npm run start` test — the session cookie was never
+// actually being stored, so every authenticated fetch 401'd even though
+// login "succeeded" (nothing here gates page rendering; only the
+// authenticated API calls fail). `VERCEL` is truthy on any Vercel-hosted
+// environment (production or preview, always HTTPS) — the correct signal for
+// secure cookies. `VERCEL_ENV === 'production'` narrows further to just the
+// deployment tied to the gramafin.com/app.gramafin.com domains, for the
+// Domain attribute specifically.
+const isOnVercel = Boolean(process.env.VERCEL)
+const isProductionDomain = process.env.VERCEL_ENV === 'production'
+
 // Login happens on app.gramafin.com, but gramafin.com (marketing) needs to
 // read the same session to redirect an already-logged-in visitor straight to
 // their dashboard instead of showing the pitch again. Without an explicit
 // Domain, the cookie defaults to the exact host that set it and never
 // reaches gramafin.com/www.gramafin.com even though they share a registrable
-// domain — this widens it to the whole *.gramafin.com family. Only applied
-// in production: a Domain attribute doesn't work sensibly against localhost.
-const useSecureCookies = process.env.NODE_ENV === 'production'
-
+// domain — this widens it to the whole *.gramafin.com family.
 export const authOptions: NextAuthOptions = {
   session: { strategy: 'jwt' },
   pages: { signIn: '/login' },
   cookies: {
     sessionToken: {
-      name: useSecureCookies ? '__Secure-next-auth.session-token' : 'next-auth.session-token',
+      name: isOnVercel ? '__Secure-next-auth.session-token' : 'next-auth.session-token',
       options: {
         httpOnly: true,
         sameSite: 'lax',
         path: '/',
-        secure: useSecureCookies,
-        ...(useSecureCookies ? { domain: '.gramafin.com' } : {}),
+        secure: isOnVercel,
+        ...(isProductionDomain ? { domain: '.gramafin.com' } : {}),
       },
     },
   },

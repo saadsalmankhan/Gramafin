@@ -36,7 +36,14 @@ export function computeNetWorth(state: AppState): NetWorthBreakdown {
     const nav = f.navOverride !== null && f.navOverride > 0 ? f.navOverride : f.currentNav
     return s + f.unitsHeld * nav
   }, 0)
-  const totalIncome = state.incomes.reduce((s, i) => s + i.amount, 0)
+  // Income already deposited into a tracked bank account (see applyDueIncome
+  // in lib/income.ts) is excluded here — it's counted once, via the account
+  // balance above, not again via net savings. Everything else (manual
+  // entries, recurring income matched to "Cash" or an unmatched label) is
+  // still counted here, same as before this distinction existed.
+  const totalIncome = state.incomes
+    .filter(i => !i.depositedToAccountId)
+    .reduce((s, i) => s + i.amount, 0)
   const totalExpenses = state.expenses.reduce((s, e) => s + e.amount, 0)
   const netSavings = totalIncome - totalExpenses
 
