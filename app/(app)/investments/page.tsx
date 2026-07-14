@@ -89,7 +89,7 @@ export default function InvestmentsPage() {
 
   // ---- Markets tab state ----
   const [OverallKSE100, OverallKSE30, ...otherIndices] = PSX_INDICES
-  const [selectedIndex, setSelectedIndex] = useState(otherIndices[0])
+  const [selectedIndex, setSelectedIndex] = useState(OverallKSE100)
   const [stockQuery, setStockQuery] = useState('')
   const [selectedMarketStock, setSelectedMarketStock] = useState<PsxSymbol | null>(null)
 
