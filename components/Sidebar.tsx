@@ -11,8 +11,8 @@ import {
   LayoutDashboard,
   Receipt,
   Wallet,
+  Building2,
   Target,
-  TrendingUp,
   PanelLeftClose,
   LogOut,
   CloudOff,
@@ -26,7 +26,7 @@ const nav = [
   { href: '/income',       label: 'Income',       icon: Wallet },
   { href: '/expenses',     label: 'Expenses',     icon: Receipt },
   { href: '/budget',       label: 'Budget',       icon: Target },
-  { href: '/investments',  label: 'Investments',  icon: TrendingUp },
+  { href: '/assets',       label: 'Net worth',    icon: Building2 },
 ]
 
 const COLLAPSE_KEY = 'wm_sidebar_collapsed'
