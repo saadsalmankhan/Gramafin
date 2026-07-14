@@ -184,7 +184,7 @@ export default function AssetsPage() {
         <MetricCard label="Total assets" value={fmt(totalAssets)} variant="positive" />
         <MetricCard label="Total liabilities" value={fmt(totalLiab)} variant="negative" />
         <MetricCard
-          label="Net worth"
+          label="Assets − liabilities"
           value={fmt(netWorth)}
           variant={netWorth >= 0 ? 'positive' : 'negative'}
           sub={netWorth >= 0 ? 'positive position' : 'negative position'}
