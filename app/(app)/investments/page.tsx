@@ -5,8 +5,9 @@ import { useStore } from '@/lib/store'
 import {
   Investment, INVESTMENT_TYPES, InvestmentType, INVESTMENT_TYPE_COLORS, PsxSymbol,
   MutualFund, MUTUAL_FUND_TYPES, MutualFundType, MUTUAL_FUND_TYPE_COLORS,
+  Asset, ASSET_CATEGORIES, AssetCategory, isLiabilityCategory, ASSET_COLORS,
 } from '@/types'
-import { fmt, fmtCompact, gainPct, uid } from '@/lib/utils'
+import { fmt, fmtCompact, gainPct, uid, pct, daysUntil } from '@/lib/utils'
 import { computeNetWorth } from '@/lib/networth'
 import { fetchStockPrice } from '@/lib/fetchStockPrice'
 import { fetchNav, fetchMufapFundsData, clearNavCache, MufapFund } from '@/lib/fetchNav'
@@ -19,11 +20,12 @@ import StockSymbolSelect from '@/components/StockSymbolSelect'
 import MutualFundSelect from '@/components/MutualFundSelect'
 import StockDetailModal from '@/components/StockDetailModal'
 import ConfirmDialog from '@/components/ConfirmDialog'
+import PayCreditCardModal from '@/components/PayCreditCardModal'
 import MarketChart from '@/components/MarketChart'
 import IndexTicker from '@/components/IndexTicker'
 import {
   Plus, Trash2, TrendingUp, TrendingDown, RefreshCw, CheckCircle, AlertCircle,
-  Edit2, X, Save, Search,
+  Edit2, X, Save, Search, CreditCard,
 } from 'lucide-react'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 import clsx from 'clsx'
@@ -31,8 +33,8 @@ import clsx from 'clsx'
 type PriceStatus = Record<string, 'idle' | 'loading' | 'live' | 'eod' | 'failed'>
 type NavStatus = Record<string, 'idle' | 'loading' | 'live' | 'override' | 'failed'>
 
-type Tab = InvestmentType | 'Mutual Funds'
-const TABS: Tab[] = [...INVESTMENT_TYPES, 'Mutual Funds']
+type Tab = InvestmentType | 'Mutual Funds' | 'Assets & Liabilities'
+const TABS: Tab[] = [...INVESTMENT_TYPES, 'Mutual Funds', 'Assets & Liabilities']
 
 function effectiveNav(f: MutualFund): number {
   return f.navOverride !== null && f.navOverride > 0 ? f.navOverride : f.currentNav
@@ -42,6 +44,9 @@ function fundCurrentValue(f: MutualFund): number {
 }
 function fundCostBasis(f: MutualFund): number {
   return f.unitsHeld * f.buyNav
+}
+function utilizationColor(p: number): string {
+  return p < 70 ? '#15803d' : p < 90 ? '#d97706' : '#dc2626'
 }
 
 export default function InvestmentsPage() {
@@ -53,6 +58,9 @@ export default function InvestmentsPage() {
     addMutualFund,
     updateMutualFund,
     deleteMutualFund,
+    addAsset,
+    deleteAsset,
+    payAssetCard,
   } = useStore()
   const chartColors = useChartColors()
   const [tab, setTab] = useState<Tab>('Stocks')
@@ -92,6 +100,17 @@ export default function InvestmentsPage() {
   const [selectedIndex, setSelectedIndex] = useState(OverallKSE100)
   const [stockQuery, setStockQuery] = useState('')
   const [selectedMarketStock, setSelectedMarketStock] = useState<PsxSymbol | null>(null)
+
+  // ---- Assets & Liabilities tab state ----
+  const [assetName, setAssetName] = useState('')
+  const [assetValue, setAssetValue] = useState('')
+  const [assetCategory, setAssetCategory] = useState<AssetCategory>('Cash / Bank')
+  const [assetCreditLimit, setAssetCreditLimit] = useState('')
+  const [assetDueDate, setAssetDueDate] = useState('')
+  const [assetMinimumPayment, setAssetMinimumPayment] = useState('')
+  const [assetFormError, setAssetFormError] = useState('')
+  const [deleteAssetTarget, setDeleteAssetTarget] = useState<Asset | null>(null)
+  const [payAssetTarget, setPayAssetTarget] = useState<Asset | null>(null)
 
   const overallNetWorth = computeNetWorth(state).netWorth
 
@@ -311,13 +330,158 @@ export default function InvestmentsPage() {
     ? state.investments.filter(i => i.type === tab)
     : []
 
+  // ---- Assets & Liabilities derived data ----
+  const isAssetCreditCard = assetCategory === 'Credit card'
+  const assetsList = state.assets.filter(a => !isLiabilityCategory(a.category))
+  const liabilitiesList = state.assets.filter(a => isLiabilityCategory(a.category))
+  const totalAssets = assetsList.reduce((s, a) => s + a.value, 0)
+  const totalLiab = liabilitiesList.reduce((s, a) => s + a.value, 0)
+  const assetsMinusLiabilities = totalAssets - totalLiab
+
+  function addAssetOrLiability() {
+    if (!assetName.trim()) { setAssetFormError('Name is required'); return }
+    const val = parseFloat(assetValue)
+    if (isNaN(val) || val <= 0) { setAssetFormError('Enter a valid value'); return }
+
+    let limit: number | undefined
+    if (isAssetCreditCard) {
+      limit = parseFloat(assetCreditLimit)
+      if (isNaN(limit) || limit <= 0) { setAssetFormError('Enter a valid credit limit'); return }
+    }
+
+    setAssetFormError('')
+    const asset: Asset = {
+      id: uid(),
+      name: assetName.trim(),
+      value: val,
+      category: assetCategory,
+      ...(isAssetCreditCard && {
+        creditLimit: limit,
+        dueDate: assetDueDate || undefined,
+        minimumPayment: assetMinimumPayment ? parseFloat(assetMinimumPayment) : undefined,
+      }),
+    }
+    addAsset(asset)
+    setAssetName('')
+    setAssetValue('')
+    setAssetCreditLimit('')
+    setAssetDueDate('')
+    setAssetMinimumPayment('')
+  }
+
+  function AssetRow({ a }: { a: Asset }) {
+    const base = isLiabilityCategory(a.category) ? totalLiab : totalAssets
+    const share = pct(a.value, base)
+    const color = ASSET_COLORS[a.category]
+    return (
+      <div className="flex items-center gap-4 py-3 hover:bg-surface-0 rounded-lg px-2 transition-colors">
+        <div
+          className="w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center text-[10px] font-bold"
+          style={{ background: color + '18', color }}
+        >
+          {a.category.slice(0, 2).toUpperCase()}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium text-ink-primary truncate">{a.name}</p>
+          <p className="text-[11px] text-ink-muted">{a.category}</p>
+        </div>
+        <div className="w-24 hidden sm:block">
+          <div className="h-1.5 bg-surface-1 rounded-full overflow-hidden">
+            <div
+              className="h-full rounded-full"
+              style={{ width: `${share}%`, background: color }}
+            />
+          </div>
+          <p className="text-[10px] text-ink-muted mt-0.5 text-right">{share}%</p>
+        </div>
+        <span
+          className={`text-sm font-mono font-medium flex-shrink-0 ${
+            isLiabilityCategory(a.category) ? 'text-danger' : 'text-success'
+          }`}
+        >
+          {fmt(a.value)}
+        </span>
+        <button
+          className="btn-danger flex-shrink-0"
+          onClick={() => setDeleteAssetTarget(a)}
+          aria-label="Delete"
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+        </button>
+      </div>
+    )
+  }
+
+  function CreditCardRow({ a }: { a: Asset }) {
+    const limit = a.creditLimit ?? 0
+    const utilization = limit > 0 ? Math.min(100, Math.round((a.value / limit) * 100)) : 0
+    const color = utilizationColor(utilization)
+    return (
+      <div className="py-3 px-2 hover:bg-surface-0 rounded-lg transition-colors">
+        <div className="flex items-center gap-4">
+          <div
+            className="w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center"
+            style={{ background: ASSET_COLORS['Credit card'] + '18' }}
+          >
+            <CreditCard className="w-4 h-4" style={{ color: ASSET_COLORS['Credit card'] }} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-ink-primary truncate">{a.name}</p>
+            <p className="text-[11px] text-ink-muted">
+              Limit {fmt(limit)}
+              {a.dueDate && ` · Due ${a.dueDate}`}
+              {a.minimumPayment ? ` · Min payment ${fmt(a.minimumPayment)}` : ''}
+              {a.dueDate && (() => {
+                const d = daysUntil(a.dueDate)
+                if (d > 7) return null
+                const label = d < 0 ? `Overdue ${Math.abs(d)}d` : d === 0 ? 'Due today' : `Due in ${d}d`
+                return (
+                  <span className={`ml-1 font-medium ${d <= 3 ? 'text-danger' : 'text-warning'}`}>
+                    · {label}
+                  </span>
+                )
+              })()}
+            </p>
+          </div>
+          <div className="w-24 hidden sm:block">
+            <div className="h-1.5 bg-surface-1 rounded-full overflow-hidden">
+              <div className="h-full rounded-full" style={{ width: `${utilization}%`, background: color }} />
+            </div>
+            <p className="text-[10px] mt-0.5 text-right font-medium" style={{ color }}>
+              {utilization}% used
+            </p>
+          </div>
+          <span className="text-sm font-mono font-medium text-danger flex-shrink-0">
+            {fmt(a.value)}
+          </span>
+          {a.value > 0 && (
+            <button
+              className="btn-ghost h-8 px-2.5 text-xs flex-shrink-0"
+              onClick={() => setPayAssetTarget(a)}
+            >
+              <CheckCircle className="w-3.5 h-3.5" /> Pay
+            </button>
+          )}
+          <button
+            className="btn-danger flex-shrink-0"
+            onClick={() => setDeleteAssetTarget(a)}
+            aria-label="Delete"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div>
-      <PageHeader title="Investments" subtitle="Stocks, mutual funds, and live PSX market data — all in one place" />
+      <PageHeader title="Investments" subtitle="Stocks, mutual funds, other assets, and live PSX market data — all in one place" />
 
-      <div className="flex flex-col sm:flex-row gap-3 mb-4">
+      <div className="flex flex-col sm:flex-row gap-3 mb-4 flex-wrap">
         <NetWorthContribution label="Investments" amount={totalCurrent} netWorth={overallNetWorth} />
         <NetWorthContribution label="Mutual funds" amount={totalFundCurrent} netWorth={overallNetWorth} />
+        <NetWorthContribution label="Assets & liabilities" amount={assetsMinusLiabilities} netWorth={overallNetWorth} />
       </div>
 
       <div className="grid grid-cols-3 gap-4 mb-6">
@@ -731,6 +895,118 @@ export default function InvestmentsPage() {
         </>
       )}
 
+      {/* ---------------- Assets & Liabilities ---------------- */}
+      {tab === 'Assets & Liabilities' && (
+        <>
+          <div className="grid grid-cols-3 gap-4 mb-6">
+            <MetricCard label="Total assets" value={fmt(totalAssets)} variant="positive" />
+            <MetricCard label="Total liabilities" value={fmt(totalLiab)} variant="negative" />
+            <MetricCard
+              label="Assets − liabilities"
+              value={fmt(assetsMinusLiabilities)}
+              variant={assetsMinusLiabilities >= 0 ? 'positive' : 'negative'}
+              sub={assetsMinusLiabilities >= 0 ? 'positive position' : 'negative position'}
+            />
+          </div>
+
+          <div className="card mb-6">
+            <h2 className="text-sm font-medium text-ink-primary mb-4">Add asset or liability</h2>
+            {assetFormError && <p className="text-xs text-danger mb-3 bg-red-50 dark:bg-danger/10 px-3 py-2 rounded">{assetFormError}</p>}
+            <div className="flex gap-3 flex-wrap mb-3">
+              <input
+                className="input flex-1 min-w-40"
+                placeholder="Name (e.g. Meezan Bank savings)"
+                value={assetName}
+                onChange={e => setAssetName(e.target.value)}
+              />
+              <input
+                className="input flex-1 min-w-32 font-mono"
+                type="number"
+                placeholder={isAssetCreditCard ? 'Current balance (PKR)' : 'Value (PKR)'}
+                value={assetValue}
+                onChange={e => setAssetValue(e.target.value)}
+              />
+              <select
+                className="select flex-1 min-w-36"
+                value={assetCategory}
+                onChange={e => setAssetCategory(e.target.value as AssetCategory)}
+              >
+                {ASSET_CATEGORIES.map(c => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+              {!isAssetCreditCard && (
+                <button className="btn-primary" onClick={addAssetOrLiability}>
+                  <Plus className="w-4 h-4" /> Add
+                </button>
+              )}
+            </div>
+            {isAssetCreditCard && (
+              <div className="flex gap-3 flex-wrap">
+                <input
+                  className="input flex-1 min-w-32 font-mono"
+                  type="number"
+                  placeholder="Credit limit (PKR)"
+                  value={assetCreditLimit}
+                  onChange={e => setAssetCreditLimit(e.target.value)}
+                />
+                <input
+                  className="input flex-1 min-w-32"
+                  type="date"
+                  placeholder="Due date"
+                  value={assetDueDate}
+                  onChange={e => setAssetDueDate(e.target.value)}
+                />
+                <input
+                  className="input flex-1 min-w-32 font-mono"
+                  type="number"
+                  placeholder="Minimum payment (PKR)"
+                  value={assetMinimumPayment}
+                  onChange={e => setAssetMinimumPayment(e.target.value)}
+                />
+                <button className="btn-primary" onClick={addAssetOrLiability}>
+                  <Plus className="w-4 h-4" /> Add
+                </button>
+              </div>
+            )}
+          </div>
+
+          <div className="card mb-4">
+            <div className="flex items-center gap-2 mb-4">
+              <TrendingUp className="w-4 h-4 text-success" />
+              <h2 className="text-sm font-medium text-ink-primary">Assets</h2>
+              <span className="text-ink-muted text-sm font-mono ml-auto">{fmt(totalAssets)}</span>
+            </div>
+            {assetsList.length === 0 ? (
+              <p className="text-sm text-ink-muted text-center py-6">No assets added yet</p>
+            ) : (
+              <div className="divide-y divide-gray-50 dark:divide-white/5">
+                {assetsList.map(a => <AssetRow key={a.id} a={a} />)}
+              </div>
+            )}
+          </div>
+
+          <div className="card">
+            <div className="flex items-center gap-2 mb-4">
+              <TrendingDown className="w-4 h-4 text-danger" />
+              <h2 className="text-sm font-medium text-ink-primary">Liabilities</h2>
+              <span className="text-ink-muted text-sm font-mono ml-auto">{fmt(totalLiab)}</span>
+            </div>
+            {liabilitiesList.length === 0 ? (
+              <p className="text-sm text-ink-muted text-center py-6">No liabilities added yet</p>
+            ) : (
+              <div className="divide-y divide-gray-50 dark:divide-white/5">
+                {liabilitiesList.map(a =>
+                  a.category === 'Credit card'
+                    ? <CreditCardRow key={a.id} a={a} />
+                    : <AssetRow key={a.id} a={a} />
+                )}
+              </div>
+            )}
+          </div>
+        </>
+      )}
+
       <StockDetailModal investment={detailStock} onClose={() => setDetailStock(null)} />
 
       <ConfirmDialog
@@ -746,6 +1022,30 @@ export default function InvestmentsPage() {
         message="This will permanently remove this fund and its unit history from your portfolio. This can't be undone."
         onConfirm={() => { if (deleteFundTarget) deleteMutualFund(deleteFundTarget.id); setDeleteFundTarget(null) }}
         onCancel={() => setDeleteFundTarget(null)}
+      />
+      <ConfirmDialog
+        open={deleteAssetTarget !== null}
+        title={`Delete "${deleteAssetTarget?.name}"?`}
+        message={`This will permanently remove this ${deleteAssetTarget && isLiabilityCategory(deleteAssetTarget.category) ? 'liability' : 'asset'} from your net worth. This can't be undone.`}
+        onConfirm={() => {
+          if (deleteAssetTarget) deleteAsset(deleteAssetTarget.id)
+          setDeleteAssetTarget(null)
+        }}
+        onCancel={() => setDeleteAssetTarget(null)}
+      />
+
+      <PayCreditCardModal
+        open={payAssetTarget !== null}
+        cardLabel={payAssetTarget?.name ?? ''}
+        balanceOwed={payAssetTarget?.value ?? 0}
+        payFromOptions={state.bankAccounts.filter(b => b.type !== 'Credit Card')}
+        onConfirm={(amount, fromAccountId) => {
+          if (payAssetTarget) {
+            payAssetCard(payAssetTarget.id, amount, fromAccountId)
+          }
+          setPayAssetTarget(null)
+        }}
+        onCancel={() => setPayAssetTarget(null)}
       />
     </div>
   )

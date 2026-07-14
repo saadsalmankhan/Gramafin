@@ -11,7 +11,6 @@ import {
   LayoutDashboard,
   Receipt,
   Wallet,
-  Building2,
   Target,
   TrendingUp,
   PanelLeftClose,
@@ -26,7 +25,6 @@ const nav = [
   { href: '/dashboard',    label: 'Dashboard',    icon: LayoutDashboard },
   { href: '/income',       label: 'Income',       icon: Wallet },
   { href: '/expenses',     label: 'Expenses',     icon: Receipt },
-  { href: '/assets',       label: 'Net worth',    icon: Building2 },
   { href: '/budget',       label: 'Budget',       icon: Target },
   { href: '/investments',  label: 'Investments',  icon: TrendingUp },
 ]

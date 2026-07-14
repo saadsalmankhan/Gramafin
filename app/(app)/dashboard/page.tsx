@@ -74,7 +74,7 @@ export default function Dashboard() {
             <AlertTriangle className="w-4 h-4 text-danger" />
             <h2 className="text-sm font-medium text-ink-primary">Payment reminders</h2>
             <Link
-              href={bankCardReminders.length > 0 && assetCardReminders.length === 0 ? '/settings' : '/assets'}
+              href={bankCardReminders.length > 0 && assetCardReminders.length === 0 ? '/settings' : '/investments'}
               className="text-xs text-brand-600 hover:text-brand-700 flex items-center gap-1 ml-auto"
             >
               Manage <ArrowRight className="w-3 h-3" />
@@ -144,8 +144,7 @@ export default function Dashboard() {
         <div className="flex items-center gap-2 mb-3 flex-wrap">
           <span className="text-[11px] text-ink-muted">Rolls up:</span>
           {[
-            { label: 'Assets', href: '/assets' },
-            { label: 'Investments & mutual funds', href: '/investments' },
+            { label: 'Assets & investments', href: '/investments' },
             { label: 'Bank accounts', href: '/settings' },
             { label: 'Income & expenses', href: '/income' },
           ].map(s => (

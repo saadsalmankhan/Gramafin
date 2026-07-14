@@ -9,7 +9,6 @@ export default function robots(): MetadataRoute.Robots {
         '/dashboard',
         '/income',
         '/expenses',
-        '/assets',
         '/budget',
         '/investments',
         '/settings',

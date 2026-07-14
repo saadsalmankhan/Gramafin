@@ -8,11 +8,13 @@ export type ExpenseCategory =
   | 'Education'
   | 'Custom'
 
+// 'Stocks' and 'Mutual funds' were removed as manual categories here — real
+// holdings always go through the properly-tracked Investment/MutualFund
+// entities on the Investments page now that assets and investments share one
+// page, rather than being duplicable as an untracked lump-sum entry too.
 export type AssetCategory =
   | 'Cash / Bank'
   | 'Real estate'
-  | 'Stocks'
-  | 'Mutual funds'
   | 'Gold / Jewelry'
   | 'Tangible assets'
   | 'Credit card'
@@ -306,8 +308,6 @@ export const EXPENSE_CATEGORIES: ExpenseCategory[] = [
 export const ASSET_CATEGORIES: AssetCategory[] = [
   'Cash / Bank',
   'Real estate',
-  'Stocks',
-  'Mutual funds',
   'Gold / Jewelry',
   'Tangible assets',
   'Credit card',
@@ -335,8 +335,6 @@ export const CATEGORY_COLORS: Record<ExpenseCategory, string> = {
 export const ASSET_COLORS: Record<AssetCategory, string> = {
   'Cash / Bank':      '#2a78d6',
   'Real estate':      '#1baf7a',
-  'Stocks':           '#4a3aa7',
-  'Mutual funds':     '#eda100',
   'Gold / Jewelry':   '#eb6834',
   'Tangible assets':  '#e87ba4',
   'Credit card':      '#c026d3',
