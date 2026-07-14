@@ -23,7 +23,13 @@ import { Plus, Trash2, RefreshCw, CheckCircle2 } from 'lucide-react'
 import clsx from 'clsx'
 
 export default function IncomePage() {
-  const { state, dispatch } = useStore()
+  const {
+    state,
+    addIncome: addIncomeOnServer,
+    addRecurringIncome,
+    deleteRecurringIncome,
+    deleteIncome,
+  } = useStore()
   const [mode, setMode] = useState<'one-time' | 'recurring'>('one-time')
   const [source, setSource] = useState('')
   const [category, setCategory] = useState<IncomeCategory>('Salary')
@@ -70,7 +76,7 @@ export default function IncomePage() {
         frequency,
         nextDate: date,
       }
-      dispatch({ type: 'ADD_RECURRING_INCOME', payload: recurring })
+      addRecurringIncome(recurring)
     } else {
       const income: Income = {
         id: uid(),
@@ -80,7 +86,7 @@ export default function IncomePage() {
         account,
         date,
       }
-      dispatch({ type: 'ADD_INCOME', payload: income })
+      addIncomeOnServer(income)
     }
     resetForm()
   }
@@ -284,7 +290,7 @@ export default function IncomePage() {
         message="This stops future auto-generated entries for this recurring income. Entries already logged from it will stay in your income log. This can't be undone."
         confirmLabel="Stop recurring"
         onConfirm={() => {
-          if (deleteRecurringTarget) dispatch({ type: 'DELETE_RECURRING_INCOME', payload: deleteRecurringTarget.id })
+          if (deleteRecurringTarget) deleteRecurringIncome(deleteRecurringTarget.id)
           setDeleteRecurringTarget(null)
         }}
         onCancel={() => setDeleteRecurringTarget(null)}
@@ -294,7 +300,7 @@ export default function IncomePage() {
         title={`Delete "${deleteIncomeTarget?.source}"?`}
         message="This will permanently remove this income entry. This can't be undone."
         onConfirm={() => {
-          if (deleteIncomeTarget) dispatch({ type: 'DELETE_INCOME', payload: deleteIncomeTarget.id })
+          if (deleteIncomeTarget) deleteIncome(deleteIncomeTarget.id)
           setDeleteIncomeTarget(null)
         }}
         onCancel={() => setDeleteIncomeTarget(null)}

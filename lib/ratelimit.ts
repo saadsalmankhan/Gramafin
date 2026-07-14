@@ -10,10 +10,11 @@ export const authRatelimit = new Ratelimit({
   prefix: 'ratelimit:auth',
 })
 
-// Looser limit for authenticated, per-user API usage (data sync, uploads).
-// The app PUTs to /api/data on every store change, so normal fast clicking
-// (e.g. adding several expenses in a row) needs headroom above a strict cap —
-// this is meant to stop a runaway loop or script, not ordinary interactive use.
+// Looser limit for authenticated, per-user API usage — shared across
+// /api/bootstrap and every per-entity CRUD route (see lib/api-auth.ts).
+// Normal fast clicking (e.g. adding several expenses in a row) needs
+// headroom above a strict cap; this is meant to stop a runaway loop or
+// script, not ordinary interactive use.
 export const apiRatelimit = new Ratelimit({
   redis,
   limiter: Ratelimit.slidingWindow(120, '1 m'),

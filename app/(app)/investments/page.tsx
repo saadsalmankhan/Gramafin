@@ -45,7 +45,15 @@ function fundCostBasis(f: MutualFund): number {
 }
 
 export default function InvestmentsPage() {
-  const { state, dispatch } = useStore()
+  const {
+    state,
+    updateInvestment,
+    addInvestment: addInvestmentOnServer,
+    deleteInvestment,
+    addMutualFund,
+    updateMutualFund,
+    deleteMutualFund,
+  } = useStore()
   const chartColors = useChartColors()
   const [tab, setTab] = useState<Tab>('Stocks')
 
@@ -112,9 +120,9 @@ export default function InvestmentsPage() {
       currentValue: inv.sharesHeld * (inv.priceOverride ?? result.price),
       lastPriceUpdate: result.fetchedAt,
     }
-    dispatch({ type: 'UPDATE_INVESTMENT', payload: updated })
+    updateInvestment(updated)
     setPriceStatus(s => ({ ...s, [inv.id]: result.source }))
-  }, [dispatch])
+  }, [updateInvestment])
 
   const refreshAllPrices = useCallback(async () => {
     for (const inv of state.investments) {
@@ -143,9 +151,9 @@ export default function InvestmentsPage() {
       currentNav: result.source !== 'failed' ? result.nav : fund.currentNav,
       lastUpdated: result.source !== 'failed' ? result.fetchedAt : fund.lastUpdated,
     }
-    dispatch({ type: 'UPDATE_MUTUAL_FUND', payload: updated })
+    updateMutualFund(updated)
     setNavStatus(s => ({ ...s, [fund.id]: result.source }))
-  }, [dispatch])
+  }, [updateMutualFund])
 
   const refreshAllNavs = useCallback(async () => {
     for (const fund of funds) await fetchNavForFund(fund)
@@ -204,7 +212,7 @@ export default function InvestmentsPage() {
         id, name: name.trim(), type, amountInvested, currentValue: amountInvested,
         symbol: symbol!, sharesHeld: sh, buyPrice: bp, priceOverride: null, lastPriceUpdate: null,
       }
-      dispatch({ type: 'ADD_INVESTMENT', payload: inv })
+      addInvestmentOnServer(inv)
       resetInvForm()
       setAdding(false)
       await refreshPrice(inv)
@@ -216,7 +224,7 @@ export default function InvestmentsPage() {
     const v = parseFloat(current)
     if (isNaN(v) || v <= 0) { setInvError('Enter a valid current value'); return }
     setInvError('')
-    dispatch({ type: 'ADD_INVESTMENT', payload: { id: uid(), name: name.trim(), type, amountInvested: c, currentValue: v } })
+    addInvestmentOnServer({ id: uid(), name: name.trim(), type, amountInvested: c, currentValue: v })
     resetInvForm()
   }
 
@@ -258,7 +266,7 @@ export default function InvestmentsPage() {
       currentNav: isNaN(mn) ? b : mn, navOverride: isNaN(mn) || mn <= 0 ? null : mn,
       lastUpdated: null, realizedGains: 0, notes: notes.trim(),
     }
-    dispatch({ type: 'ADD_MUTUAL_FUND', payload: fund })
+    addMutualFund(fund)
     setFundName(''); setUnits(''); setBuyNav(''); setManualNav(''); setNotes('')
   }
 
@@ -279,16 +287,13 @@ export default function InvestmentsPage() {
     const u = parseFloat(editUnits)
     const b = parseFloat(editBuyNav)
     const ov = parseFloat(editOverride)
-    dispatch({
-      type: 'UPDATE_MUTUAL_FUND',
-      payload: {
-        ...f,
-        unitsHeld: isNaN(u) ? f.unitsHeld : u,
-        buyNav: isNaN(b) ? f.buyNav : b,
-        navOverride: !isNaN(ov) && ov > 0 ? ov : null,
-        currentNav: !isNaN(ov) && ov > 0 ? ov : f.currentNav,
-        notes: editNotes.trim(),
-      },
+    updateMutualFund({
+      ...f,
+      unitsHeld: isNaN(u) ? f.unitsHeld : u,
+      buyNav: isNaN(b) ? f.buyNav : b,
+      navOverride: !isNaN(ov) && ov > 0 ? ov : null,
+      currentNav: !isNaN(ov) && ov > 0 ? ov : f.currentNav,
+      notes: editNotes.trim(),
     })
     setEditId(null)
   }
@@ -732,14 +737,14 @@ export default function InvestmentsPage() {
         open={deleteInvTarget !== null}
         title={`Delete "${deleteInvTarget?.name}"?`}
         message="This will permanently remove this investment from your portfolio. This can't be undone."
-        onConfirm={() => { if (deleteInvTarget) dispatch({ type: 'DELETE_INVESTMENT', payload: deleteInvTarget.id }); setDeleteInvTarget(null) }}
+        onConfirm={() => { if (deleteInvTarget) deleteInvestment(deleteInvTarget.id); setDeleteInvTarget(null) }}
         onCancel={() => setDeleteInvTarget(null)}
       />
       <ConfirmDialog
         open={deleteFundTarget !== null}
         title={`Delete "${deleteFundTarget?.name}"?`}
         message="This will permanently remove this fund and its unit history from your portfolio. This can't be undone."
-        onConfirm={() => { if (deleteFundTarget) dispatch({ type: 'DELETE_MUTUAL_FUND', payload: deleteFundTarget.id }); setDeleteFundTarget(null) }}
+        onConfirm={() => { if (deleteFundTarget) deleteMutualFund(deleteFundTarget.id); setDeleteFundTarget(null) }}
         onCancel={() => setDeleteFundTarget(null)}
       />
     </div>

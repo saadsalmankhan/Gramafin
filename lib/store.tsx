@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useCallback, useContext, useEffect, useReducer, useRef, useState, ReactNode } from 'react'
+import React, { createContext, useCallback, useContext, useEffect, useState, ReactNode } from 'react'
 import { useSession } from 'next-auth/react'
 import {
   AppState,
@@ -16,26 +16,10 @@ import {
   Preferences,
   DEFAULT_PREFERENCES,
   CURRENCIES,
+  NetWorthSnapshot,
 } from '@/types'
-import { applyDueIncome } from '@/lib/income'
-import { computeNetWorth } from '@/lib/networth'
+import { NetWorthBreakdown } from '@/lib/networth'
 import { today, setCurrencySymbol } from '@/lib/utils'
-
-const LEGACY_STORAGE_KEY = 'wm_state_v2'
-
-// Every dispatch changes state, and the whole app blob gets re-saved — a
-// short debounce coalesces bursts of edits (e.g. deleting several items in a
-// row) into one request instead of one per action.
-const SAVE_DEBOUNCE_MS = 1000
-
-function persistData(data: AppState, keepalive = false) {
-  return fetch('/api/data', {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-    keepalive,
-  })
-}
 
 const initialState: AppState = {
   expenses: [],
@@ -50,148 +34,50 @@ const initialState: AppState = {
   preferences: DEFAULT_PREFERENCES,
 }
 
-type Action =
-  | { type: 'ADD_EXPENSE'; payload: Expense }
-  | { type: 'DELETE_EXPENSE'; payload: string }
-  | { type: 'ADD_ASSET'; payload: Asset }
-  | { type: 'DELETE_ASSET'; payload: string }
-  | { type: 'ADD_INVESTMENT'; payload: Investment }
-  | { type: 'UPDATE_INVESTMENT'; payload: Investment }
-  | { type: 'DELETE_INVESTMENT'; payload: string }
-  | { type: 'ADD_MUTUAL_FUND'; payload: MutualFund }
-  | { type: 'UPDATE_MUTUAL_FUND'; payload: MutualFund }
-  | { type: 'DELETE_MUTUAL_FUND'; payload: string }
-  | { type: 'SET_BUDGET'; payload: { category: ExpenseCategory; amount: number } }
-  | { type: 'ADD_RECURRING_INCOME'; payload: RecurringIncome }
-  | { type: 'DELETE_RECURRING_INCOME'; payload: string }
-  | { type: 'ADD_INCOME'; payload: Income }
-  | { type: 'DELETE_INCOME'; payload: string }
-  | { type: 'ADD_BANK_ACCOUNT'; payload: BankAccount }
-  | { type: 'DELETE_BANK_ACCOUNT'; payload: string }
-  | {
-      type: 'PAY_CREDIT_CARD'
-      payload: { cardKind: 'asset' | 'bankAccount'; cardId: string; amount: number; fromAccountId: string | null }
-    }
-  | { type: 'SET_PREFERENCES'; payload: Partial<Preferences> }
-  | { type: 'LOAD'; payload: AppState }
-
 // Keeps a running daily history of net worth so it can be charted over time,
-// updating today's entry in place rather than appending on every action.
-function upsertNetWorthSnapshot(state: AppState): AppState {
-  const value = computeNetWorth(state).netWorth
+// updating today's entry in place rather than appending on every action —
+// mirrors the value the server just recomputed and returned.
+function upsertHistory(history: NetWorthSnapshot[], value: number): NetWorthSnapshot[] {
   const t = today()
-  const history = state.netWorthHistory
   const last = history[history.length - 1]
   if (last && last.date === t) {
-    return last.value === value
-      ? state
-      : { ...state, netWorthHistory: [...history.slice(0, -1), { date: t, value }] }
+    return last.value === value ? history : [...history.slice(0, -1), { date: t, value }]
   }
-  return { ...state, netWorthHistory: [...history, { date: t, value }] }
+  return [...history, { date: t, value }]
 }
 
-function reducer(state: AppState, action: Action): AppState {
-  return upsertNetWorthSnapshot(baseReducer(state, action))
-}
-
-function baseReducer(state: AppState, action: Action): AppState {
-  switch (action.type) {
-    case 'LOAD':
-      return action.payload
-    case 'ADD_EXPENSE':
-      return { ...state, expenses: [action.payload, ...state.expenses] }
-    case 'DELETE_EXPENSE':
-      return { ...state, expenses: state.expenses.filter(e => e.id !== action.payload) }
-    case 'ADD_ASSET':
-      return { ...state, assets: [action.payload, ...state.assets] }
-    case 'DELETE_ASSET':
-      return { ...state, assets: state.assets.filter(a => a.id !== action.payload) }
-    case 'ADD_INVESTMENT':
-      return { ...state, investments: [action.payload, ...state.investments] }
-    case 'UPDATE_INVESTMENT':
-      return {
-        ...state,
-        investments: state.investments.map(i =>
-          i.id === action.payload.id ? action.payload : i
-        ),
-      }
-    case 'DELETE_INVESTMENT':
-      return { ...state, investments: state.investments.filter(i => i.id !== action.payload) }
-    case 'ADD_MUTUAL_FUND':
-      return { ...state, mutualFunds: [action.payload, ...state.mutualFunds] }
-    case 'UPDATE_MUTUAL_FUND':
-      return {
-        ...state,
-        mutualFunds: state.mutualFunds.map(f =>
-          f.id === action.payload.id ? action.payload : f
-        ),
-      }
-    case 'DELETE_MUTUAL_FUND':
-      return { ...state, mutualFunds: state.mutualFunds.filter(f => f.id !== action.payload) }
-    case 'SET_BUDGET':
-      return {
-        ...state,
-        budgets: { ...state.budgets, [action.payload.category]: action.payload.amount },
-      }
-    case 'ADD_RECURRING_INCOME': {
-      const { incomes, recurring, bankAccounts } = applyDueIncome(
-        [...state.recurringIncomes, action.payload],
-        state.incomes,
-        state.bankAccounts
-      )
-      return { ...state, recurringIncomes: recurring, incomes, bankAccounts }
-    }
-    case 'DELETE_RECURRING_INCOME':
-      return {
-        ...state,
-        recurringIncomes: state.recurringIncomes.filter(r => r.id !== action.payload),
-      }
-    case 'ADD_INCOME':
-      return { ...state, incomes: [action.payload, ...state.incomes] }
-    case 'DELETE_INCOME':
-      return { ...state, incomes: state.incomes.filter(i => i.id !== action.payload) }
-    case 'ADD_BANK_ACCOUNT':
-      return { ...state, bankAccounts: [...state.bankAccounts, action.payload] }
-    case 'DELETE_BANK_ACCOUNT':
-      return { ...state, bankAccounts: state.bankAccounts.filter(b => b.id !== action.payload) }
-    case 'PAY_CREDIT_CARD': {
-      const { cardKind, cardId, amount, fromAccountId } = action.payload
-      let next = state
-      if (cardKind === 'asset') {
-        // Asset-based cards have no "overpaid = credit" convention in their
-        // UI (always shown as a positive liability), so payments floor at 0
-        // rather than going negative.
-        next = {
-          ...next,
-          assets: next.assets.map(a => a.id === cardId ? { ...a, value: Math.max(0, a.value - amount) } : a),
-        }
-      } else {
-        // BankAccount-type cards already use "negative balance = credit" as
-        // their documented convention (see Settings), so this can go negative.
-        next = {
-          ...next,
-          bankAccounts: next.bankAccounts.map(b => b.id === cardId ? { ...b, startingBalance: b.startingBalance - amount } : b),
-        }
-      }
-      if (fromAccountId) {
-        next = {
-          ...next,
-          bankAccounts: next.bankAccounts.map(b => b.id === fromAccountId ? { ...b, startingBalance: b.startingBalance - amount } : b),
-        }
-      }
-      return next
-    }
-    case 'SET_PREFERENCES':
-      return { ...state, preferences: { ...state.preferences, ...action.payload } }
-    default:
-      return state
+async function readJson<T>(res: Response, fallbackError: string): Promise<T> {
+  if (!res.ok) {
+    const body = await res.json().catch(() => null)
+    throw new Error((body && typeof body.error === 'string' && body.error) || fallbackError)
   }
+  return res.json()
 }
 
 interface StoreCtx {
   state: AppState
-  dispatch: React.Dispatch<Action>
+  hydrated: boolean
   syncError: boolean
+  addExpense: (expense: Expense) => Promise<void>
+  deleteExpense: (id: string) => Promise<void>
+  addAsset: (asset: Asset) => Promise<void>
+  deleteAsset: (id: string) => Promise<void>
+  payAssetCard: (cardId: string, amount: number, fromAccountId: string | null) => Promise<void>
+  addInvestment: (investment: Investment) => Promise<void>
+  updateInvestment: (investment: Investment) => Promise<void>
+  deleteInvestment: (id: string) => Promise<void>
+  addMutualFund: (fund: MutualFund) => Promise<void>
+  updateMutualFund: (fund: MutualFund) => Promise<void>
+  deleteMutualFund: (id: string) => Promise<void>
+  setBudget: (category: ExpenseCategory, amount: number) => Promise<void>
+  addRecurringIncome: (recurring: RecurringIncome) => Promise<void>
+  deleteRecurringIncome: (id: string) => Promise<void>
+  addIncome: (income: Income) => Promise<void>
+  deleteIncome: (id: string) => Promise<void>
+  addBankAccount: (account: BankAccount) => Promise<void>
+  deleteBankAccount: (id: string) => Promise<void>
+  payBankAccountCard: (cardId: string, amount: number, fromAccountId: string | null) => Promise<void>
+  setPreferences: (prefs: Partial<Preferences>) => Promise<void>
 }
 
 const StoreContext = createContext<StoreCtx | null>(null)
@@ -200,23 +86,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const { data: session, status } = useSession()
   const userId = session?.user?.id
 
-  const [state, dispatch] = useReducer(reducer, initialState)
+  const [state, setState] = useState<AppState>(initialState)
   const [hydrated, setHydrated] = useState(false)
   const [syncError, setSyncError] = useState(false)
-
-  // The initial cloud fetch below is async, so a fast interaction (or a slow
-  // network) can land a dispatch before it resolves. Recording those actions
-  // here lets the load() below replay them on top of the cloud snapshot
-  // instead of the LOAD silently discarding them.
-  const hydratedRef = useRef(false)
-  const pendingActionsRef = useRef<Action[]>([])
-
-  const guardedDispatch = useCallback((action: Action) => {
-    if (!hydratedRef.current && action.type !== 'LOAD') {
-      pendingActionsRef.current.push(action)
-    }
-    dispatch(action)
-  }, [])
 
   // Keep fmt()/fmtCompact()'s currency symbol in sync with the saved
   // preference. Set synchronously during render (not in a useEffect) so
@@ -227,54 +99,27 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   // pick up the fix.
   setCurrencySymbol(CURRENCIES.find(c => c.code === state.preferences.currency)?.symbol ?? 'Rs')
 
-  // Load this user's data from the cloud after auth resolves. Falls back to
-  // migrating any pre-existing browser-local data on the very first load.
+  // Load this user's data from the server after auth resolves. Runs once —
+  // the recurring-income catch-up sweep that used to happen client-side on
+  // every load now happens inside GET /api/bootstrap itself.
   useEffect(() => {
     if (status !== 'authenticated' || !userId) return
     let cancelled = false
 
     async function load() {
       try {
-        const res = await fetch('/api/data')
+        const res = await fetch('/api/bootstrap')
         if (!res.ok) throw new Error(`Failed to load data (${res.status})`)
-        const { data } = (await res.json()) as { data: AppState | null }
-
-        if (data) {
-          const merged = { ...initialState, ...data }
-          const { incomes, recurring, bankAccounts } = applyDueIncome(merged.recurringIncomes, merged.incomes, merged.bankAccounts)
-          let finalState: AppState = { ...merged, incomes, recurringIncomes: recurring, bankAccounts }
-          for (const action of pendingActionsRef.current) {
-            finalState = reducer(finalState, action)
-          }
-          if (!cancelled) {
-            dispatch({ type: 'LOAD', payload: finalState })
-          }
-        } else {
-          try {
-            const raw = localStorage.getItem(LEGACY_STORAGE_KEY)
-            if (raw) {
-              const legacy = { ...initialState, ...(JSON.parse(raw) as AppState) }
-              const { incomes, recurring, bankAccounts } = applyDueIncome(legacy.recurringIncomes, legacy.incomes, legacy.bankAccounts)
-              let finalState: AppState = { ...legacy, incomes, recurringIncomes: recurring, bankAccounts }
-              for (const action of pendingActionsRef.current) {
-                finalState = reducer(finalState, action)
-              }
-              if (!cancelled) {
-                dispatch({ type: 'LOAD', payload: finalState })
-              }
-            }
-          } catch {}
+        const { data } = (await res.json()) as { data: AppState }
+        if (!cancelled) {
+          setState(data)
+          setSyncError(false)
         }
-        localStorage.removeItem(LEGACY_STORAGE_KEY)
       } catch (err) {
-        console.error('Failed to load cloud data:', err)
+        console.error('Failed to load data:', err)
         if (!cancelled) setSyncError(true)
       } finally {
-        if (!cancelled) {
-          hydratedRef.current = true
-          pendingActionsRef.current = []
-          setHydrated(true)
-        }
+        if (!cancelled) setHydrated(true)
       }
     }
 
@@ -284,65 +129,520 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
   }, [status, userId])
 
-  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const pendingSaveRef = useRef<AppState | null>(null)
+  // Every mutating action follows the same shape: apply an optimistic update
+  // immediately, fire the request, and either merge the server's freshly
+  // recomputed net worth in (success) or run `revert` (failure). Both apply
+  // and revert go through functional setState so they always operate on the
+  // latest state rather than a snapshot captured at call time — safe even if
+  // another action lands while this one's request is still in flight.
+  const mutate = useCallback(
+    async <T extends { netWorth: NetWorthBreakdown }>(
+      apply: (s: AppState) => AppState,
+      revert: (s: AppState) => AppState,
+      request: () => Promise<T>
+    ): Promise<T | undefined> => {
+      setState(apply)
+      try {
+        const result = await request()
+        setState(s => ({ ...s, netWorthHistory: upsertHistory(s.netWorthHistory, result.netWorth.netWorth) }))
+        setSyncError(false)
+        return result
+      } catch (err) {
+        console.error('Failed to save:', err)
+        setState(revert)
+        setSyncError(true)
+        return undefined
+      }
+    },
+    []
+  )
 
-  // Persist to the cloud whenever state changes post-hydration (covers both
-  // normal edits and the one-time migration load above). Debounced so a burst
-  // of quick edits coalesces into a single request.
-  useEffect(() => {
-    if (!hydrated || status !== 'authenticated' || !userId) return
+  const addExpense = useCallback(
+    (expense: Expense) =>
+      mutate(
+        s => ({ ...s, expenses: [expense, ...s.expenses] }),
+        s => ({ ...s, expenses: s.expenses.filter(e => e.id !== expense.id) }),
+        async () => {
+          const res = await fetch('/api/expenses', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(expense),
+          })
+          return readJson<{ expense: Expense; netWorth: NetWorthBreakdown }>(res, 'Failed to add expense')
+        }
+      ).then(() => undefined),
+    [mutate]
+  )
 
-    pendingSaveRef.current = state
-    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
+  const deleteExpense = useCallback(
+    (id: string) => {
+      let removed: Expense | undefined
+      return mutate(
+        s => {
+          removed = s.expenses.find(e => e.id === id)
+          return { ...s, expenses: s.expenses.filter(e => e.id !== id) }
+        },
+        s => (removed ? { ...s, expenses: [removed, ...s.expenses] } : s),
+        async () => {
+          const res = await fetch(`/api/expenses/${id}`, { method: 'DELETE' })
+          return readJson<{ netWorth: NetWorthBreakdown }>(res, 'Failed to delete expense')
+        }
+      ).then(() => undefined)
+    },
+    [mutate]
+  )
 
-    saveTimeoutRef.current = setTimeout(() => {
-      const toSave = pendingSaveRef.current
-      pendingSaveRef.current = null
-      if (!toSave) return
-      // keepalive so a navigation landing in the gap between the debounce
-      // firing and the response arriving can't get the request aborted —
-      // the explicit beforeunload/visibilitychange flush below only covers
-      // saves that are still pending, not ones already in flight.
-      persistData(toSave, true)
-        .then(res => {
-          if (!res.ok) throw new Error(`Failed to save data (${res.status})`)
-          setSyncError(false)
-        })
-        .catch(err => {
-          console.error('Failed to save data:', err)
-          setSyncError(true)
-        })
-    }, SAVE_DEBOUNCE_MS)
+  const addAsset = useCallback(
+    (asset: Asset) =>
+      mutate(
+        s => ({ ...s, assets: [asset, ...s.assets] }),
+        s => ({ ...s, assets: s.assets.filter(a => a.id !== asset.id) }),
+        async () => {
+          const res = await fetch('/api/assets', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(asset),
+          })
+          return readJson<{ asset: Asset; netWorth: NetWorthBreakdown }>(res, 'Failed to add asset')
+        }
+      ).then(() => undefined),
+    [mutate]
+  )
 
-    return () => {
-      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
+  const deleteAsset = useCallback(
+    (id: string) => {
+      let removed: Asset | undefined
+      return mutate(
+        s => {
+          removed = s.assets.find(a => a.id === id)
+          return { ...s, assets: s.assets.filter(a => a.id !== id) }
+        },
+        s => (removed ? { ...s, assets: [removed, ...s.assets] } : s),
+        async () => {
+          const res = await fetch(`/api/assets/${id}`, { method: 'DELETE' })
+          return readJson<{ netWorth: NetWorthBreakdown }>(res, 'Failed to delete asset')
+        }
+      ).then(() => undefined)
+    },
+    [mutate]
+  )
+
+  const payAssetCard = useCallback(
+    (cardId: string, amount: number, fromAccountId: string | null) => {
+      let prevCard: Asset | undefined
+      let prevFromAccount: BankAccount | undefined
+      return mutate(
+        s => {
+          prevCard = s.assets.find(a => a.id === cardId)
+          prevFromAccount = fromAccountId ? s.bankAccounts.find(b => b.id === fromAccountId) : undefined
+          return {
+            ...s,
+            assets: s.assets.map(a => (a.id === cardId ? { ...a, value: Math.max(0, a.value - amount) } : a)),
+            bankAccounts: fromAccountId
+              ? s.bankAccounts.map(b =>
+                  b.id === fromAccountId ? { ...b, startingBalance: b.startingBalance - amount } : b
+                )
+              : s.bankAccounts,
+          }
+        },
+        s => ({
+          ...s,
+          assets: prevCard ? s.assets.map(a => (a.id === cardId ? prevCard! : a)) : s.assets,
+          bankAccounts: prevFromAccount
+            ? s.bankAccounts.map(b => (b.id === fromAccountId ? prevFromAccount! : b))
+            : s.bankAccounts,
+        }),
+        async () => {
+          const res = await fetch(`/api/assets/${cardId}/pay`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ amount, fromAccountId }),
+          })
+          return readJson<{ asset: Asset; bankAccount: BankAccount | null; netWorth: NetWorthBreakdown }>(
+            res,
+            'Failed to process payment'
+          )
+        }
+      ).then(() => undefined)
+    },
+    [mutate]
+  )
+
+  const addInvestment = useCallback(
+    (investment: Investment) =>
+      mutate(
+        s => ({ ...s, investments: [investment, ...s.investments] }),
+        s => ({ ...s, investments: s.investments.filter(i => i.id !== investment.id) }),
+        async () => {
+          const res = await fetch('/api/investments', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(investment),
+          })
+          return readJson<{ investment: Investment; netWorth: NetWorthBreakdown }>(res, 'Failed to add investment')
+        }
+      ).then(() => undefined),
+    [mutate]
+  )
+
+  const updateInvestment = useCallback(
+    (investment: Investment) => {
+      let prev: Investment | undefined
+      return mutate(
+        s => {
+          prev = s.investments.find(i => i.id === investment.id)
+          return { ...s, investments: s.investments.map(i => (i.id === investment.id ? investment : i)) }
+        },
+        s => (prev ? { ...s, investments: s.investments.map(i => (i.id === investment.id ? prev! : i)) } : s),
+        async () => {
+          const res = await fetch(`/api/investments/${investment.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(investment),
+          })
+          return readJson<{ investment: Investment; netWorth: NetWorthBreakdown }>(
+            res,
+            'Failed to update investment'
+          )
+        }
+      ).then(() => undefined)
+    },
+    [mutate]
+  )
+
+  const deleteInvestment = useCallback(
+    (id: string) => {
+      let removed: Investment | undefined
+      return mutate(
+        s => {
+          removed = s.investments.find(i => i.id === id)
+          return { ...s, investments: s.investments.filter(i => i.id !== id) }
+        },
+        s => (removed ? { ...s, investments: [removed, ...s.investments] } : s),
+        async () => {
+          const res = await fetch(`/api/investments/${id}`, { method: 'DELETE' })
+          return readJson<{ netWorth: NetWorthBreakdown }>(res, 'Failed to delete investment')
+        }
+      ).then(() => undefined)
+    },
+    [mutate]
+  )
+
+  const addMutualFund = useCallback(
+    (fund: MutualFund) =>
+      mutate(
+        s => ({ ...s, mutualFunds: [fund, ...s.mutualFunds] }),
+        s => ({ ...s, mutualFunds: s.mutualFunds.filter(f => f.id !== fund.id) }),
+        async () => {
+          const res = await fetch('/api/mutual-funds', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(fund),
+          })
+          return readJson<{ mutualFund: MutualFund; netWorth: NetWorthBreakdown }>(
+            res,
+            'Failed to add mutual fund'
+          )
+        }
+      ).then(() => undefined),
+    [mutate]
+  )
+
+  const updateMutualFund = useCallback(
+    (fund: MutualFund) => {
+      let prev: MutualFund | undefined
+      return mutate(
+        s => {
+          prev = s.mutualFunds.find(f => f.id === fund.id)
+          return { ...s, mutualFunds: s.mutualFunds.map(f => (f.id === fund.id ? fund : f)) }
+        },
+        s => (prev ? { ...s, mutualFunds: s.mutualFunds.map(f => (f.id === fund.id ? prev! : f)) } : s),
+        async () => {
+          const res = await fetch(`/api/mutual-funds/${fund.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(fund),
+          })
+          return readJson<{ mutualFund: MutualFund; netWorth: NetWorthBreakdown }>(
+            res,
+            'Failed to update mutual fund'
+          )
+        }
+      ).then(() => undefined)
+    },
+    [mutate]
+  )
+
+  const deleteMutualFund = useCallback(
+    (id: string) => {
+      let removed: MutualFund | undefined
+      return mutate(
+        s => {
+          removed = s.mutualFunds.find(f => f.id === id)
+          return { ...s, mutualFunds: s.mutualFunds.filter(f => f.id !== id) }
+        },
+        s => (removed ? { ...s, mutualFunds: [removed, ...s.mutualFunds] } : s),
+        async () => {
+          const res = await fetch(`/api/mutual-funds/${id}`, { method: 'DELETE' })
+          return readJson<{ netWorth: NetWorthBreakdown }>(res, 'Failed to delete mutual fund')
+        }
+      ).then(() => undefined)
+    },
+    [mutate]
+  )
+
+  const setBudget = useCallback(
+    (category: ExpenseCategory, amount: number) => {
+      let prev: number | undefined
+      return mutate(
+        s => {
+          prev = s.budgets[category]
+          return { ...s, budgets: { ...s.budgets, [category]: amount } }
+        },
+        s => (prev !== undefined ? { ...s, budgets: { ...s.budgets, [category]: prev } } : s),
+        async () => {
+          const res = await fetch(`/api/budgets/${encodeURIComponent(category)}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ amount }),
+          })
+          return readJson<{ netWorth: NetWorthBreakdown }>(res, 'Failed to update budget')
+        }
+      ).then(() => undefined)
+    },
+    [mutate]
+  )
+
+  // Not run through the optimistic mutate() helper — the server-side catch-up
+  // sweep (see lib/recurring-sweep.ts) can generate multiple new income
+  // entries and shift bank balances in ways too complex to predict correctly
+  // client-side, so this waits for the real response and applies it exactly.
+  const addRecurringIncome = useCallback(async (recurring: RecurringIncome) => {
+    try {
+      const res = await fetch('/api/recurring-incomes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(recurring),
+      })
+      const result = await readJson<{
+        recurringIncome: RecurringIncome
+        incomes: Income[]
+        bankAccounts: BankAccount[]
+        netWorth: NetWorthBreakdown
+      }>(res, 'Failed to add recurring income')
+
+      setState(s => ({
+        ...s,
+        recurringIncomes: [...s.recurringIncomes.filter(r => r.id !== result.recurringIncome.id), result.recurringIncome],
+        incomes: result.incomes,
+        bankAccounts: result.bankAccounts,
+        netWorthHistory: upsertHistory(s.netWorthHistory, result.netWorth.netWorth),
+      }))
+      setSyncError(false)
+    } catch (err) {
+      console.error('Failed to add recurring income:', err)
+      setSyncError(true)
     }
-  }, [state, hydrated, status, userId])
+  }, [])
 
-  // A debounced save can still be pending when the tab closes or backgrounds —
-  // flush it immediately with `keepalive` so the request survives unload
-  // instead of silently dropping the last edit.
-  useEffect(() => {
-    function flush() {
-      if (!pendingSaveRef.current) return
-      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
-      persistData(pendingSaveRef.current, true).catch(() => {})
-      pendingSaveRef.current = null
-    }
-    function handleVisibilityChange() {
-      if (document.visibilityState === 'hidden') flush()
-    }
-    window.addEventListener('beforeunload', flush)
-    document.addEventListener('visibilitychange', handleVisibilityChange)
-    return () => {
-      window.removeEventListener('beforeunload', flush)
-      document.removeEventListener('visibilitychange', handleVisibilityChange)
+  const deleteRecurringIncome = useCallback(
+    (id: string) => {
+      let removed: RecurringIncome | undefined
+      return mutate(
+        s => {
+          removed = s.recurringIncomes.find(r => r.id === id)
+          return { ...s, recurringIncomes: s.recurringIncomes.filter(r => r.id !== id) }
+        },
+        s => (removed ? { ...s, recurringIncomes: [...s.recurringIncomes, removed] } : s),
+        async () => {
+          const res = await fetch(`/api/recurring-incomes/${id}`, { method: 'DELETE' })
+          return readJson<{ netWorth: NetWorthBreakdown }>(res, 'Failed to delete recurring income')
+        }
+      ).then(() => undefined)
+    },
+    [mutate]
+  )
+
+  const addIncome = useCallback(
+    (income: Income) =>
+      mutate(
+        s => ({ ...s, incomes: [income, ...s.incomes] }),
+        s => ({ ...s, incomes: s.incomes.filter(i => i.id !== income.id) }),
+        async () => {
+          const res = await fetch('/api/incomes', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(income),
+          })
+          return readJson<{ income: Income; netWorth: NetWorthBreakdown }>(res, 'Failed to add income')
+        }
+      ).then(() => undefined),
+    [mutate]
+  )
+
+  const deleteIncome = useCallback(
+    (id: string) => {
+      let removed: Income | undefined
+      return mutate(
+        s => {
+          removed = s.incomes.find(i => i.id === id)
+          return { ...s, incomes: s.incomes.filter(i => i.id !== id) }
+        },
+        s => (removed ? { ...s, incomes: [removed, ...s.incomes] } : s),
+        async () => {
+          const res = await fetch(`/api/incomes/${id}`, { method: 'DELETE' })
+          return readJson<{ netWorth: NetWorthBreakdown }>(res, 'Failed to delete income')
+        }
+      ).then(() => undefined)
+    },
+    [mutate]
+  )
+
+  const addBankAccount = useCallback(
+    (account: BankAccount) =>
+      mutate(
+        s => ({ ...s, bankAccounts: [...s.bankAccounts, account] }),
+        s => ({ ...s, bankAccounts: s.bankAccounts.filter(b => b.id !== account.id) }),
+        async () => {
+          const res = await fetch('/api/bank-accounts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(account),
+          })
+          return readJson<{ bankAccount: BankAccount; netWorth: NetWorthBreakdown }>(
+            res,
+            'Failed to add bank account'
+          )
+        }
+      ).then(() => undefined),
+    [mutate]
+  )
+
+  const deleteBankAccount = useCallback(
+    (id: string) => {
+      let removed: BankAccount | undefined
+      let affectedIncomeIds: string[] = []
+      return mutate(
+        s => {
+          removed = s.bankAccounts.find(b => b.id === id)
+          affectedIncomeIds = s.incomes.filter(i => i.depositedToAccountId === id).map(i => i.id)
+          return {
+            ...s,
+            bankAccounts: s.bankAccounts.filter(b => b.id !== id),
+            // The DB's incomes.deposited_to_account_id FK is ON DELETE SET
+            // NULL — mirror that here so the account balance / net-savings
+            // double-counting exclusion updates immediately rather than only
+            // after the next full reload. See types/index.ts's comment on
+            // depositedToAccountId for why this matters.
+            incomes: s.incomes.map(i => (i.depositedToAccountId === id ? { ...i, depositedToAccountId: undefined } : i)),
+          }
+        },
+        s => ({
+          ...s,
+          bankAccounts: removed ? [...s.bankAccounts, removed] : s.bankAccounts,
+          incomes: s.incomes.map(i => (affectedIncomeIds.includes(i.id) ? { ...i, depositedToAccountId: id } : i)),
+        }),
+        async () => {
+          const res = await fetch(`/api/bank-accounts/${id}`, { method: 'DELETE' })
+          return readJson<{ netWorth: NetWorthBreakdown }>(res, 'Failed to delete bank account')
+        }
+      ).then(() => undefined)
+    },
+    [mutate]
+  )
+
+  const payBankAccountCard = useCallback(
+    (cardId: string, amount: number, fromAccountId: string | null) => {
+      let prevCard: BankAccount | undefined
+      let prevFromAccount: BankAccount | undefined
+      return mutate(
+        s => {
+          prevCard = s.bankAccounts.find(b => b.id === cardId)
+          prevFromAccount = fromAccountId ? s.bankAccounts.find(b => b.id === fromAccountId) : undefined
+          return {
+            ...s,
+            bankAccounts: s.bankAccounts.map(b => {
+              if (b.id === cardId) return { ...b, startingBalance: b.startingBalance - amount }
+              if (fromAccountId && b.id === fromAccountId) return { ...b, startingBalance: b.startingBalance - amount }
+              return b
+            }),
+          }
+        },
+        s => ({
+          ...s,
+          bankAccounts: s.bankAccounts.map(b => {
+            if (prevCard && b.id === cardId) return prevCard
+            if (prevFromAccount && b.id === fromAccountId) return prevFromAccount
+            return b
+          }),
+        }),
+        async () => {
+          const res = await fetch(`/api/bank-accounts/${cardId}/pay`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ amount, fromAccountId }),
+          })
+          return readJson<{ bankAccount: BankAccount; fromAccount: BankAccount | null; netWorth: NetWorthBreakdown }>(
+            res,
+            'Failed to process payment'
+          )
+        }
+      ).then(() => undefined)
+    },
+    [mutate]
+  )
+
+  // Doesn't affect net worth, so this skips the netWorthHistory-merging
+  // mutate() helper and does its own minimal optimistic-update + rollback.
+  const setPreferences = useCallback(async (prefs: Partial<Preferences>) => {
+    let prev: Preferences | undefined
+    setState(s => {
+      prev = s.preferences
+      return { ...s, preferences: { ...s.preferences, ...prefs } }
+    })
+    try {
+      const res = await fetch('/api/preferences', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(prefs),
+      })
+      await readJson(res, 'Failed to update preferences')
+      setSyncError(false)
+    } catch (err) {
+      console.error('Failed to update preferences:', err)
+      setState(s => (prev ? { ...s, preferences: prev! } : s))
+      setSyncError(true)
     }
   }, [])
 
   return (
-    <StoreContext.Provider value={{ state, dispatch: guardedDispatch, syncError }}>
+    <StoreContext.Provider
+      value={{
+        state,
+        hydrated,
+        syncError,
+        addExpense,
+        deleteExpense,
+        addAsset,
+        deleteAsset,
+        payAssetCard,
+        addInvestment,
+        updateInvestment,
+        deleteInvestment,
+        addMutualFund,
+        updateMutualFund,
+        deleteMutualFund,
+        setBudget,
+        addRecurringIncome,
+        deleteRecurringIncome,
+        addIncome,
+        deleteIncome,
+        addBankAccount,
+        deleteBankAccount,
+        payBankAccountCard,
+        setPreferences,
+      }}
+    >
       {children}
     </StoreContext.Provider>
   )

@@ -1,5 +1,8 @@
 import bcrypt from 'bcryptjs'
-import { redis } from '@/lib/redis'
+import { eq } from 'drizzle-orm'
+import { db } from '@/db/client'
+import * as schema from '@/db/schema'
+import { DEFAULT_BUDGETS, EXPENSE_CATEGORIES } from '@/types'
 
 export interface StoredUser {
   id: string
@@ -10,12 +13,17 @@ export interface StoredUser {
   createdAt: string
 }
 
-function userKey(email: string): string {
-  return `user:${email.trim().toLowerCase()}`
+function normalizeEmail(email: string): string {
+  return email.trim().toLowerCase()
 }
 
 export async function getUserByEmail(email: string): Promise<StoredUser | null> {
-  return redis.get<StoredUser>(userKey(email))
+  const [user] = await db
+    .select()
+    .from(schema.users)
+    .where(eq(schema.users.email, normalizeEmail(email)))
+    .limit(1)
+  return user ?? null
 }
 
 export async function createUser(params: {
@@ -29,34 +37,61 @@ export async function createUser(params: {
     throw new Error('An account with this email already exists')
   }
 
-  const user: StoredUser = {
-    id: crypto.randomUUID(),
-    email: email.trim().toLowerCase(),
-    name: name.trim(),
-    passwordHash: await bcrypt.hash(password, 12),
-    emailVerified: false,
-    createdAt: new Date().toISOString(),
-  }
+  try {
+    const [user] = await db
+      .insert(schema.users)
+      .values({
+        email: normalizeEmail(email),
+        name: name.trim(),
+        passwordHash: await bcrypt.hash(password, 12),
+        emailVerified: false,
+      })
+      .returning()
 
-  await redis.set(userKey(user.email), user)
-  return user
+    // New users start with no rows anywhere else — seed the 8 fixed budget
+    // categories and default preferences so every downstream read (bootstrap,
+    // budget page) can rely on a row existing per category instead of having
+    // to synthesize defaults for a user who technically has zero rows yet.
+    await db.insert(schema.preferences).values({ userId: user.id })
+    await db.insert(schema.budgetLimits).values(
+      EXPENSE_CATEGORIES.map((category) => ({
+        userId: user.id,
+        category,
+        amount: DEFAULT_BUDGETS[category],
+      }))
+    )
+
+    return user
+  } catch (err: unknown) {
+    // Unique-violation race: two signups for the same email landing between
+    // the check above and this insert. Redis's get-then-set had this same
+    // race with no protection at all; the DB's unique constraint now catches
+    // it for real, so surface the same user-facing message instead of a raw
+    // constraint error.
+    if (err && typeof err === 'object' && 'code' in err && err.code === '23505') {
+      throw new Error('An account with this email already exists')
+    }
+    throw err
+  }
 }
 
 export async function markEmailVerified(email: string): Promise<void> {
-  const user = await getUserByEmail(email)
-  if (!user) return
-  user.emailVerified = true
-  await redis.set(userKey(user.email), user)
+  await db
+    .update(schema.users)
+    .set({ emailVerified: true })
+    .where(eq(schema.users.email, normalizeEmail(email)))
 }
 
 export async function updateUserPassword(email: string, newPassword: string): Promise<void> {
-  const user = await getUserByEmail(email)
-  if (!user) return
-  user.passwordHash = await bcrypt.hash(newPassword, 12)
   // Resetting via a mailed link proves email ownership just as well as the
   // original verification link would have, so clear up any unverified state.
-  user.emailVerified = true
-  await redis.set(userKey(user.email), user)
+  await db
+    .update(schema.users)
+    .set({
+      passwordHash: await bcrypt.hash(newPassword, 12),
+      emailVerified: true,
+    })
+    .where(eq(schema.users.email, normalizeEmail(email)))
 }
 
 export async function verifyPassword(user: StoredUser, password: string): Promise<boolean> {

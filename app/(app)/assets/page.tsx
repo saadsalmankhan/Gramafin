@@ -17,7 +17,7 @@ function utilizationColor(p: number): string {
 }
 
 export default function AssetsPage() {
-  const { state, dispatch } = useStore()
+  const { state, addAsset, deleteAsset, payAssetCard } = useStore()
   const [name, setName] = useState('')
   const [value, setValue] = useState('')
   const [category, setCategory] = useState<AssetCategory>('Cash / Bank')
@@ -60,7 +60,7 @@ export default function AssetsPage() {
         minimumPayment: minimumPayment ? parseFloat(minimumPayment) : undefined,
       }),
     }
-    dispatch({ type: 'ADD_ASSET', payload: asset })
+    addAsset(asset)
     setName('')
     setValue('')
     setCreditLimit('')
@@ -295,7 +295,7 @@ export default function AssetsPage() {
         title={`Delete "${deleteTarget?.name}"?`}
         message={`This will permanently remove this ${deleteTarget && isLiabilityCategory(deleteTarget.category) ? 'liability' : 'asset'} from your net worth. This can't be undone.`}
         onConfirm={() => {
-          if (deleteTarget) dispatch({ type: 'DELETE_ASSET', payload: deleteTarget.id })
+          if (deleteTarget) deleteAsset(deleteTarget.id)
           setDeleteTarget(null)
         }}
         onCancel={() => setDeleteTarget(null)}
@@ -308,7 +308,7 @@ export default function AssetsPage() {
         payFromOptions={state.bankAccounts.filter(b => b.type !== 'Credit Card')}
         onConfirm={(amount, fromAccountId) => {
           if (payTarget) {
-            dispatch({ type: 'PAY_CREDIT_CARD', payload: { cardKind: 'asset', cardId: payTarget.id, amount, fromAccountId } })
+            payAssetCard(payTarget.id, amount, fromAccountId)
           }
           setPayTarget(null)
         }}

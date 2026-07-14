@@ -1,4 +1,5 @@
 import Sidebar from '@/components/Sidebar'
+import HydrationGate from '@/components/HydrationGate'
 
 // See app/(auth)/layout.tsx — same reasoning: the CSP nonce is per-request,
 // so this subtree can't be statically optimized.
@@ -12,7 +13,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         className="flex-1 p-8 min-h-screen transition-[margin] duration-200 ease-in-out"
         style={{ marginLeft: 'var(--sidebar-w)' }}
       >
-        <div className="max-w-4xl mx-auto">{children}</div>
+        <div className="max-w-4xl mx-auto">
+          <HydrationGate>{children}</HydrationGate>
+        </div>
       </main>
     </div>
   )

@@ -26,7 +26,7 @@ import clsx from 'clsx'
 type Tab = 'accounts' | 'preferences'
 
 export default function SettingsPage() {
-  const { state, dispatch } = useStore()
+  const { state, addBankAccount, deleteBankAccount, payBankAccountCard, setPreferences } = useStore()
   const [tab, setTab] = useState<Tab>('accounts')
   const [bank, setBank] = useState(PAKISTANI_BANKS[0])
   const [nickname, setNickname] = useState('')
@@ -53,7 +53,7 @@ export default function SettingsPage() {
       startingBalance: isNaN(balance) ? 0 : balance,
       ...(isCreditCardForm && dueDate && { dueDate }),
     }
-    dispatch({ type: 'ADD_BANK_ACCOUNT', payload: account })
+    addBankAccount(account)
     setBank(PAKISTANI_BANKS[0])
     setNickname('')
     setType('Checking')
@@ -275,7 +275,7 @@ export default function SettingsPage() {
             <select
               className="select w-full sm:w-80"
               value={state.preferences.currency}
-              onChange={e => dispatch({ type: 'SET_PREFERENCES', payload: { currency: e.target.value as CurrencyCode } })}
+              onChange={e => setPreferences({ currency: e.target.value as CurrencyCode })}
             >
               {CURRENCIES.map(c => (
                 <option key={c.code} value={c.code}>{c.label}</option>
@@ -291,7 +291,7 @@ export default function SettingsPage() {
             <select
               className="select w-full sm:w-80"
               value={state.preferences.stockMarket}
-              onChange={e => dispatch({ type: 'SET_PREFERENCES', payload: { stockMarket: e.target.value as StockMarketCode } })}
+              onChange={e => setPreferences({ stockMarket: e.target.value as StockMarketCode })}
             >
               {STOCK_MARKETS.map(m => (
                 <option key={m.code} value={m.code} disabled={!m.available}>
@@ -308,7 +308,7 @@ export default function SettingsPage() {
         title={`Delete "${deleteTarget ? bankAccountLabel(deleteTarget) : ''}"?`}
         message="This will remove the account and its balance from your net worth. Any expenses or income already logged against it will keep the account's name as plain text. This can't be undone."
         onConfirm={() => {
-          if (deleteTarget) dispatch({ type: 'DELETE_BANK_ACCOUNT', payload: deleteTarget.id })
+          if (deleteTarget) deleteBankAccount(deleteTarget.id)
           setDeleteTarget(null)
         }}
         onCancel={() => setDeleteTarget(null)}
@@ -321,7 +321,7 @@ export default function SettingsPage() {
         payFromOptions={state.bankAccounts.filter(b => b.type !== 'Credit Card')}
         onConfirm={(amount, fromAccountId) => {
           if (payTarget) {
-            dispatch({ type: 'PAY_CREDIT_CARD', payload: { cardKind: 'bankAccount', cardId: payTarget.id, amount, fromAccountId } })
+            payBankAccountCard(payTarget.id, amount, fromAccountId)
           }
           setPayTarget(null)
         }}

@@ -12,7 +12,7 @@ import ConfirmDialog from '@/components/ConfirmDialog'
 import { Plus, Trash2, Paperclip } from 'lucide-react'
 
 export default function ExpensesPage() {
-  const { state, dispatch } = useStore()
+  const { state, addExpense, deleteExpense } = useStore()
   const [desc, setDesc] = useState('')
   const [amount, setAmount] = useState('')
   const [category, setCategory] = useState<ExpenseCategory>('Food & Dining')
@@ -63,7 +63,7 @@ export default function ExpensesPage() {
       date,
       ...(receiptUrl ? { receiptUrl } : {}),
     }
-    dispatch({ type: 'ADD_EXPENSE', payload: expense })
+    addExpense(expense)
     setDesc('')
     setAmount('')
     setAccount('Cash')
@@ -72,7 +72,7 @@ export default function ExpensesPage() {
   }
 
   function removeExpense(e: Expense) {
-    dispatch({ type: 'DELETE_EXPENSE', payload: e.id })
+    deleteExpense(e.id)
     if (e.receiptUrl) {
       fetch('/api/upload/receipt', {
         method: 'DELETE',

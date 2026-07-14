@@ -7,7 +7,7 @@ import MetricCard from '@/components/MetricCard'
 import PageHeader from '@/components/PageHeader'
 
 export default function BudgetPage() {
-  const { state, dispatch } = useStore()
+  const { state, setBudget: setBudgetOnServer } = useStore()
   const monthExpenses = useThisMonth()
 
   const totalBudget = Object.values(state.budgets).reduce((s, v) => s + v, 0)
@@ -20,7 +20,7 @@ export default function BudgetPage() {
 
   function setBudget(cat: ExpenseCategory, val: string) {
     const n = parseFloat(val) || 0
-    dispatch({ type: 'SET_BUDGET', payload: { category: cat, amount: n } })
+    setBudgetOnServer(cat, n)
   }
 
   return (
