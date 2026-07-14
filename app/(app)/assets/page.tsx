@@ -29,13 +29,21 @@ import {
 } from 'lucide-react'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 import clsx from 'clsx'
+import { FEATURE_FLAGS } from '@/lib/featureFlags'
 
 type PriceStatus = Record<string, 'idle' | 'loading' | 'live' | 'eod' | 'failed'>
 type NavStatus = Record<string, 'idle' | 'loading' | 'live' | 'override' | 'failed'>
 
 type MainTab = 'Assets' | 'Liabilities'
 type AssetSubTab = InvestmentType | 'Mutual Funds' | 'Cash & Property'
-const ASSET_SUB_TABS: AssetSubTab[] = [...INVESTMENT_TYPES, 'Mutual Funds', 'Cash & Property']
+// Bonds stays a fully valid InvestmentType (existing holdings still count
+// toward totals/net worth as normal) — this only hides the tab/add-form
+// entry point per FEATURE_FLAGS.bondsTab.
+const ASSET_SUB_TABS: AssetSubTab[] = [
+  ...INVESTMENT_TYPES.filter(t => FEATURE_FLAGS.bondsTab || t !== 'Bonds'),
+  'Mutual Funds',
+  'Cash & Property',
+]
 
 // Assets tab covers everything that adds to net worth (investments, funds,
 // cash, property); Liability-category assets (credit cards, loans) live on
@@ -512,7 +520,7 @@ export default function AssetsPage() {
 
   return (
     <div>
-      <PageHeader title="Net worth" subtitle="Everything you own and owe — assets, investments, and liabilities in one place" />
+      <PageHeader title="Assets & Liabilities" subtitle="Everything you own and owe — assets, investments, and liabilities in one place" />
 
       <div className="flex flex-col sm:flex-row gap-3 mb-4 flex-wrap">
         <NetWorthContribution label="Assets" amount={totalAssetsAll} netWorth={overallNetWorth} />
