@@ -108,7 +108,11 @@ export default function AssetsPage() {
   const [navUpdatedAt, setNavUpdatedAt] = useState<string | null>(null)
 
   // ---- Markets tab state ----
-  const [OverallKSE100, OverallKSE30, ...otherIndices] = PSX_INDICES
+  // otherIndices skips All Share Index (index 2) — KSE-100 is more useful as
+  // a quick-select ticker here than a second all-share view, even though
+  // it's also shown as its own featured card above.
+  const [OverallKSE100, OverallKSE30] = PSX_INDICES
+  const otherIndices = [PSX_INDICES[0], ...PSX_INDICES.slice(3)]
   const [selectedIndex, setSelectedIndex] = useState(OverallKSE100)
   const [stockQuery, setStockQuery] = useState('')
   const [selectedMarketStock, setSelectedMarketStock] = useState<PsxSymbol | null>(null)
