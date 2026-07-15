@@ -48,6 +48,15 @@ export default function IncomePage() {
   const monthTotal = state.incomes
     .filter(i => i.date.startsWith(month))
     .reduce((s, i) => s + i.amount, 0)
+  const lastMonthDate = new Date()
+  lastMonthDate.setMonth(lastMonthDate.getMonth() - 1)
+  const lastMonth = lastMonthDate.toISOString().slice(0, 7)
+  const lastMonthTotal = state.incomes
+    .filter(i => i.date.startsWith(lastMonth))
+    .reduce((s, i) => s + i.amount, 0)
+  const monthDeltaPct = lastMonthTotal > 0
+    ? Math.round(((monthTotal - lastMonthTotal) / lastMonthTotal) * 100)
+    : null
   const fy = fiscalYearRange()
   const fyTotal = state.incomes
     .filter(i => inFiscalYear(i.date, fy))
@@ -107,7 +116,13 @@ export default function IncomePage() {
       />
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-        <MetricCard label="This month" value={fmt(monthTotal)} />
+        <MetricCard
+          label="This month"
+          value={fmt(monthTotal)}
+          sub={monthDeltaPct !== null ? 'vs last month' : undefined}
+          delta={monthDeltaPct !== null ? `${monthDeltaPct >= 0 ? '+' : ''}${monthDeltaPct}%` : undefined}
+          deltaTone={monthDeltaPct !== null && monthDeltaPct < 0 ? 'negative' : 'positive'}
+        />
         <MetricCard label={`This tax year (${fy.label})`} value={fmt(fyTotal)} sub="Jul – Jun" />
         <MetricCard label="All time" value={fmt(totalAll)} />
         <MetricCard label="Transactions" value={String(state.incomes.length)} sub="total logged" />

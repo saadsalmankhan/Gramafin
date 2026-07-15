@@ -482,8 +482,8 @@ export default function AssetsPage() {
           label="Assets − liabilities"
           value={fmtCompact(Math.abs(assetsMinusLiabilities))}
           sub={assetsMinusLiabilities >= 0 ? 'positive position' : 'negative position'}
-          delta={assetsMinusLiabilities < 0 ? 'negative' : undefined}
-          deltaTone="negative"
+          delta={`${assetsMinusLiabilities >= 0 ? '+' : '−'}${pct(Math.abs(assetsMinusLiabilities), totalAssetsAll)}%`}
+          deltaTone={assetsMinusLiabilities >= 0 ? 'positive' : 'negative'}
         />
       </div>
 

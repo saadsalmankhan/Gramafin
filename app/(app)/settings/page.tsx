@@ -168,12 +168,12 @@ export default function SettingsPage() {
                   const isCreditCard = b.type === 'Credit Card'
                   const balance = b.startingBalance ?? 0
                   // Credit cards invert the usual sign: owing money (positive) reads
-                  // as debt (red); a negative entry means the card owes the user
-                  // instead (they overpaid), so it displays as a positive credit.
-                  // fmt() already renders a leading "-" for negative numbers, so
-                  // credit cards use Math.abs to avoid double-signing the debt case.
-                  const displayText = isCreditCard ? fmt(Math.abs(balance)) : fmt(balance)
+                  // as debt; a negative entry means the card owes the user instead
+                  // (they overpaid), so it displays as a positive credit.
                   const isDebt = isCreditCard ? balance > 0 : balance < 0
+                  // Sign carries direction via an explicit prefix, not color — same
+                  // convention as the expense/income tables (text stays ink-primary).
+                  const displayText = `${isDebt ? '−' : '+'}${fmt(Math.abs(balance))}`
                   return (
                     <div key={b.id} className="flex items-center justify-between py-2.5 gap-3">
                       <div className="flex items-center gap-2.5 min-w-0">
@@ -199,8 +199,8 @@ export default function SettingsPage() {
                       <div className="flex items-center gap-3 flex-shrink-0">
                         <span
                           className={clsx(
-                            'text-sm font-mono font-medium',
-                            isDebt ? 'text-danger' : 'text-success'
+                            'text-sm font-mono font-medium tabular-nums',
+                            isDebt ? 'text-ink-primary' : 'text-success'
                           )}
                         >
                           {displayText}
