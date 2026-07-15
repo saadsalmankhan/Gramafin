@@ -107,8 +107,8 @@ export default function IncomePage() {
       />
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-        <MetricCard label="This month" value={fmt(monthTotal)} variant="positive" />
-        <MetricCard label={`This tax year (${fy.label})`} value={fmt(fyTotal)} variant="positive" sub="Jul – Jun" />
+        <MetricCard label="This month" value={fmt(monthTotal)} />
+        <MetricCard label={`This tax year (${fy.label})`} value={fmt(fyTotal)} sub="Jul – Jun" />
         <MetricCard label="All time" value={fmt(totalAll)} />
         <MetricCard label="Transactions" value={String(state.incomes.length)} sub="total logged" />
       </div>
@@ -207,7 +207,7 @@ export default function IncomePage() {
                 </div>
                 <div className="flex items-center gap-3 flex-shrink-0">
                   <Badge category={r.category} colorMap={INCOME_CATEGORY_COLORS} />
-                  <span className="text-sm font-mono font-medium text-success">+{fmt(r.amount)}</span>
+                  <span className="text-sm font-mono font-medium text-success tabular-nums">+{fmt(r.amount)}</span>
                   <button
                     className="btn-danger"
                     onClick={() => setDeleteRecurringTarget(r)}
@@ -246,9 +246,12 @@ export default function IncomePage() {
         ) : (
           <div>
             <div className="grid grid-cols-[1fr_150px_120px_140px_100px_40px] gap-2 px-2 pb-2 border-b border-gray-100 dark:border-white/10">
-              {['Source', 'Category', 'Account', 'Date', 'Amount', ''].map(h => (
-                <p key={h} className="section-label">{h}</p>
-              ))}
+              <p className="section-label">Source</p>
+              <p className="section-label">Category</p>
+              <p className="section-label">Account</p>
+              <p className="section-label">Date</p>
+              <p className="section-label text-right">Amount</p>
+              <p className="section-label" aria-hidden="true"></p>
             </div>
             <div className="divide-y divide-gray-50 dark:divide-white/5">
               {sortedIncomes.map(i => (
@@ -267,7 +270,7 @@ export default function IncomePage() {
                     )}
                   </span>
                   <span className="text-xs text-ink-muted font-mono">{i.date}</span>
-                  <span className="text-sm font-mono font-medium text-success">
+                  <span className="text-sm font-mono font-medium text-success text-right tabular-nums">
                     +{fmt(i.amount)}
                   </span>
                   <button

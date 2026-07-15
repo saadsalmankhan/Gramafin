@@ -13,6 +13,7 @@ export default function BudgetPage() {
   const totalBudget = Object.values(state.budgets).reduce((s, v) => s + v, 0)
   const totalSpent = monthExpenses.reduce((s, e) => s + e.amount, 0)
   const remaining = totalBudget - totalSpent
+  const spendPct = totalBudget > 0 ? Math.round((totalSpent / totalBudget) * 100) : null
   const overBudgetCats = EXPENSE_CATEGORIES.filter(cat => {
     const spent = monthExpenses.filter(e => e.category === cat).reduce((s, e) => s + e.amount, 0)
     return spent > (state.budgets[cat] ?? 0) && (state.budgets[cat] ?? 0) > 0
@@ -28,18 +29,25 @@ export default function BudgetPage() {
       <PageHeader title="Budget" subtitle="Set monthly spending limits per category" />
 
       <div className="grid grid-cols-3 gap-4 mb-8">
-        <MetricCard label="Total budget" value={fmt(totalBudget)} />
+        <MetricCard
+          label="Total budget"
+          value={fmt(totalBudget)}
+          delta={spendPct !== null ? `${spendPct}% used` : undefined}
+          deltaTone={spendPct !== null && spendPct > 100 ? 'negative' : 'neutral'}
+        />
         <MetricCard
           label="Remaining"
           value={fmt(Math.abs(remaining))}
           sub={remaining < 0 ? 'over budget' : 'left this month'}
-          variant={remaining >= 0 ? 'positive' : 'negative'}
+          delta={remaining < 0 ? 'over' : undefined}
+          deltaTone="negative"
         />
         <MetricCard
           label="Over limit"
           value={String(overBudgetCats)}
           sub="categories"
-          variant={overBudgetCats > 0 ? 'negative' : 'positive'}
+          delta={overBudgetCats > 0 ? 'review' : undefined}
+          deltaTone="negative"
         />
       </div>
 

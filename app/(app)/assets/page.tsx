@@ -35,21 +35,17 @@ type PriceStatus = Record<string, 'idle' | 'loading' | 'live' | 'eod' | 'failed'
 type NavStatus = Record<string, 'idle' | 'loading' | 'live' | 'override' | 'failed'>
 
 type MainTab = 'Assets' | 'Liabilities'
-type AssetSubTab = InvestmentType | 'Mutual Funds' | 'Cash & Property'
+type AssetSubTab = InvestmentType | 'Mutual Funds'
 // Bonds stays a fully valid InvestmentType (existing holdings still count
 // toward totals/net worth as normal) — this only hides the tab/add-form
-// entry point per FEATURE_FLAGS.bondsTab.
+// entry point per FEATURE_FLAGS.bondsTab. Cash & Property was folded into
+// "Other" — plain assets (cash, real estate, gold, tangible) are now added
+// as Other investments, not a separate category, so there's no unified-list
+// ambiguity between the two.
 const ASSET_SUB_TABS: AssetSubTab[] = [
   ...INVESTMENT_TYPES.filter(t => FEATURE_FLAGS.bondsTab || t !== 'Bonds'),
   'Mutual Funds',
-  'Cash & Property',
 ]
-
-// Assets tab covers everything that adds to net worth (investments, funds,
-// cash, property); Liability-category assets (credit cards, loans) live on
-// their own tab — the two-group split the user asked for, rather than one
-// flat row of tabs treating stocks and cash the same way as a credit card.
-const PLAIN_ASSET_CATEGORIES: AssetCategory[] = ['Cash / Bank', 'Real estate', 'Gold / Jewelry', 'Tangible assets']
 
 function effectiveNav(f: MutualFund): number {
   return f.navOverride !== null && f.navOverride > 0 ? f.navOverride : f.currentNav
@@ -116,13 +112,6 @@ export default function AssetsPage() {
   const [selectedIndex, setSelectedIndex] = useState(OverallKSE100)
   const [stockQuery, setStockQuery] = useState('')
   const [selectedMarketStock, setSelectedMarketStock] = useState<PsxSymbol | null>(null)
-
-  // ---- Cash & Property (plain assets) state ----
-  const [plainName, setPlainName] = useState('')
-  const [plainValue, setPlainValue] = useState('')
-  const [plainCategory, setPlainCategory] = useState<AssetCategory>('Cash / Bank')
-  const [plainFormError, setPlainFormError] = useState('')
-  const [deletePlainTarget, setDeletePlainTarget] = useState<Asset | null>(null)
 
   // ---- Liabilities state ----
   const [liabName, setLiabName] = useState('')
@@ -351,49 +340,6 @@ export default function AssetsPage() {
     ? state.investments.filter(i => i.type === assetSubTab)
     : []
 
-  // ---- Cash & Property derived data ----
-  const plainAssets = state.assets.filter(a => !isLiabilityCategory(a.category))
-  const totalPlainAssets = plainAssets.reduce((s, a) => s + a.value, 0)
-
-  function addPlainAsset() {
-    if (!plainName.trim()) { setPlainFormError('Name is required'); return }
-    const val = parseFloat(plainValue)
-    if (isNaN(val) || val <= 0) { setPlainFormError('Enter a valid value'); return }
-    setPlainFormError('')
-    addAsset({ id: uid(), name: plainName.trim(), value: val, category: plainCategory })
-    setPlainName('')
-    setPlainValue('')
-  }
-
-  function PlainAssetRow({ a }: { a: Asset }) {
-    const share = pct(a.value, totalPlainAssets)
-    const color = ASSET_COLORS[a.category]
-    return (
-      <div className="flex items-center gap-4 py-3 hover:bg-surface-0 rounded-lg px-2 transition-colors">
-        <div
-          className="w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center text-[10px] font-bold"
-          style={{ background: color + '18', color }}
-        >
-          {a.category.slice(0, 2).toUpperCase()}
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-ink-primary truncate">{a.name}</p>
-          <p className="text-[11px] text-ink-muted">{a.category}</p>
-        </div>
-        <div className="w-24 hidden sm:block">
-          <div className="h-1.5 bg-surface-1 rounded-full overflow-hidden">
-            <div className="h-full rounded-full" style={{ width: `${share}%`, background: color }} />
-          </div>
-          <p className="text-[10px] text-ink-muted mt-0.5 text-right">{share}%</p>
-        </div>
-        <span className="text-sm font-mono font-medium flex-shrink-0 text-success">{fmt(a.value)}</span>
-        <button className="btn-danger flex-shrink-0" onClick={() => setDeletePlainTarget(a)} aria-label="Delete">
-          <Trash2 className="w-3.5 h-3.5" />
-        </button>
-      </div>
-    )
-  }
-
   // ---- Liabilities derived data ----
   const liabilitiesList = state.assets.filter(a => isLiabilityCategory(a.category))
   const totalLiab = liabilitiesList.reduce((s, a) => s + a.value, 0)
@@ -451,7 +397,7 @@ export default function AssetsPage() {
           </div>
           <p className="text-[10px] text-ink-muted mt-0.5 text-right">{share}%</p>
         </div>
-        <span className="text-sm font-mono font-medium flex-shrink-0 text-danger">{fmt(a.value)}</span>
+        <span className="text-sm font-mono font-medium flex-shrink-0 text-danger tabular-nums">{fmt(a.value)}</span>
         <button className="btn-danger flex-shrink-0" onClick={() => setDeleteLiabTarget(a)} aria-label="Delete">
           <Trash2 className="w-3.5 h-3.5" />
         </button>
@@ -498,7 +444,7 @@ export default function AssetsPage() {
               {utilization}% used
             </p>
           </div>
-          <span className="text-sm font-mono font-medium text-danger flex-shrink-0">
+          <span className="text-sm font-mono font-medium text-danger flex-shrink-0 tabular-nums">
             {fmt(a.value)}
           </span>
           {a.value > 0 && (
@@ -514,8 +460,10 @@ export default function AssetsPage() {
     )
   }
 
-  // ---- Top-of-page totals: assets = investments + funds + cash/property ----
-  const totalAssetsAll = totalCurrent + totalFundCurrent + totalPlainAssets
+  // ---- Top-of-page totals: assets = investments + funds ----
+  // (Cash/property is now tracked as an "Other" investment, so totalCurrent
+  // already includes it — no separate plain-asset total needed here.)
+  const totalAssetsAll = totalCurrent + totalFundCurrent
   const assetsMinusLiabilities = totalAssetsAll - totalLiab
 
   return (
@@ -528,13 +476,14 @@ export default function AssetsPage() {
       </div>
 
       <div className="grid grid-cols-3 gap-4 mb-6">
-        <MetricCard label="Total assets" value={fmtCompact(totalAssetsAll)} variant="positive" />
-        <MetricCard label="Total liabilities" value={fmtCompact(totalLiab)} variant="negative" />
+        <MetricCard label="Total assets" value={fmtCompact(totalAssetsAll)} />
+        <MetricCard label="Total liabilities" value={fmtCompact(totalLiab)} />
         <MetricCard
           label="Assets − liabilities"
-          value={fmtCompact(assetsMinusLiabilities)}
-          variant={assetsMinusLiabilities >= 0 ? 'positive' : 'negative'}
+          value={fmtCompact(Math.abs(assetsMinusLiabilities))}
           sub={assetsMinusLiabilities >= 0 ? 'positive position' : 'negative position'}
+          delta={assetsMinusLiabilities < 0 ? 'negative' : undefined}
+          deltaTone="negative"
         />
       </div>
 
@@ -560,9 +509,10 @@ export default function AssetsPage() {
             <MetricCard label="Total invested" value={fmtCompact(totalCost + totalFundCost)} />
             <MetricCard
               label="Total gain / loss"
-              value={`${(totalGain + totalFundGain) >= 0 ? '+' : ''}${fmtCompact(totalGain + totalFundGain)}`}
-              sub={`${gainPct(totalCost + totalFundCost, totalCurrent + totalFundCurrent)}% overall return`}
-              variant={(totalGain + totalFundGain) >= 0 ? 'positive' : 'negative'}
+              value={fmtCompact(Math.abs(totalGain + totalFundGain))}
+              sub="vs invested"
+              delta={`${(totalGain + totalFundGain) >= 0 ? '+' : '−'}${gainPct(totalCost + totalFundCost, totalCurrent + totalFundCurrent)}%`}
+              deltaTone={(totalGain + totalFundGain) >= 0 ? 'positive' : 'negative'}
             />
           </div>
 
@@ -586,6 +536,11 @@ export default function AssetsPage() {
             <>
               <div className="card mb-6">
                 <h2 className="text-sm font-medium text-ink-primary mb-4">Add {assetSubTab.toLowerCase()}</h2>
+                {assetSubTab === 'Other' && (
+                  <p className="text-[11px] text-ink-muted mb-3">
+                    Also where cash, real estate, gold, and other property go — anything without its own tracked type.
+                  </p>
+                )}
                 {invError && <p className="text-xs text-danger mb-3 bg-red-50 dark:bg-danger/10 px-3 py-2 rounded">{invError}</p>}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
                   {assetSubTab === 'Stocks' ? (
@@ -598,7 +553,7 @@ export default function AssetsPage() {
                   ) : (
                     <input
                       className="input"
-                      placeholder={`${assetSubTab} name`}
+                      placeholder={assetSubTab === 'Other' ? 'Name (e.g. DHA plot, gold jewelry, cash)' : `${assetSubTab} name`}
                       value={name}
                       onChange={e => setName(e.target.value)}
                     />
@@ -643,9 +598,11 @@ export default function AssetsPage() {
                   ) : (
                     <div>
                       <div className="grid grid-cols-[1fr_100px_100px_90px_36px] gap-2 px-2 pb-2 border-b border-gray-100 dark:border-white/10">
-                        {['Name', 'Invested', 'Current', 'Gain/Loss', ''].map(h => (
-                          <p key={h} className="section-label">{h}</p>
-                        ))}
+                        <p className="section-label">Name</p>
+                        <p className="section-label text-right">Invested</p>
+                        <p className="section-label text-right">Current</p>
+                        <p className="section-label text-right">Gain/Loss</p>
+                        <p className="section-label" aria-hidden="true"></p>
                       </div>
                       <div className="divide-y divide-gray-50 dark:divide-white/5">
                         {subTabInvestments.map(inv => {
@@ -672,9 +629,9 @@ export default function AssetsPage() {
                                   </div>
                                 )}
                               </div>
-                              <span className="text-xs font-mono text-ink-muted">{fmt(inv.amountInvested)}</span>
-                              <span className="text-sm font-mono text-ink-primary">{fmt(inv.currentValue)}</span>
-                              <div className="flex items-center gap-1">
+                              <span className="text-xs font-mono text-ink-muted text-right tabular-nums">{fmt(inv.amountInvested)}</span>
+                              <span className="text-sm font-mono text-ink-primary text-right tabular-nums">{fmt(inv.currentValue)}</span>
+                              <div className="flex items-center gap-1 justify-end">
                                 {gain >= 0
                                   ? <TrendingUp className="w-3 h-3 text-success flex-shrink-0" />
                                   : <TrendingDown className="w-3 h-3 text-danger flex-shrink-0" />}
@@ -784,11 +741,12 @@ export default function AssetsPage() {
                 <MetricCard label="Cost basis" value={fmtCompact(totalFundCost)} />
                 <MetricCard
                   label="Unrealized gain"
-                  value={`${totalFundGain >= 0 ? '+' : ''}${fmtCompact(totalFundGain)}`}
-                  sub={`${totalFundGainPct}% return`}
-                  variant={totalFundGain >= 0 ? 'positive' : 'negative'}
+                  value={fmtCompact(Math.abs(totalFundGain))}
+                  sub="vs cost basis"
+                  delta={`${totalFundGain >= 0 ? '+' : '−'}${totalFundGainPct}%`}
+                  deltaTone={totalFundGain >= 0 ? 'positive' : 'negative'}
                 />
-                <MetricCard label="Realized gains" value={fmtCompact(totalRealizedGains)} sub="from sold units" variant={totalRealizedGains >= 0 ? 'positive' : 'default'} />
+                <MetricCard label="Realized gains" value={fmtCompact(totalRealizedGains)} sub="from sold units" />
               </div>
 
               <p className="text-[11px] text-ink-muted -mt-3 mb-4">
@@ -965,58 +923,6 @@ export default function AssetsPage() {
               </div>
             </>
           )}
-
-          {/* ---------------- Cash & Property ---------------- */}
-          {assetSubTab === 'Cash & Property' && (
-            <>
-              <div className="card mb-6">
-                <h2 className="text-sm font-medium text-ink-primary mb-4">Add cash or property</h2>
-                {plainFormError && <p className="text-xs text-danger mb-3 bg-red-50 dark:bg-danger/10 px-3 py-2 rounded">{plainFormError}</p>}
-                <div className="flex gap-3 flex-wrap">
-                  <input
-                    className="input flex-1 min-w-40"
-                    placeholder="Name (e.g. Meezan Bank savings)"
-                    value={plainName}
-                    onChange={e => setPlainName(e.target.value)}
-                  />
-                  <input
-                    className="input flex-1 min-w-32 font-mono"
-                    type="number"
-                    placeholder="Value (PKR)"
-                    value={plainValue}
-                    onChange={e => setPlainValue(e.target.value)}
-                  />
-                  <select
-                    className="select flex-1 min-w-36"
-                    value={plainCategory}
-                    onChange={e => setPlainCategory(e.target.value as AssetCategory)}
-                  >
-                    {PLAIN_ASSET_CATEGORIES.map(c => (
-                      <option key={c} value={c}>{c}</option>
-                    ))}
-                  </select>
-                  <button className="btn-primary" onClick={addPlainAsset}>
-                    <Plus className="w-4 h-4" /> Add
-                  </button>
-                </div>
-              </div>
-
-              <div className="card">
-                <div className="flex items-center gap-2 mb-4">
-                  <TrendingUp className="w-4 h-4 text-success" />
-                  <h2 className="text-sm font-medium text-ink-primary">Cash & property</h2>
-                  <span className="text-ink-muted text-sm font-mono ml-auto">{fmt(totalPlainAssets)}</span>
-                </div>
-                {plainAssets.length === 0 ? (
-                  <p className="text-sm text-ink-muted text-center py-6">No cash or property added yet</p>
-                ) : (
-                  <div className="divide-y divide-gray-50 dark:divide-white/5">
-                    {plainAssets.map(a => <PlainAssetRow key={a.id} a={a} />)}
-                  </div>
-                )}
-              </div>
-            </>
-          )}
         </>
       )}
 
@@ -1121,13 +1027,6 @@ export default function AssetsPage() {
         message="This will permanently remove this fund and its unit history from your portfolio. This can't be undone."
         onConfirm={() => { if (deleteFundTarget) deleteMutualFund(deleteFundTarget.id); setDeleteFundTarget(null) }}
         onCancel={() => setDeleteFundTarget(null)}
-      />
-      <ConfirmDialog
-        open={deletePlainTarget !== null}
-        title={`Delete "${deletePlainTarget?.name}"?`}
-        message="This will permanently remove this asset from your net worth. This can't be undone."
-        onConfirm={() => { if (deletePlainTarget) deleteAsset(deletePlainTarget.id); setDeletePlainTarget(null) }}
-        onCancel={() => setDeletePlainTarget(null)}
       />
       <ConfirmDialog
         open={deleteLiabTarget !== null}

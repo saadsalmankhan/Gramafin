@@ -8,15 +8,15 @@ export type ExpenseCategory =
   | 'Education'
   | 'Custom'
 
-// 'Stocks' and 'Mutual funds' were removed as manual categories here — real
-// holdings always go through the properly-tracked Investment/MutualFund
-// entities on the Investments page now that assets and investments share one
-// page, rather than being duplicable as an untracked lump-sum entry too.
+// 'Stocks' and 'Mutual funds' were removed as manual categories earlier —
+// real holdings always go through the properly-tracked Investment/MutualFund
+// entities now that assets and investments share one page. 'Cash / Bank',
+// 'Real estate', 'Gold / Jewelry', and 'Tangible assets' followed the same
+// path: they're added as Other-type Investments now, not a separate Asset
+// category — so every remaining AssetCategory is a liability, and `Asset`
+// effectively represents "money you owe" going forward (kept the type/table
+// name as-is rather than renaming across the whole codebase for this).
 export type AssetCategory =
-  | 'Cash / Bank'
-  | 'Real estate'
-  | 'Gold / Jewelry'
-  | 'Tangible assets'
   | 'Credit card'
   | 'Liability'
 
@@ -306,10 +306,6 @@ export const EXPENSE_CATEGORIES: ExpenseCategory[] = [
 ]
 
 export const ASSET_CATEGORIES: AssetCategory[] = [
-  'Cash / Bank',
-  'Real estate',
-  'Gold / Jewelry',
-  'Tangible assets',
   'Credit card',
   'Liability',
 ]
@@ -333,10 +329,6 @@ export const CATEGORY_COLORS: Record<ExpenseCategory, string> = {
 }
 
 export const ASSET_COLORS: Record<AssetCategory, string> = {
-  'Cash / Bank':      '#2a78d6',
-  'Real estate':      '#1baf7a',
-  'Gold / Jewelry':   '#eb6834',
-  'Tangible assets':  '#e87ba4',
   'Credit card':      '#c026d3',
   'Liability':        '#e34948',
 }

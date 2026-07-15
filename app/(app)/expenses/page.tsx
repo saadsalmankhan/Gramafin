@@ -29,6 +29,8 @@ export default function ExpensesPage() {
     .filter(e => e.date.startsWith(month))
     .reduce((s, e) => s + e.amount, 0)
   const totalAll = state.expenses.reduce((s, e) => s + e.amount, 0)
+  const totalBudget = Object.values(state.budgets).reduce((s, v) => s + v, 0)
+  const spendPct = totalBudget > 0 ? Math.round((monthTotal / totalBudget) * 100) : null
 
   async function add() {
     if (!desc.trim()) { setError('Description is required'); return }
@@ -91,7 +93,13 @@ export default function ExpensesPage() {
       <PageHeader title="Expenses" subtitle="Track every rupee you spend" />
 
       <div className="grid grid-cols-3 gap-4 mb-8">
-        <MetricCard label="This month" value={fmt(monthTotal)} variant="negative" />
+        <MetricCard
+          label="This month"
+          value={fmt(monthTotal)}
+          delta={spendPct !== null ? `${spendPct}%` : undefined}
+          deltaTone={spendPct !== null && spendPct > 100 ? 'negative' : 'neutral'}
+          sub={totalBudget > 0 ? `of ${fmt(totalBudget)} budget` : undefined}
+        />
         <MetricCard label="All time" value={fmt(totalAll)} />
         <MetricCard label="Transactions" value={String(state.expenses.length)} sub="total logged" />
       </div>
@@ -182,9 +190,11 @@ export default function ExpensesPage() {
           <div>
             {/* Header */}
             <div className="grid grid-cols-[1fr_120px_140px_100px_40px] gap-2 px-2 pb-2 border-b border-gray-100 dark:border-white/10">
-              {['Description', 'Category', 'Date', 'Amount', ''].map(h => (
-                <p key={h} className="section-label">{h}</p>
-              ))}
+              <p className="section-label">Description</p>
+              <p className="section-label">Category</p>
+              <p className="section-label">Date</p>
+              <p className="section-label text-right">Amount</p>
+              <p className="section-label" aria-hidden="true"></p>
             </div>
             <div className="divide-y divide-gray-50 dark:divide-white/5">
               {visible.map(e => (
@@ -215,7 +225,7 @@ export default function ExpensesPage() {
                   </div>
                   <Badge category={e.category} colorMap={CATEGORY_COLORS} />
                   <span className="text-xs text-ink-muted font-mono">{e.date}</span>
-                  <span className="text-sm font-mono font-medium text-danger">
+                  <span className="text-sm font-mono font-medium text-ink-primary text-right tabular-nums">
                     −{fmt(e.amount)}
                   </span>
                   <button
@@ -232,9 +242,9 @@ export default function ExpensesPage() {
               <div className="flex justify-end pt-4 border-t border-gray-100 dark:border-white/10 mt-2">
                 <div className="text-right">
                   <p className="text-xs text-ink-muted mb-0.5">
-                    {filter === 'all' ? 'Total' : `Total — ${filter}`}
+                    {filter === 'all' ? 'Total' : `Total — ${filter}`} · {visible.length} transactions
                   </p>
-                  <p className="text-base font-mono font-semibold text-danger">
+                  <p className="text-base font-mono font-semibold text-ink-primary">
                     −{fmt(visible.reduce((s, e) => s + e.amount, 0))}
                   </p>
                 </div>

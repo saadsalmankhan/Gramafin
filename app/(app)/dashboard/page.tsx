@@ -38,6 +38,7 @@ export default function Dashboard() {
   const portfolioCost = state.investments.reduce((s, i) => s + i.amountInvested, 0)
     + state.mutualFunds.reduce((s, f) => s + f.unitsHeld * f.buyNav, 0)
   const portfolioGain = portfolioValue - portfolioCost
+  const spendPct = totalBudget > 0 ? Math.round((totalSpend / totalBudget) * 100) : null
 
   // Spending by category this month
   const catTotals = EXPENSE_CATEGORIES.map(cat => ({
@@ -118,25 +119,29 @@ export default function Dashboard() {
           label="Net worth"
           value={fmtCompact(netWorth)}
           sub="assets + investments + savings − liabilities"
-          variant={netWorth >= 0 ? 'positive' : 'negative'}
+          delta={netWorth < 0 ? 'negative' : undefined}
+          deltaTone="negative"
         />
         <MetricCard
           label="Spent this month"
           value={fmtCompact(totalSpend)}
           sub={`of ${fmtCompact(totalBudget)} budget`}
-          variant="negative"
+          delta={spendPct !== null ? `${spendPct}%` : undefined}
+          deltaTone={spendPct !== null && spendPct > 100 ? 'negative' : 'neutral'}
         />
         <MetricCard
           label="Budget remaining"
           value={fmtCompact(Math.abs(budgetLeft))}
           sub={budgetLeft < 0 ? 'over budget' : 'left to spend'}
-          variant={budgetLeft >= 0 ? 'positive' : 'negative'}
+          delta={budgetLeft < 0 ? 'over' : undefined}
+          deltaTone="negative"
         />
         <MetricCard
           label="Portfolio value"
           value={fmtCompact(portfolioValue)}
-          sub={`${portfolioGain >= 0 ? '+' : ''}${gainPct(portfolioCost, portfolioValue)}% return`}
-          variant={portfolioGain >= 0 ? 'positive' : 'negative'}
+          sub="vs cost basis"
+          delta={portfolioCost > 0 ? `${portfolioGain >= 0 ? '+' : ''}${gainPct(portfolioCost, portfolioValue)}%` : undefined}
+          deltaTone={portfolioGain >= 0 ? 'positive' : 'negative'}
         />
       </div>
 
@@ -300,7 +305,7 @@ export default function Dashboard() {
                 </div>
                 <div className="flex items-center gap-3 flex-shrink-0 ml-4">
                   <Badge category={e.category} colorMap={CATEGORY_COLORS} />
-                  <span className="text-sm font-mono font-medium text-danger">
+                  <span className="text-sm font-mono font-medium text-ink-primary">
                     −{fmt(e.amount)}
                   </span>
                 </div>
