@@ -1,44 +1,68 @@
 'use client'
 
 import { useStore, useThisMonth } from '@/lib/store'
-import { fmt, fmtCompact, gainPct, daysUntil } from '@/lib/utils'
-import { CATEGORY_COLORS, EXPENSE_CATEGORIES, ExpenseCategory, bankAccountLabel } from '@/types'
+import { fmt, fmtCompact, fiscalYearRange, daysUntil } from '@/lib/utils'
+import { CATEGORY_COLORS, EXPENSE_CATEGORIES, bankAccountLabel } from '@/types'
 import { computeNetWorth } from '@/lib/networth'
-import { useChartColors } from '@/lib/theme'
 import MetricCard from '@/components/MetricCard'
 import Badge from '@/components/Badge'
 import PageHeader from '@/components/PageHeader'
 import NetWorthTrendChart from '@/components/NetWorthTrendChart'
-import NetWorthBreakdownChart from '@/components/NetWorthBreakdownChart'
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  Cell,
-} from 'recharts'
+import SpendingDonutChart from '@/components/SpendingDonutChart'
 import { ArrowRight, AlertTriangle, CreditCard } from 'lucide-react'
 import Link from 'next/link'
 
 const REMINDER_WINDOW_DAYS = 7
 
+function daysRemainingInMonth(): number {
+  const now = new Date()
+  const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
+  return lastDay - now.getDate()
+}
+
 export default function Dashboard() {
   const { state } = useStore()
   const monthExpenses = useThisMonth()
-  const chartColors = useChartColors()
 
   const totalSpend = monthExpenses.reduce((s, e) => s + e.amount, 0)
   const netWorthBreakdown = computeNetWorth(state)
   const netWorth = netWorthBreakdown.netWorth
   const totalBudget = Object.values(state.budgets).reduce((s, v) => s + v, 0)
   const budgetLeft = totalBudget - totalSpend
-  const portfolioValue = netWorthBreakdown.investments + netWorthBreakdown.mutualFunds
-  const portfolioCost = state.investments.reduce((s, i) => s + i.amountInvested, 0)
-    + state.mutualFunds.reduce((s, f) => s + f.unitsHeld * f.buyNav, 0)
-  const portfolioGain = portfolioValue - portfolioCost
   const spendPct = totalBudget > 0 ? Math.round((totalSpend / totalBudget) * 100) : null
+
+  const monthLabel = new Date().toLocaleDateString('en-PK', { month: 'short' })
+  const monthKey = new Date().toISOString().slice(0, 7)
+  const monthIncome = state.incomes
+    .filter(i => i.date.startsWith(monthKey))
+    .reduce((s, i) => s + i.amount, 0)
+
+  // Net worth change vs the oldest snapshot on record — "since you started
+  // tracking" rather than a fixed lookback window, since history length
+  // varies a lot account to account.
+  const oldestSnapshot = state.netWorthHistory[0]
+  const netWorthChangePct = oldestSnapshot && oldestSnapshot.value !== 0
+    ? Math.round(((netWorth - oldestSnapshot.value) / Math.abs(oldestSnapshot.value)) * 1000) / 10
+    : null
+
+  // Quick-glance breakdown pills — same underlying numbers as the net worth
+  // formula, just surfaced individually and linked back to where each one
+  // is managed.
+  const bankTotal = state.bankAccounts
+    .filter(b => b.type !== 'Credit Card')
+    .reduce((s, b) => s + b.startingBalance, 0)
+  const cardsOwed = state.assets
+    .filter(a => a.category === 'Credit card')
+    .reduce((s, a) => s + a.value, 0)
+    + state.bankAccounts
+      .filter(b => b.type === 'Credit Card' && b.startingBalance > 0)
+      .reduce((s, b) => s + b.startingBalance, 0)
+  const quickStats = [
+    { label: 'Bank', value: bankTotal, href: '/settings', negative: false },
+    { label: 'Cards', value: cardsOwed, href: '/assets', negative: true },
+    { label: 'Investments', value: netWorthBreakdown.investments, href: '/assets', negative: false },
+    { label: 'Funds', value: netWorthBreakdown.mutualFunds, href: '/assets', negative: false },
+  ]
 
   // Spending by category this month
   const catTotals = EXPENSE_CATEGORIES.map(cat => ({
@@ -65,7 +89,7 @@ export default function Dashboard() {
     <div>
       <PageHeader
         title="Dashboard"
-        subtitle={new Date().toLocaleDateString('en-PK', { month: 'long', year: 'numeric' })}
+        subtitle={`${new Date().toLocaleDateString('en-PK', { month: 'long', year: 'numeric' })} · ${fiscalYearRange().label}`}
       />
 
       {/* Payment reminders */}
@@ -86,26 +110,27 @@ export default function Dashboard() {
               const urgent = c.days <= 3
               const color = urgent ? 'text-danger' : 'text-warning'
               const bg = urgent ? 'bg-red-50 dark:bg-danger/10' : 'bg-amber-50 dark:bg-warning/10'
+              const label = c.days < 0
+                ? `Overdue by ${Math.abs(c.days)}d`
+                : c.days === 0
+                ? 'Due today'
+                : `Due in ${c.days}d`
               return (
                 <div key={c.id} className={`flex items-center justify-between px-3 py-2 rounded-lg ${bg}`}>
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <CreditCard className={`w-3.5 h-3.5 flex-shrink-0 ${color}`} />
+                    <div className={`w-6 h-6 rounded-md flex-shrink-0 flex items-center justify-center ${urgent ? 'bg-danger/15' : 'bg-warning/15'}`}>
+                      <CreditCard className={`w-3.5 h-3.5 ${color}`} />
+                    </div>
                     <span className="text-sm text-ink-primary truncate">{c.name}</span>
-                  </div>
-                  <div className="flex items-center gap-3 flex-shrink-0">
                     {c.minimumPayment && (
-                      <span className="text-xs font-mono text-ink-muted hidden sm:inline">
-                        Min {fmt(c.minimumPayment)}
+                      <span className="text-xs font-mono text-ink-muted hidden sm:inline tabular-nums">
+                        — min {fmt(c.minimumPayment)}
                       </span>
                     )}
-                    <span className={`text-xs font-medium ${color}`}>
-                      {c.days < 0
-                        ? `Overdue by ${Math.abs(c.days)}d`
-                        : c.days === 0
-                        ? 'Due today'
-                        : `Due in ${c.days}d`}
-                    </span>
                   </div>
+                  <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full flex-shrink-0 ${color} ${bg}`}>
+                    {label}
+                  </span>
                 </div>
               )
             })}
@@ -114,134 +139,83 @@ export default function Dashboard() {
       )}
 
       {/* Metrics */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div id="net-worth" className="scroll-mt-6 grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
         <MetricCard
           label="Net worth"
           value={fmtCompact(netWorth)}
-          sub="assets + investments + savings − liabilities"
-          delta={netWorth < 0 ? 'negative' : undefined}
-          deltaTone="negative"
+          sub="assets + investments − liabilities"
+          delta={netWorthChangePct !== null ? `${netWorthChangePct >= 0 ? '+' : ''}${netWorthChangePct}%` : undefined}
+          deltaTone={netWorthChangePct !== null && netWorthChangePct < 0 ? 'negative' : 'positive'}
         />
         <MetricCard
-          label="Spent this month"
+          label={`Income · ${monthLabel}`}
+          value={fmtCompact(monthIncome)}
+          sub="salary + other income"
+        />
+        <MetricCard
+          label={`Spent · ${monthLabel}`}
           value={fmtCompact(totalSpend)}
-          sub={`of ${fmtCompact(totalBudget)} budget`}
+          sub={`of ${fmtCompact(totalBudget)} budgeted`}
           delta={spendPct !== null ? `${spendPct}%` : undefined}
           deltaTone={spendPct !== null && spendPct > 100 ? 'negative' : 'neutral'}
         />
         <MetricCard
-          label="Budget remaining"
+          label="Budget left"
           value={fmtCompact(Math.abs(budgetLeft))}
-          sub={budgetLeft < 0 ? 'over budget' : 'left to spend'}
+          sub={budgetLeft < 0 ? 'over budget' : `${daysRemainingInMonth()} days remaining`}
           delta={budgetLeft < 0 ? 'over' : undefined}
           deltaTone="negative"
         />
-        <MetricCard
-          label="Portfolio value"
-          value={fmtCompact(portfolioValue)}
-          sub="vs cost basis"
-          delta={portfolioCost > 0 ? `${portfolioGain >= 0 ? '+' : ''}${gainPct(portfolioCost, portfolioValue)}%` : undefined}
-          deltaTone={portfolioGain >= 0 ? 'positive' : 'negative'}
-        />
       </div>
 
-      <div id="net-worth" className="scroll-mt-6">
-        <div className="flex items-center gap-2 mb-3 flex-wrap">
-          <span className="text-[11px] text-ink-muted">Rolls up:</span>
-          {[
-            { label: 'Assets & investments', href: '/assets' },
-            { label: 'Bank accounts', href: '/settings' },
-            { label: 'Income & expenses', href: '/income' },
-          ].map(s => (
-            <Link
-              key={s.href}
-              href={s.href}
-              className="text-[11px] px-2 py-0.5 rounded-full bg-surface-1 text-ink-secondary hover:bg-surface-0 hover:text-brand-700 transition-colors"
-            >
-              {s.label}
+      {/* Quick-glance breakdown */}
+      <div className="flex items-center gap-2 mb-8 flex-wrap">
+        {quickStats.map(s => (
+          <Link
+            key={s.label}
+            href={s.href}
+            className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-surface-1 hover:bg-surface-0 transition-colors"
+          >
+            <span className="text-ink-muted">{s.label}</span>
+            <span className={`font-mono font-medium tabular-nums ${s.negative && s.value > 0 ? 'text-danger' : 'text-ink-primary'}`}>
+              {s.negative && s.value > 0 ? '−' : ''}{fmtCompact(s.value)}
+            </span>
+          </Link>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <div className="card">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-medium text-ink-primary">Net worth · trailing 12 months</h2>
+            <Link href="/assets" className="text-xs text-brand-600 hover:text-brand-700 flex items-center gap-1">
+              Net worth <ArrowRight className="w-3 h-3" />
             </Link>
-          ))}
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          <div className="card">
-            <h2 className="text-sm font-medium text-ink-primary mb-4">Net worth over time</h2>
-            <NetWorthTrendChart history={state.netWorthHistory} />
           </div>
-          <div className="card">
-            <h2 className="text-sm font-medium text-ink-primary mb-4">Net worth breakdown</h2>
-            <NetWorthBreakdownChart breakdown={netWorthBreakdown} />
-          </div>
+          <NetWorthTrendChart history={state.netWorthHistory} />
         </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        {/* Spending chart */}
-        <div className="card lg:col-span-2">
+        <div className="card">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-medium text-ink-primary">Spending by category</h2>
             <Link href="/expenses" className="text-xs text-brand-600 hover:text-brand-700 flex items-center gap-1">
-              View all <ArrowRight className="w-3 h-3" />
+              Expenses <ArrowRight className="w-3 h-3" />
             </Link>
           </div>
-          {catTotals.length === 0 ? (
-            <div className="h-48 flex items-center justify-center text-sm text-ink-muted">
-              No expenses logged this month
-            </div>
-          ) : (
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={catTotals} barSize={28}>
-                <XAxis
-                  dataKey="name"
-                  tick={{ fontSize: 11, fill: chartColors.axisText }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <YAxis
-                  tick={{ fontSize: 11, fill: chartColors.axisText }}
-                  axisLine={false}
-                  tickLine={false}
-                  tickFormatter={v => 'Rs ' + Math.round(v / 1000) + 'K'}
-                  width={60}
-                />
-                <Tooltip
-                  formatter={(val: number, _: string, props: { payload?: { fullName?: string } }) => [
-                    fmt(val),
-                    props.payload?.fullName ?? '',
-                  ]}
-                  cursor={{ fill: chartColors.gridStroke, opacity: 0.3 }}
-                  contentStyle={{
-                    fontSize: 12,
-                    border: `1px solid ${chartColors.tooltipBorder}`,
-                    borderRadius: 8,
-                    background: chartColors.tooltipBg,
-                    color: chartColors.mutedText,
-                  }}
-                  labelStyle={{ color: chartColors.mutedText }}
-                  itemStyle={{ color: chartColors.mutedText }}
-                />
-                <Bar dataKey="total" radius={[4, 4, 0, 0]}>
-                  {catTotals.map((c) => (
-                    <Cell
-                      key={c.fullName}
-                      fill={CATEGORY_COLORS[c.fullName as ExpenseCategory] ?? '#888'}
-                    />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          )}
+          <SpendingDonutChart data={catTotals} totalSpend={totalSpend} centerLabel={`SPENT · ${monthLabel.toUpperCase()}`} />
         </div>
+      </div>
 
-        {/* Budget overview mini */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        {/* Budget overview */}
         <div className="card">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-medium text-ink-primary">Budget status</h2>
+            <h2 className="text-sm font-medium text-ink-primary">Budgets · {monthLabel}</h2>
             <Link href="/budget" className="text-xs text-brand-600 hover:text-brand-700 flex items-center gap-1">
-              Edit <ArrowRight className="w-3 h-3" />
+              All budgets <ArrowRight className="w-3 h-3" />
             </Link>
           </div>
-          <div className="space-y-3">
-            {EXPENSE_CATEGORIES.slice(0, 6).map(cat => {
+          <div className="space-y-4">
+            {EXPENSE_CATEGORIES.slice(0, 4).map(cat => {
               const spent = monthExpenses
                 .filter(e => e.category === cat)
                 .reduce((s, e) => s + e.amount, 0)
@@ -250,18 +224,27 @@ export default function Dashboard() {
               const over = spent > limit && limit > 0
               return (
                 <div key={cat}>
-                  <div className="flex justify-between text-[11px] mb-1">
-                    <span className="text-ink-secondary truncate pr-2">{cat.split(' ')[0]}</span>
-                    <span className={over ? 'text-danger font-medium' : 'text-ink-muted'}>
-                      {p}%
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: CATEGORY_COLORS[cat] }} />
+                      <span className="text-sm text-ink-secondary">{cat}</span>
+                      {over && (
+                        <span className="text-[10px] font-medium text-danger bg-red-50 dark:bg-danger/10 px-1.5 py-0.5 rounded-full">
+                          over limit
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-xs font-mono tabular-nums">
+                      <span className={over ? 'text-danger font-medium' : 'text-ink-secondary'}>{fmtCompact(spent)}</span>
+                      <span className="text-ink-muted"> / {fmtCompact(limit)}</span>
                     </span>
                   </div>
-                  <div className="h-1.5 bg-surface-1 rounded-full overflow-hidden">
+                  <div className="h-2 bg-surface-1 rounded-full overflow-hidden">
                     <div
                       className="h-full rounded-full transition-all"
                       style={{
                         width: `${p}%`,
-                        background: p < 70 ? '#15803d' : p < 90 ? '#d97706' : '#dc2626',
+                        background: p < 70 ? 'rgb(var(--success))' : p < 90 ? 'rgb(var(--warning))' : 'rgb(var(--danger))',
                       }}
                     />
                   </div>
@@ -270,49 +253,49 @@ export default function Dashboard() {
             })}
           </div>
         </div>
-      </div>
 
-      {/* Recent transactions */}
-      <div className="card">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-sm font-medium text-ink-primary">Recent transactions</h2>
-          <Link href="/expenses" className="text-xs text-brand-600 hover:text-brand-700 flex items-center gap-1">
-            View all <ArrowRight className="w-3 h-3" />
-          </Link>
-        </div>
-        {recent.length === 0 ? (
-          <p className="text-sm text-ink-muted text-center py-8">
-            No transactions yet — <Link href="/expenses" className="text-brand-600 hover:underline">add your first expense</Link>
-          </p>
-        ) : (
-          <div className="divide-y divide-gray-50 dark:divide-white/5">
-            {recent.map(e => (
-              <div key={e.id} className="flex items-center justify-between py-3">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div
-                    className="w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center text-[10px] font-bold"
-                    style={{
-                      background: CATEGORY_COLORS[e.category] + '18',
-                      color: CATEGORY_COLORS[e.category],
-                    }}
-                  >
-                    {e.category.slice(0, 2).toUpperCase()}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-sm text-ink-primary truncate">{e.description}</p>
-                    <p className="text-[11px] text-ink-muted">{e.date}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 flex-shrink-0 ml-4">
-                  <Badge category={e.category} colorMap={CATEGORY_COLORS} />
-                  <span className="text-sm font-mono font-medium text-ink-primary">
-                    −{fmt(e.amount)}
-                  </span>
-                </div>
-              </div>
-            ))}
+        {/* Recent transactions */}
+        <div className="card">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-medium text-ink-primary">Recent transactions</h2>
+            <Link href="/expenses" className="text-xs text-brand-600 hover:text-brand-700 flex items-center gap-1">
+              View all <ArrowRight className="w-3 h-3" />
+            </Link>
           </div>
-        )}
+          {recent.length === 0 ? (
+            <p className="text-sm text-ink-muted text-center py-8">
+              No transactions yet — <Link href="/expenses" className="text-brand-600 hover:underline">add your first expense</Link>
+            </p>
+          ) : (
+            <div className="divide-y divide-gray-50 dark:divide-white/5">
+              {recent.slice(0, 4).map(e => (
+                <div key={e.id} className="flex items-center justify-between py-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div
+                      className="w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center text-[10px] font-bold"
+                      style={{
+                        background: CATEGORY_COLORS[e.category] + '18',
+                        color: CATEGORY_COLORS[e.category],
+                      }}
+                    >
+                      {e.category.slice(0, 2).toUpperCase()}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm text-ink-primary truncate">{e.description}</p>
+                      <p className="text-[11px] text-ink-muted truncate">{e.account || e.date}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 flex-shrink-0 ml-4">
+                    <Badge category={e.category} colorMap={CATEGORY_COLORS} />
+                    <span className="text-sm font-mono font-medium text-ink-primary tabular-nums">
+                      −{fmt(e.amount)}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )
