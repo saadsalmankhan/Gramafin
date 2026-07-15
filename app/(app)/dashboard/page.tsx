@@ -51,12 +51,9 @@ export default function Dashboard() {
   const bankTotal = state.bankAccounts
     .filter(b => b.type !== 'Credit Card')
     .reduce((s, b) => s + b.startingBalance, 0)
-  const cardsOwed = state.assets
-    .filter(a => a.category === 'Credit card')
-    .reduce((s, a) => s + a.value, 0)
-    + state.bankAccounts
-      .filter(b => b.type === 'Credit Card' && b.startingBalance > 0)
-      .reduce((s, b) => s + b.startingBalance, 0)
+  const cardsOwed = state.bankAccounts
+    .filter(b => b.type === 'Credit Card' && b.startingBalance > 0)
+    .reduce((s, b) => s + b.startingBalance, 0)
   const quickStats = [
     { label: 'Bank', value: bankTotal, href: '/settings', negative: false },
     { label: 'Cards', value: cardsOwed, href: '/assets', negative: true },
@@ -75,13 +72,9 @@ export default function Dashboard() {
 
   const recent = state.expenses.slice(0, 8)
 
-  const assetCardReminders = state.assets
-    .filter(a => a.category === 'Credit card' && a.dueDate)
-    .map(a => ({ id: a.id, name: a.name, minimumPayment: a.minimumPayment, days: daysUntil(a.dueDate!) }))
-  const bankCardReminders = state.bankAccounts
+  const cardReminders = state.bankAccounts
     .filter(b => b.type === 'Credit Card' && b.dueDate)
-    .map(b => ({ id: b.id, name: bankAccountLabel(b), minimumPayment: undefined as number | undefined, days: daysUntil(b.dueDate!) }))
-  const cardReminders = [...assetCardReminders, ...bankCardReminders]
+    .map(b => ({ id: b.id, name: bankAccountLabel(b), minimumPayment: b.minimumPayment, days: daysUntil(b.dueDate!) }))
     .filter(c => c.days <= REMINDER_WINDOW_DAYS)
     .sort((a, b) => a.days - b.days)
 
@@ -99,7 +92,7 @@ export default function Dashboard() {
             <AlertTriangle className="w-4 h-4 text-danger" />
             <h2 className="text-sm font-medium text-ink-primary">Payment reminders</h2>
             <Link
-              href={bankCardReminders.length > 0 && assetCardReminders.length === 0 ? '/settings' : '/assets'}
+              href="/settings"
               className="text-xs text-brand-600 hover:text-brand-700 flex items-center gap-1 ml-auto"
             >
               Manage <ArrowRight className="w-3 h-3" />

@@ -34,6 +34,8 @@ export async function POST(req: Request) {
         type: body.type,
         startingBalance: body.startingBalance,
         dueDate: typeof body.dueDate === 'string' ? body.dueDate : null,
+        creditLimit: isFiniteNumber(body.creditLimit) ? body.creditLimit : null,
+        minimumPayment: isFiniteNumber(body.minimumPayment) ? body.minimumPayment : null,
       })
       .returning()
 

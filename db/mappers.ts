@@ -24,6 +24,8 @@ export function bankAccountFromRow(row: typeof schema.bankAccounts.$inferSelect)
     type: row.type as BankAccount['type'],
     startingBalance: row.startingBalance,
     dueDate: row.dueDate ?? undefined,
+    creditLimit: row.creditLimit ?? undefined,
+    minimumPayment: row.minimumPayment ?? undefined,
   }
 }
 
@@ -36,6 +38,7 @@ export function expenseFromRow(row: typeof schema.expenses.$inferSelect): Expens
     date: row.date,
     receiptUrl: row.receiptUrl ?? undefined,
     account: row.account ?? undefined,
+    deductedFromAccountId: row.deductedFromAccountId ?? undefined,
   }
 }
 

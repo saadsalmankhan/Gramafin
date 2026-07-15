@@ -66,6 +66,10 @@ export const bankAccounts = pgTable('bank_accounts', {
   type: text('type').notNull(),
   startingBalance: numeric('starting_balance', { precision: 14, scale: 2, mode: 'number' }).notNull(),
   dueDate: date('due_date', { mode: 'string' }),
+  // Credit Card only — mirrors the fields Asset-category 'Credit card'
+  // liabilities used to carry before that category was folded into here.
+  creditLimit: numeric('credit_limit', { precision: 14, scale: 2, mode: 'number' }),
+  minimumPayment: numeric('minimum_payment', { precision: 14, scale: 2, mode: 'number' }),
 }, (table) => [
   primaryKey({ columns: [table.userId, table.id] }),
   check('bank_accounts_type_check', oneOf('type', BANK_ACCOUNT_TYPES)),
@@ -83,9 +87,22 @@ export const expenses = pgTable('expenses', {
   // convention of snapshotting the account name at save time so deleting a
   // bank account never mutates or cascades into historical expense records.
   account: text('account'),
+  // Set when `account` was matched to a real BankAccount at save time and
+  // that account's balance was adjusted by this expense's amount — real FK
+  // (unlike `account`) since computeNetWorth needs a stable answer to "was
+  // this already reflected in an account balance" that can't drift if the
+  // account is later renamed. ON DELETE SET NULL, not CASCADE: deleting a
+  // bank account should never erase expense history, only detach the link
+  // (see incomes.deposited_to_account_id for the identical rationale).
+  deductedFromAccountId: text('deducted_from_account_id'),
 }, (table) => [
   primaryKey({ columns: [table.userId, table.id] }),
   check('expenses_category_check', oneOf('category', EXPENSE_CATEGORIES)),
+  foreignKey({
+    columns: [table.userId, table.deductedFromAccountId],
+    foreignColumns: [bankAccounts.userId, bankAccounts.id],
+    name: 'expenses_deducted_from_account_id_fk',
+  }).onDelete('set null'),
 ])
 
 export const assets = pgTable('assets', {

@@ -22,6 +22,20 @@
       "when": 1784113040224,
       "tag": "0002_closed_harpoon",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1784158180355,
+      "tag": "0003_old_shinko_yamashiro",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1784158931680,
+      "tag": "0004_military_stone_men",
+      "breakpoints": true
     }
   ]
 }

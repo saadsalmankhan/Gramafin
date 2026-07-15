@@ -62,7 +62,6 @@ interface StoreCtx {
   deleteExpense: (id: string) => Promise<void>
   addAsset: (asset: Asset) => Promise<void>
   deleteAsset: (id: string) => Promise<void>
-  payAssetCard: (cardId: string, amount: number, fromAccountId: string | null) => Promise<void>
   addInvestment: (investment: Investment) => Promise<void>
   updateInvestment: (investment: Investment) => Promise<void>
   deleteInvestment: (id: string) => Promise<void>
@@ -221,47 +220,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         async () => {
           const res = await fetch(`/api/assets/${id}`, { method: 'DELETE' })
           return readJson<{ netWorth: NetWorthBreakdown }>(res, 'Failed to delete asset')
-        }
-      ).then(() => undefined)
-    },
-    [mutate]
-  )
-
-  const payAssetCard = useCallback(
-    (cardId: string, amount: number, fromAccountId: string | null) => {
-      let prevCard: Asset | undefined
-      let prevFromAccount: BankAccount | undefined
-      return mutate(
-        s => {
-          prevCard = s.assets.find(a => a.id === cardId)
-          prevFromAccount = fromAccountId ? s.bankAccounts.find(b => b.id === fromAccountId) : undefined
-          return {
-            ...s,
-            assets: s.assets.map(a => (a.id === cardId ? { ...a, value: Math.max(0, a.value - amount) } : a)),
-            bankAccounts: fromAccountId
-              ? s.bankAccounts.map(b =>
-                  b.id === fromAccountId ? { ...b, startingBalance: b.startingBalance - amount } : b
-                )
-              : s.bankAccounts,
-          }
-        },
-        s => ({
-          ...s,
-          assets: prevCard ? s.assets.map(a => (a.id === cardId ? prevCard! : a)) : s.assets,
-          bankAccounts: prevFromAccount
-            ? s.bankAccounts.map(b => (b.id === fromAccountId ? prevFromAccount! : b))
-            : s.bankAccounts,
-        }),
-        async () => {
-          const res = await fetch(`/api/assets/${cardId}/pay`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ amount, fromAccountId }),
-          })
-          return readJson<{ asset: Asset; bankAccount: BankAccount | null; netWorth: NetWorthBreakdown }>(
-            res,
-            'Failed to process payment'
-          )
         }
       ).then(() => undefined)
     },
@@ -625,7 +583,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         deleteExpense,
         addAsset,
         deleteAsset,
-        payAssetCard,
         addInvestment,
         updateInvestment,
         deleteInvestment,

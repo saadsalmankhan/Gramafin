@@ -25,6 +25,10 @@ import clsx from 'clsx'
 
 type Tab = 'accounts' | 'preferences'
 
+function utilizationColor(p: number): string {
+  return p < 70 ? '#15803d' : p < 90 ? '#d97706' : '#dc2626'
+}
+
 export default function SettingsPage() {
   const { state, addBankAccount, deleteBankAccount, payBankAccountCard, setPreferences } = useStore()
   const [tab, setTab] = useState<Tab>('accounts')
@@ -33,6 +37,8 @@ export default function SettingsPage() {
   const [type, setType] = useState<BankAccountType>('Checking')
   const [startingBalance, setStartingBalance] = useState('')
   const [dueDate, setDueDate] = useState('')
+  const [creditLimit, setCreditLimit] = useState('')
+  const [minimumPayment, setMinimumPayment] = useState('')
   const [error, setError] = useState('')
   const [deleteTarget, setDeleteTarget] = useState<BankAccount | null>(null)
   const [payTarget, setPayTarget] = useState<BankAccount | null>(null)
@@ -45,6 +51,8 @@ export default function SettingsPage() {
     const balance = parseFloat(startingBalance)
     if (startingBalance.trim() && isNaN(balance)) { setError('Enter a valid starting balance'); return }
     setError('')
+    const limit = parseFloat(creditLimit)
+    const minPayment = parseFloat(minimumPayment)
     const account: BankAccount = {
       id: uid(),
       bank,
@@ -52,6 +60,8 @@ export default function SettingsPage() {
       type,
       startingBalance: isNaN(balance) ? 0 : balance,
       ...(isCreditCardForm && dueDate && { dueDate }),
+      ...(isCreditCardForm && !isNaN(limit) && limit > 0 && { creditLimit: limit }),
+      ...(isCreditCardForm && !isNaN(minPayment) && minPayment > 0 && { minimumPayment: minPayment }),
     }
     addBankAccount(account)
     setBank(PAKISTANI_BANKS[0])
@@ -59,6 +69,8 @@ export default function SettingsPage() {
     setType('Checking')
     setStartingBalance('')
     setDueDate('')
+    setCreditLimit('')
+    setMinimumPayment('')
   }
 
   return (
@@ -142,11 +154,26 @@ export default function SettingsPage() {
                     value={dueDate}
                     onChange={e => setDueDate(e.target.value)}
                   />
+                  <input
+                    className="input flex-1 min-w-40 font-mono"
+                    type="number"
+                    placeholder="Credit limit (PKR, optional)"
+                    value={creditLimit}
+                    onChange={e => setCreditLimit(e.target.value)}
+                  />
+                  <input
+                    className="input flex-1 min-w-40 font-mono"
+                    type="number"
+                    placeholder="Minimum payment (PKR, optional)"
+                    value={minimumPayment}
+                    onChange={e => setMinimumPayment(e.target.value)}
+                  />
                 </div>
                 <p className="text-[11px] text-ink-muted mt-3">
                   For credit cards, a positive balance means you owe that amount (shown in red).
                   Enter a negative number (e.g. −100) if you've overpaid and the card owes you money instead.
-                  Set a due date to get a payment reminder on the Dashboard.
+                  Set a due date to get a payment reminder on the Dashboard. A credit limit adds a
+                  utilization bar to the account below.
                 </p>
               </>
             )}
@@ -174,53 +201,68 @@ export default function SettingsPage() {
                   // Sign carries direction via an explicit prefix, not color — same
                   // convention as the expense/income tables (text stays ink-primary).
                   const displayText = `${isDebt ? '−' : '+'}${fmt(Math.abs(balance))}`
+                  const limit = b.creditLimit ?? 0
+                  const utilization = limit > 0 ? Math.min(100, Math.round((balance / limit) * 100)) : 0
                   return (
-                    <div key={b.id} className="flex items-center justify-between py-2.5 gap-3">
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="w-7 h-7 rounded-md flex-shrink-0 flex items-center justify-center bg-brand-50 text-brand-700">
-                          {isCreditCard ? <CreditCard className="w-3.5 h-3.5" /> : <Landmark className="w-3.5 h-3.5" />}
+                    <div key={b.id} className="py-2.5">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="w-7 h-7 rounded-md flex-shrink-0 flex items-center justify-center bg-brand-50 text-brand-700">
+                            {isCreditCard ? <CreditCard className="w-3.5 h-3.5" /> : <Landmark className="w-3.5 h-3.5" />}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-sm text-ink-primary truncate">{bankAccountLabel(b)}</p>
+                            <p className="text-[11px] text-ink-muted">
+                              {b.bank} · {b.type}
+                              {isCreditCard && b.minimumPayment ? ` · Min payment ${fmt(b.minimumPayment)}` : ''}
+                              {isCreditCard && b.dueDate && (() => {
+                                const d = daysUntil(b.dueDate)
+                                const label = d < 0 ? `Overdue ${Math.abs(d)}d` : d === 0 ? 'Due today' : `Due in ${d}d`
+                                return (
+                                  <span className={clsx('ml-1 font-medium', d <= 3 ? 'text-danger' : d <= 7 ? 'text-warning' : 'text-ink-muted')}>
+                                    · {label}
+                                  </span>
+                                )
+                              })()}
+                            </p>
+                          </div>
                         </div>
-                        <div className="min-w-0">
-                          <p className="text-sm text-ink-primary truncate">{bankAccountLabel(b)}</p>
-                          <p className="text-[11px] text-ink-muted">
-                            {b.bank} · {b.type}
-                            {isCreditCard && b.dueDate && (() => {
-                              const d = daysUntil(b.dueDate)
-                              const label = d < 0 ? `Overdue ${Math.abs(d)}d` : d === 0 ? 'Due today' : `Due in ${d}d`
-                              return (
-                                <span className={clsx('ml-1 font-medium', d <= 3 ? 'text-danger' : d <= 7 ? 'text-warning' : 'text-ink-muted')}>
-                                  · {label}
-                                </span>
-                              )
-                            })()}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3 flex-shrink-0">
-                        <span
-                          className={clsx(
-                            'text-sm font-mono font-medium tabular-nums',
-                            isDebt ? 'text-ink-primary' : 'text-success'
+                        <div className="flex items-center gap-3 flex-shrink-0">
+                          {isCreditCard && limit > 0 && (
+                            <div className="w-24 hidden sm:block">
+                              <div className="h-1.5 bg-surface-1 rounded-full overflow-hidden">
+                                <div className="h-full rounded-full" style={{ width: `${utilization}%`, background: utilizationColor(utilization) }} />
+                              </div>
+                              <p className="text-[10px] mt-0.5 text-right font-medium" style={{ color: utilizationColor(utilization) }}>
+                                {utilization}% used
+                              </p>
+                            </div>
                           )}
-                        >
-                          {displayText}
-                          {isCreditCard && balance < 0 && ' credit'}
-                        </span>
-                        {isCreditCard && isDebt && (
-                          <button
-                            className="btn-ghost h-8 px-2.5 text-xs"
-                            onClick={() => setPayTarget(b)}
+                          <span
+                            className={clsx(
+                              'text-sm font-mono font-medium tabular-nums',
+                              isDebt ? 'text-ink-primary' : 'text-success'
+                            )}
                           >
-                            <CheckCircle className="w-3.5 h-3.5" /> Pay
+                            {displayText}
+                            {isCreditCard && balance < 0 && ' credit'}
+                          </span>
+                          {isCreditCard && isDebt && (
+                            <button
+                              className="btn-ghost h-8 px-2.5 text-xs"
+                              onClick={() => setPayTarget(b)}
+                            >
+                              <CheckCircle className="w-3.5 h-3.5" /> Pay
+                            </button>
+                          )}
+                          <button
+                            className="btn-danger"
+                            onClick={() => setDeleteTarget(b)}
+                            aria-label="Delete bank account"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
                           </button>
-                        )}
-                        <button
-                          className="btn-danger"
-                          onClick={() => setDeleteTarget(b)}
-                          aria-label="Delete bank account"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                        </div>
                       </div>
                     </div>
                   )

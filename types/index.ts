@@ -13,11 +13,14 @@ export type ExpenseCategory =
 // entities now that assets and investments share one page. 'Cash / Bank',
 // 'Real estate', 'Gold / Jewelry', and 'Tangible assets' followed the same
 // path: they're added as Other-type Investments now, not a separate Asset
-// category — so every remaining AssetCategory is a liability, and `Asset`
-// effectively represents "money you owe" going forward (kept the type/table
-// name as-is rather than renaming across the whole codebase for this).
+// category. 'Credit card' followed it too (Jul 2026) — credit cards are
+// tracked exclusively as bank-account-type Credit Cards now (Settings >
+// Accounts), which already had the fuller feature set (Pay flow, dashboard
+// reminders); BankAccount picked up creditLimit/minimumPayment from here to
+// match. So `AssetCategory` now has exactly one value, and `Asset`
+// effectively represents "a generic liability" going forward (kept the
+// type/table name as-is rather than renaming across the whole codebase).
 export type AssetCategory =
-  | 'Credit card'
   | 'Liability'
 
 export type InvestmentType =
@@ -66,6 +69,15 @@ export interface Expense {
   date: string
   receiptUrl?: string
   account?: string // e.g. a bank account name, or "Cash"
+  // Set when `account` was matched to a real BankAccount and that account's
+  // balance was adjusted by this expense — Checking/Saving balances go down,
+  // Credit Card balances go up (more owed). computeNetWorth excludes an
+  // expense with this set from netSavings, since it's already reflected in
+  // the account balance instead. Unset means it's still counted via
+  // netSavings, same as before this field existed (e.g. "Cash", which has
+  // no tracked balance, or an account label that doesn't match any real
+  // account).
+  deductedFromAccountId?: string
 }
 
 export type BankAccountType = 'Checking' | 'Saving' | 'Credit Card'
@@ -105,6 +117,8 @@ export interface BankAccount {
   type: BankAccountType
   startingBalance: number
   dueDate?: string // Credit Card only — ISO date of next payment due
+  creditLimit?: number // Credit Card only
+  minimumPayment?: number // Credit Card only
 }
 
 // Loaded data from before this field set existed may be missing fields —
@@ -218,7 +232,7 @@ export interface Asset {
   minimumPayment?: number
 }
 
-export const LIABILITY_CATEGORIES: AssetCategory[] = ['Liability', 'Credit card']
+export const LIABILITY_CATEGORIES: AssetCategory[] = ['Liability']
 
 export function isLiabilityCategory(category: AssetCategory): boolean {
   return LIABILITY_CATEGORIES.includes(category)
@@ -306,7 +320,6 @@ export const EXPENSE_CATEGORIES: ExpenseCategory[] = [
 ]
 
 export const ASSET_CATEGORIES: AssetCategory[] = [
-  'Credit card',
   'Liability',
 ]
 
@@ -329,7 +342,6 @@ export const CATEGORY_COLORS: Record<ExpenseCategory, string> = {
 }
 
 export const ASSET_COLORS: Record<AssetCategory, string> = {
-  'Credit card':      '#c026d3',
   'Liability':        '#e34948',
 }
 

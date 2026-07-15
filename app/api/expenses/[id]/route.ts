@@ -11,9 +11,29 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
   const { userId } = auth
 
   const result = await db.transaction(async (tx) => {
-    await tx
+    const [deleted] = await tx
       .delete(schema.expenses)
       .where(and(eq(schema.expenses.userId, userId), eq(schema.expenses.id, params.id)))
+      .returning()
+
+    // Reverse the balance change this expense made when it was added — same
+    // sign logic as the POST route, inverted. If the linked account was
+    // itself deleted since, deductedFromAccountId is already null (the FK's
+    // ON DELETE SET NULL), so there's nothing to reverse into.
+    if (deleted?.deductedFromAccountId) {
+      const [account] = await tx
+        .select()
+        .from(schema.bankAccounts)
+        .where(and(eq(schema.bankAccounts.userId, userId), eq(schema.bankAccounts.id, deleted.deductedFromAccountId)))
+        .limit(1)
+      if (account) {
+        const delta = account.type === 'Credit Card' ? -deleted.amount : deleted.amount
+        await tx
+          .update(schema.bankAccounts)
+          .set({ startingBalance: account.startingBalance + delta })
+          .where(and(eq(schema.bankAccounts.userId, userId), eq(schema.bankAccounts.id, account.id)))
+      }
+    }
 
     const netWorth = await recomputeAndUpsertNetWorth(tx, userId)
     return { netWorth }

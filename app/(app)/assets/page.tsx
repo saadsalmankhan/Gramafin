@@ -1,13 +1,14 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
+import Link from 'next/link'
 import { useStore } from '@/lib/store'
 import {
   Investment, INVESTMENT_TYPES, InvestmentType, INVESTMENT_TYPE_COLORS, PsxSymbol,
   MutualFund, MUTUAL_FUND_TYPES, MutualFundType, MUTUAL_FUND_TYPE_COLORS,
-  Asset, AssetCategory, isLiabilityCategory, ASSET_COLORS, LIABILITY_CATEGORIES,
+  Asset, isLiabilityCategory, ASSET_COLORS,
 } from '@/types'
-import { fmt, fmtCompact, gainPct, uid, pct, daysUntil } from '@/lib/utils'
+import { fmt, fmtCompact, gainPct, uid, pct } from '@/lib/utils'
 import { computeNetWorth } from '@/lib/networth'
 import { fetchStockPrice } from '@/lib/fetchStockPrice'
 import { fetchNav, fetchMufapFundsData, clearNavCache, MufapFund } from '@/lib/fetchNav'
@@ -20,12 +21,11 @@ import StockSymbolSelect from '@/components/StockSymbolSelect'
 import MutualFundSelect from '@/components/MutualFundSelect'
 import StockDetailModal from '@/components/StockDetailModal'
 import ConfirmDialog from '@/components/ConfirmDialog'
-import PayCreditCardModal from '@/components/PayCreditCardModal'
 import MarketChart from '@/components/MarketChart'
 import IndexTicker from '@/components/IndexTicker'
 import {
   Plus, Trash2, TrendingUp, TrendingDown, RefreshCw, CheckCircle, AlertCircle,
-  Edit2, X, Save, Search, CreditCard,
+  Edit2, X, Save, Search,
 } from 'lucide-react'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 import clsx from 'clsx'
@@ -56,9 +56,6 @@ function fundCurrentValue(f: MutualFund): number {
 function fundCostBasis(f: MutualFund): number {
   return f.unitsHeld * f.buyNav
 }
-function utilizationColor(p: number): string {
-  return p < 70 ? '#15803d' : p < 90 ? '#d97706' : '#dc2626'
-}
 
 export default function AssetsPage() {
   const {
@@ -71,7 +68,6 @@ export default function AssetsPage() {
     deleteMutualFund,
     addAsset,
     deleteAsset,
-    payAssetCard,
   } = useStore()
   const chartColors = useChartColors()
   const [mainTab, setMainTab] = useState<MainTab>('Assets')
@@ -118,15 +114,14 @@ export default function AssetsPage() {
   const [selectedMarketStock, setSelectedMarketStock] = useState<PsxSymbol | null>(null)
 
   // ---- Liabilities state ----
+  // Credit cards live in Settings > Accounts now (bank-account-type Credit
+  // Card, which already has its own Pay flow, due-date reminder, and
+  // utilization tracking) — this tab is generic liabilities only (loans,
+  // etc.), so there's no per-liability category or credit-card fields left.
   const [liabName, setLiabName] = useState('')
   const [liabValue, setLiabValue] = useState('')
-  const [liabCategory, setLiabCategory] = useState<AssetCategory>('Credit card')
-  const [liabCreditLimit, setLiabCreditLimit] = useState('')
-  const [liabDueDate, setLiabDueDate] = useState('')
-  const [liabMinimumPayment, setLiabMinimumPayment] = useState('')
   const [liabFormError, setLiabFormError] = useState('')
   const [deleteLiabTarget, setDeleteLiabTarget] = useState<Asset | null>(null)
-  const [payLiabTarget, setPayLiabTarget] = useState<Asset | null>(null)
 
   const overallNetWorth = computeNetWorth(state).netWorth
 
@@ -347,37 +342,22 @@ export default function AssetsPage() {
   // ---- Liabilities derived data ----
   const liabilitiesList = state.assets.filter(a => isLiabilityCategory(a.category))
   const totalLiab = liabilitiesList.reduce((s, a) => s + a.value, 0)
-  const isLiabCreditCard = liabCategory === 'Credit card'
 
   function addLiability() {
     if (!liabName.trim()) { setLiabFormError('Name is required'); return }
     const val = parseFloat(liabValue)
     if (isNaN(val) || val <= 0) { setLiabFormError('Enter a valid value'); return }
 
-    let limit: number | undefined
-    if (isLiabCreditCard) {
-      limit = parseFloat(liabCreditLimit)
-      if (isNaN(limit) || limit <= 0) { setLiabFormError('Enter a valid credit limit'); return }
-    }
-
     setLiabFormError('')
     const asset: Asset = {
       id: uid(),
       name: liabName.trim(),
       value: val,
-      category: liabCategory,
-      ...(isLiabCreditCard && {
-        creditLimit: limit,
-        dueDate: liabDueDate || undefined,
-        minimumPayment: liabMinimumPayment ? parseFloat(liabMinimumPayment) : undefined,
-      }),
+      category: 'Liability',
     }
     addAsset(asset)
     setLiabName('')
     setLiabValue('')
-    setLiabCreditLimit('')
-    setLiabDueDate('')
-    setLiabMinimumPayment('')
   }
 
   function LiabilityRow({ a }: { a: Asset }) {
@@ -405,61 +385,6 @@ export default function AssetsPage() {
         <button className="btn-danger flex-shrink-0" onClick={() => setDeleteLiabTarget(a)} aria-label="Delete">
           <Trash2 className="w-3.5 h-3.5" />
         </button>
-      </div>
-    )
-  }
-
-  function CreditCardRow({ a }: { a: Asset }) {
-    const limit = a.creditLimit ?? 0
-    const utilization = limit > 0 ? Math.min(100, Math.round((a.value / limit) * 100)) : 0
-    const color = utilizationColor(utilization)
-    return (
-      <div className="py-3 px-2 hover:bg-surface-0 rounded-lg transition-colors">
-        <div className="flex items-center gap-4">
-          <div
-            className="w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center"
-            style={{ background: ASSET_COLORS['Credit card'] + '18' }}
-          >
-            <CreditCard className="w-4 h-4" style={{ color: ASSET_COLORS['Credit card'] }} />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-ink-primary truncate">{a.name}</p>
-            <p className="text-[11px] text-ink-muted">
-              Limit {fmt(limit)}
-              {a.dueDate && ` · Due ${a.dueDate}`}
-              {a.minimumPayment ? ` · Min payment ${fmt(a.minimumPayment)}` : ''}
-              {a.dueDate && (() => {
-                const d = daysUntil(a.dueDate)
-                if (d > 7) return null
-                const label = d < 0 ? `Overdue ${Math.abs(d)}d` : d === 0 ? 'Due today' : `Due in ${d}d`
-                return (
-                  <span className={`ml-1 font-medium ${d <= 3 ? 'text-danger' : 'text-warning'}`}>
-                    · {label}
-                  </span>
-                )
-              })()}
-            </p>
-          </div>
-          <div className="w-24 hidden sm:block">
-            <div className="h-1.5 bg-surface-1 rounded-full overflow-hidden">
-              <div className="h-full rounded-full" style={{ width: `${utilization}%`, background: color }} />
-            </div>
-            <p className="text-[10px] mt-0.5 text-right font-medium" style={{ color }}>
-              {utilization}% used
-            </p>
-          </div>
-          <span className="text-sm font-mono font-medium text-danger flex-shrink-0 tabular-nums">
-            {fmt(a.value)}
-          </span>
-          {a.value > 0 && (
-            <button className="btn-ghost h-8 px-2.5 text-xs flex-shrink-0" onClick={() => setPayLiabTarget(a)}>
-              <CheckCircle className="w-3.5 h-3.5" /> Pay
-            </button>
-          )}
-          <button className="btn-danger flex-shrink-0" onClick={() => setDeleteLiabTarget(a)} aria-label="Delete">
-            <Trash2 className="w-3.5 h-3.5" />
-          </button>
-        </div>
       </div>
     )
   }
@@ -936,63 +861,28 @@ export default function AssetsPage() {
           <div className="card mb-6">
             <h2 className="text-sm font-medium text-ink-primary mb-4">Add liability</h2>
             {liabFormError && <p className="text-xs text-danger mb-3 bg-red-50 dark:bg-danger/10 px-3 py-2 rounded">{liabFormError}</p>}
-            <div className="flex gap-3 flex-wrap mb-3">
+            <div className="flex gap-3 flex-wrap">
               <input
                 className="input flex-1 min-w-40"
-                placeholder={isLiabCreditCard ? 'Name (e.g. UBL Visa)' : 'Name (e.g. Car loan)'}
+                placeholder="Name (e.g. Car loan)"
                 value={liabName}
                 onChange={e => setLiabName(e.target.value)}
               />
               <input
                 className="input flex-1 min-w-32 font-mono"
                 type="number"
-                placeholder={isLiabCreditCard ? 'Current balance (PKR)' : 'Value (PKR)'}
+                placeholder="Value (PKR)"
                 value={liabValue}
                 onChange={e => setLiabValue(e.target.value)}
               />
-              <select
-                className="select flex-1 min-w-36"
-                value={liabCategory}
-                onChange={e => setLiabCategory(e.target.value as AssetCategory)}
-              >
-                {LIABILITY_CATEGORIES.map(c => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
-              {!isLiabCreditCard && (
-                <button className="btn-primary" onClick={addLiability}>
-                  <Plus className="w-4 h-4" /> Add
-                </button>
-              )}
+              <button className="btn-primary" onClick={addLiability}>
+                <Plus className="w-4 h-4" /> Add
+              </button>
             </div>
-            {isLiabCreditCard && (
-              <div className="flex gap-3 flex-wrap">
-                <input
-                  className="input flex-1 min-w-32 font-mono"
-                  type="number"
-                  placeholder="Credit limit (PKR)"
-                  value={liabCreditLimit}
-                  onChange={e => setLiabCreditLimit(e.target.value)}
-                />
-                <input
-                  className="input flex-1 min-w-32"
-                  type="date"
-                  placeholder="Due date"
-                  value={liabDueDate}
-                  onChange={e => setLiabDueDate(e.target.value)}
-                />
-                <input
-                  className="input flex-1 min-w-32 font-mono"
-                  type="number"
-                  placeholder="Minimum payment (PKR)"
-                  value={liabMinimumPayment}
-                  onChange={e => setLiabMinimumPayment(e.target.value)}
-                />
-                <button className="btn-primary" onClick={addLiability}>
-                  <Plus className="w-4 h-4" /> Add
-                </button>
-              </div>
-            )}
+            <p className="text-[11px] text-ink-muted mt-3">
+              Credit cards go in <Link href="/settings" className="text-brand-600 hover:underline">Settings → Accounts</Link> now — this is
+              for other liabilities like loans.
+            </p>
           </div>
 
           <div className="card">
@@ -1005,11 +895,7 @@ export default function AssetsPage() {
               <p className="text-sm text-ink-muted text-center py-6">No liabilities added yet</p>
             ) : (
               <div className="divide-y divide-gray-50 dark:divide-white/5">
-                {liabilitiesList.map(a =>
-                  a.category === 'Credit card'
-                    ? <CreditCardRow key={a.id} a={a} />
-                    : <LiabilityRow key={a.id} a={a} />
-                )}
+                {liabilitiesList.map(a => <LiabilityRow key={a.id} a={a} />)}
               </div>
             )}
           </div>
@@ -1040,19 +926,6 @@ export default function AssetsPage() {
         onCancel={() => setDeleteLiabTarget(null)}
       />
 
-      <PayCreditCardModal
-        open={payLiabTarget !== null}
-        cardLabel={payLiabTarget?.name ?? ''}
-        balanceOwed={payLiabTarget?.value ?? 0}
-        payFromOptions={state.bankAccounts.filter(b => b.type !== 'Credit Card')}
-        onConfirm={(amount, fromAccountId) => {
-          if (payLiabTarget) {
-            payAssetCard(payLiabTarget.id, amount, fromAccountId)
-          }
-          setPayLiabTarget(null)
-        }}
-        onCancel={() => setPayLiabTarget(null)}
-      />
     </div>
   )
 }

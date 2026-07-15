@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server'
+import { and, eq } from 'drizzle-orm'
 import { db } from '@/db/client'
 import * as schema from '@/db/schema'
-import { expenseFromRow } from '@/db/mappers'
+import { bankAccountFromRow, expenseFromRow } from '@/db/mappers'
 import { recomputeAndUpsertNetWorth } from '@/lib/networth-server'
 import { requireUserId } from '@/lib/api-auth'
-import { EXPENSE_CATEGORIES } from '@/types'
+import { EXPENSE_CATEGORIES, bankAccountLabel } from '@/types'
 import { isFiniteNumber, isIsoDate, isNonEmptyString, isOneOf } from '@/lib/validate'
 
 export async function POST(req: Request) {
@@ -24,7 +25,33 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Invalid expense' }, { status: 400 })
   }
 
+  const account = typeof body.account === 'string' ? body.account : null
+
   const result = await db.transaction(async (tx) => {
+    // Match the account label to a real bank account, same approach as the
+    // recurring-income deposit sweep in lib/income.ts. Unlike that sweep,
+    // Credit Card accounts are a valid match target here — an expense is
+    // exactly the "charged to a card" case that sweep never has to handle.
+    let deductedFromAccountId: string | null = null
+    if (account) {
+      const bankAccountRows = await tx
+        .select()
+        .from(schema.bankAccounts)
+        .where(eq(schema.bankAccounts.userId, userId))
+      const matched = bankAccountRows.map(bankAccountFromRow).find(b => bankAccountLabel(b) === account)
+      if (matched) {
+        deductedFromAccountId = matched.id
+        // Credit Card balances use an inverted sign (positive = owed), so a
+        // charge increases it; Checking/Saving balances are cash, so a
+        // charge decreases it.
+        const delta = matched.type === 'Credit Card' ? body.amount : -body.amount
+        await tx
+          .update(schema.bankAccounts)
+          .set({ startingBalance: matched.startingBalance + delta })
+          .where(and(eq(schema.bankAccounts.userId, userId), eq(schema.bankAccounts.id, matched.id)))
+      }
+    }
+
     const [row] = await tx
       .insert(schema.expenses)
       .values({
@@ -35,7 +62,8 @@ export async function POST(req: Request) {
         category: body.category,
         date: body.date,
         receiptUrl: typeof body.receiptUrl === 'string' ? body.receiptUrl : null,
-        account: typeof body.account === 'string' ? body.account : null,
+        account,
+        deductedFromAccountId,
       })
       .returning()
 

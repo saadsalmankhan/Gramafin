@@ -44,7 +44,14 @@ export function computeNetWorth(state: AppState): NetWorthBreakdown {
   const totalIncome = state.incomes
     .filter(i => !i.depositedToAccountId)
     .reduce((s, i) => s + i.amount, 0)
-  const totalExpenses = state.expenses.reduce((s, e) => s + e.amount, 0)
+  // Same exclusion, mirrored for expenses: one already deducted from (or
+  // charged to) a real bank account was already reflected above — via a
+  // lower cash balance, or higher credit card debt — so counting it again
+  // here would double it. Expenses still on "Cash" or an unmatched label
+  // are counted here exactly as before this distinction existed.
+  const totalExpenses = state.expenses
+    .filter(e => !e.deductedFromAccountId)
+    .reduce((s, e) => s + e.amount, 0)
   const netSavings = totalIncome - totalExpenses
 
   return {
