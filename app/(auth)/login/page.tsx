@@ -7,6 +7,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { CreditCard, Target, TrendingUp, Building2 } from 'lucide-react'
 import AuthMarketingPanel from '@/components/AuthMarketingPanel'
+import PasswordInput from '@/components/PasswordInput'
 
 const tips = [
   {
@@ -98,9 +99,7 @@ function LoginForm() {
               required
             />
             <div>
-              <input
-                className="input"
-                type="password"
+              <PasswordInput
                 placeholder="Password"
                 value={password}
                 onChange={e => setPassword(e.target.value)}

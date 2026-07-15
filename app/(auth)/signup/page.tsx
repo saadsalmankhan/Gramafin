@@ -5,6 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { MailCheck, Receipt, Target, Building2, TrendingUp } from 'lucide-react'
 import AuthMarketingPanel from '@/components/AuthMarketingPanel'
+import PasswordInput from '@/components/PasswordInput'
 
 const benefits = [
   {
@@ -109,9 +110,7 @@ export default function SignupPage() {
                 autoComplete="email"
                 required
               />
-              <input
-                className="input"
-                type="password"
+              <PasswordInput
                 placeholder="Password (min. 8 characters)"
                 value={password}
                 onChange={e => setPassword(e.target.value)}

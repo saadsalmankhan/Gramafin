@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { XCircle } from 'lucide-react'
+import PasswordInput from '@/components/PasswordInput'
 
 function ResetPasswordForm() {
   const router = useRouter()
@@ -73,9 +74,7 @@ function ResetPasswordForm() {
 
       <form onSubmit={handleSubmit} className="card space-y-3">
         {error && <p className="text-xs text-danger bg-red-50 px-3 py-2 rounded">{error}</p>}
-        <input
-          className="input"
-          type="password"
+        <PasswordInput
           placeholder="New password"
           value={password}
           onChange={e => setPassword(e.target.value)}
@@ -83,9 +82,7 @@ function ResetPasswordForm() {
           minLength={8}
           required
         />
-        <input
-          className="input"
-          type="password"
+        <PasswordInput
           placeholder="Confirm new password"
           value={confirmPassword}
           onChange={e => setConfirmPassword(e.target.value)}
