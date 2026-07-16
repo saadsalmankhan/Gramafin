@@ -167,9 +167,22 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(expense),
           })
-          return readJson<{ expense: Expense; netWorth: NetWorthBreakdown }>(res, 'Failed to add expense')
+          return readJson<{ expense: Expense; bankAccount: BankAccount | null; netWorth: NetWorthBreakdown }>(
+            res,
+            'Failed to add expense'
+          )
         }
-      ).then(() => undefined),
+      ).then(result => {
+        // The optimistic update above only knows about the new expense — it
+        // can't guess a bank/credit-card balance change without duplicating
+        // the server's account-matching logic. Patch it in from the
+        // server-confirmed value instead, so Settings/Dashboard don't show a
+        // stale balance until the next full reload.
+        if (result?.bankAccount) {
+          const account = result.bankAccount
+          setState(s => ({ ...s, bankAccounts: s.bankAccounts.map(b => (b.id === account.id ? account : b)) }))
+        }
+      }),
     [mutate]
   )
 
@@ -184,9 +197,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         s => (removed ? { ...s, expenses: [removed, ...s.expenses] } : s),
         async () => {
           const res = await fetch(`/api/expenses/${id}`, { method: 'DELETE' })
-          return readJson<{ netWorth: NetWorthBreakdown }>(res, 'Failed to delete expense')
+          return readJson<{ bankAccount: BankAccount | null; netWorth: NetWorthBreakdown }>(
+            res,
+            'Failed to delete expense'
+          )
         }
-      ).then(() => undefined)
+      ).then(result => {
+        if (result?.bankAccount) {
+          const account = result.bankAccount
+          setState(s => ({ ...s, bankAccounts: s.bankAccounts.map(b => (b.id === account.id ? account : b)) }))
+        }
+      })
     },
     [mutate]
   )

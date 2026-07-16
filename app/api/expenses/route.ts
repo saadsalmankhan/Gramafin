@@ -33,6 +33,7 @@ export async function POST(req: Request) {
     // Credit Card accounts are a valid match target here — an expense is
     // exactly the "charged to a card" case that sweep never has to handle.
     let deductedFromAccountId: string | null = null
+    let updatedBankAccount: typeof schema.bankAccounts.$inferSelect | null = null
     if (account) {
       const bankAccountRows = await tx
         .select()
@@ -45,10 +46,11 @@ export async function POST(req: Request) {
         // charge increases it; Checking/Saving balances are cash, so a
         // charge decreases it.
         const delta = matched.type === 'Credit Card' ? body.amount : -body.amount
-        await tx
+        ;[updatedBankAccount] = await tx
           .update(schema.bankAccounts)
           .set({ startingBalance: matched.startingBalance + delta })
           .where(and(eq(schema.bankAccounts.userId, userId), eq(schema.bankAccounts.id, matched.id)))
+          .returning()
       }
     }
 
@@ -68,7 +70,17 @@ export async function POST(req: Request) {
       .returning()
 
     const netWorth = await recomputeAndUpsertNetWorth(tx, userId)
-    return { expense: expenseFromRow(row), netWorth }
+    return {
+      expense: expenseFromRow(row),
+      // The client's optimistic update only knows about the new expense
+      // itself — it can't guess a bank account's new balance without
+      // duplicating this route's matching + sign logic. Returning the
+      // updated row lets the store patch state.bankAccounts directly with
+      // the server-confirmed value instead of leaving it stale until the
+      // next full bootstrap (e.g. a hard refresh).
+      bankAccount: updatedBankAccount ? bankAccountFromRow(updatedBankAccount) : null,
+      netWorth,
+    }
   })
 
   return NextResponse.json(result, { status: 201 })
