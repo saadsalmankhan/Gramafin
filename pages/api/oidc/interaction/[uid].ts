@@ -9,6 +9,23 @@ import { getGramafinUserId } from '@/lib/oidc/pagesSession'
 // JSON endpoint a separate React page fetches: a fetch() from any other
 // path wouldn't carry the cookie, and interactionDetails/interactionFinished
 // both need it (plus the raw req/res only the Pages Router provides).
+// Allow/Deny submit as plain <form> POSTs, deliberately not fetch(). The
+// success path ends in a redirect chain that legitimately leaves this
+// origin (.../authorize/{uid} -> the connecting client's own redirect_uri,
+// e.g. claude.ai's callback) — a real top-level navigation follows that
+// fine (redirects aren't CORS-restricted), but fetch()'s default
+// redirect:'follow' enforces CORS on every hop including the last one, so
+// it throws once the chain crosses origins. That was the actual bug behind
+// a real "This connection request is invalid or has expired" incident: the
+// thrown fetch error fell into a catch-all window.location.reload(), which
+// re-GETs this same interaction uid after it's already been consumed by
+// the confirm POST, which always 400s (SessionNotFound). A prior version
+// of this page used fetch() to auto-chase what its comment described as
+// oidc-provider's separate login/consent round trips — but confirm.ts
+// always submits login+consent together in one shot, so that second round
+// trip never actually happens in practice; the auto-chase logic was
+// solving a problem this app doesn't have, at the cost of breaking the one
+// it does.
 function escapeHtml(s: string) {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 }
@@ -52,8 +69,9 @@ function renderPage(opts: { uid: string; clientName: string; scopes: string[]; e
   li { font-size: 14px; padding-left: 22px; position: relative; }
   li::before { content: '✓'; position: absolute; left: 0; color: rgb(0 128 55); font-weight: 700; }
   .row { display: flex; gap: 10px; }
+  .row form { flex: 1; }
   button {
-    flex: 1; height: 40px; border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer;
+    width: 100%; height: 40px; border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer;
     border: 1px solid rgb(228 225 216);
   }
   button.primary { background: rgb(0 128 55); color: #fff; border-color: rgb(0 128 55); }
@@ -71,37 +89,15 @@ function renderPage(opts: { uid: string; clientName: string; scopes: string[]; e
     ${error ? `<p class="error">${escapeHtml(error)}</p>` : ''}
     <ul>${items}</ul>
     <div class="row">
-      <button class="ghost" id="deny">Deny</button>
-      <button class="primary" id="allow">Allow access</button>
+      <form method="POST" action="/api/oidc/interaction/${uid}/deny" onsubmit="this.querySelector('button').disabled=true">
+        <button class="ghost" type="submit">Deny</button>
+      </form>
+      <form method="POST" action="/api/oidc/interaction/${uid}/confirm" onsubmit="this.querySelector('button').disabled=true">
+        <button class="primary" type="submit">Allow access</button>
+      </form>
     </div>
     <p class="foot">You can revoke this at any time from Settings.</p>
   </div>
-  <script>
-    // oidc-provider resolves the login and consent prompts as two separate
-    // round trips (this page's own submission satisfies login; the
-    // redirect it returns lands on a *new* interaction, at this same URL
-    // shape, still needing consent) — chase that chain here so the visitor
-    // only has to click once instead of seeing this same screen twice.
-    async function respond(action, path, depth) {
-      depth = depth || 0
-      document.getElementById('allow').disabled = true
-      document.getElementById('deny').disabled = true
-      try {
-        const res = await fetch(path + '/' + action, { method: 'POST' })
-        if (!res.redirected) { window.location.reload(); return }
-        if (action === 'confirm' && depth < 5 && /\\/api\\/oidc\\/interaction\\//.test(res.url)) {
-          const nextPath = new URL(res.url).pathname
-          await respond('confirm', nextPath, depth + 1)
-          return
-        }
-        window.location.href = res.url
-      } catch (e) {
-        window.location.reload()
-      }
-    }
-    document.getElementById('allow').addEventListener('click', () => respond('confirm', '/api/oidc/interaction/${uid}'))
-    document.getElementById('deny').addEventListener('click', () => respond('deny', '/api/oidc/interaction/${uid}'))
-  </script>
 </body>
 </html>`
 }
