@@ -35,9 +35,9 @@ const tips = [
 function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const justVerified = searchParams.get('verified') === '1'
-  const justReset = searchParams.get('reset') === '1'
-  const callbackUrl = searchParams.get('callbackUrl') || '/dashboard'
+  const justVerified = searchParams?.get('verified') === '1'
+  const justReset = searchParams?.get('reset') === '1'
+  const callbackUrl = searchParams?.get('callbackUrl') || '/dashboard'
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')

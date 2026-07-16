@@ -11,6 +11,7 @@
     "db:migrate": "tsx db/migrate.ts"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.26.0",
     "@neondatabase/serverless": "^1.1.0",
     "@portabletext/react": "^6.2.0",
     "@sanity/image-url": "^1.2.0",
@@ -22,21 +23,26 @@
     "cheerio": "^1.2.0",
     "clsx": "^2.1.1",
     "drizzle-orm": "^0.45.2",
+    "jose": "^6.2.3",
     "lucide-react": "^0.383.0",
+    "mcp-handler": "^1.1.0",
     "next": "14.2.5",
     "next-auth": "^4.24.14",
     "next-sanity": "^9.8.0",
+    "oidc-provider": "^9.9.1",
     "react": "^18",
     "react-dom": "^18",
     "recharts": "^2.12.7",
     "resend": "^6.16.0",
     "sanity": "^3.99.0",
     "styled-components": "^6.4.3",
-    "ws": "^8.21.0"
+    "ws": "^8.21.0",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20",
+    "@types/oidc-provider": "^9.5.0",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "@types/ws": "^8.18.1",

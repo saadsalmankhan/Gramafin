@@ -7,6 +7,8 @@ import {
   timestamp,
   numeric,
   date,
+  jsonb,
+  index,
   primaryKey,
   foreignKey,
   check,
@@ -201,4 +203,34 @@ export const netWorthSnapshots = pgTable('net_worth_snapshots', {
   value: numeric('value', { precision: 16, scale: 2, mode: 'number' }).notNull(),
 }, (table) => [
   primaryKey({ columns: [table.userId, table.date] }),
+])
+
+// Generic storage for the oidc-provider library (MCP OAuth authorization
+// server — lets Claude/ChatGPT/etc. connect to a specific Gramafin user's
+// account). oidc-provider is model-agnostic about how its Adapter persists
+// data as long as the interface contract is met, so one key-value-shaped
+// table serves every model it defines (AccessToken, AuthorizationCode,
+// Client, Grant, Interaction, RefreshToken, Session, etc.) rather than a
+// dozen narrow tables — this is the standard pattern for a custom
+// oidc-provider adapter. `userId` is nullable because some models (Client,
+// InitialAccessToken) aren't tied to an end user. No user_id FK/cascade:
+// oidc-provider manages its own record lifecycle (expiry, consume/destroy,
+// revokeByGrantId) independent of the app's user deletion flow, which
+// doesn't exist yet anyway.
+export const oauthModelRecords = pgTable('oauth_model_records', {
+  modelType: text('model_type').notNull(),
+  id: text('id').notNull(),
+  payload: jsonb('payload').notNull(),
+  userId: uuid('user_id'),
+  grantId: text('grant_id'),
+  userCode: text('user_code'),
+  uid: text('uid'),
+  expiresAt: timestamp('expires_at', { withTimezone: true, mode: 'string' }),
+  consumedAt: timestamp('consumed_at', { withTimezone: true, mode: 'string' }),
+}, (table) => [
+  primaryKey({ columns: [table.modelType, table.id] }),
+  index('oauth_model_records_grant_id_idx').on(table.grantId),
+  index('oauth_model_records_user_code_idx').on(table.userCode),
+  index('oauth_model_records_uid_idx').on(table.uid),
+  index('oauth_model_records_expires_at_idx').on(table.expiresAt),
 ])

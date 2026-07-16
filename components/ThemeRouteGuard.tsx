@@ -16,7 +16,7 @@ export default function ThemeRouteGuard() {
   const pathname = usePathname()
 
   useEffect(() => {
-    if (isAppRoute(pathname)) {
+    if (isAppRoute(pathname ?? '')) {
       let stored: string | null = null
       try {
         stored = localStorage.getItem(THEME_KEY)

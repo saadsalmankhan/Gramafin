@@ -20,10 +20,11 @@ import PageHeader from '@/components/PageHeader'
 import NetWorthContribution from '@/components/NetWorthContribution'
 import ConfirmDialog from '@/components/ConfirmDialog'
 import PayCreditCardModal from '@/components/PayCreditCardModal'
+import ConnectedAppsSection from '@/components/ConnectedAppsSection'
 import { Plus, Trash2, Landmark, CreditCard, Moon, Sun, CheckCircle } from 'lucide-react'
 import clsx from 'clsx'
 
-type Tab = 'accounts' | 'preferences'
+type Tab = 'accounts' | 'preferences' | 'connected'
 
 function utilizationColor(p: number): string {
   return p < 70 ? '#15803d' : p < 90 ? '#d97706' : '#dc2626'
@@ -81,6 +82,7 @@ export default function SettingsPage() {
         {([
           { key: 'accounts', label: 'Accounts' },
           { key: 'preferences', label: 'Preferences' },
+          { key: 'connected', label: 'Connected apps' },
         ] as const).map(t => (
           <button
             key={t.key}
@@ -344,6 +346,8 @@ export default function SettingsPage() {
           </div>
         </div>
       )}
+
+      {tab === 'connected' && <ConnectedAppsSection />}
 
       <ConfirmDialog
         open={deleteTarget !== null}
