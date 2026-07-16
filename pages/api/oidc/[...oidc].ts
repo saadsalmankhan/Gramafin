@@ -23,6 +23,24 @@ export const config = {
 // route inside oidc-provider 404s.
 const MOUNT_PREFIX = '/api/oidc'
 
+// oidc-provider wires up CORS (including the OPTIONS preflight route) for
+// most endpoints — token, jwks, userinfo, discovery, revocation, etc. — but
+// deliberately not for /register: Dynamic Client Registration (RFC 7591) is
+// written assuming the caller is a server, not browser JS. Claude's web app
+// calls it directly from the browser, so without CORS here every attempt
+// fails silently (preflight 404s, and even the POSTs that do succeed can't
+// be read by the caller since the response also lacks
+// Access-Control-Allow-Origin) — confirmed via production logs showing the
+// OPTIONS preflight 404ing right before Claude's connector setup gave up.
+function applyRegistrationCors(req: NextApiRequest, res: NextApiResponse) {
+  const origin = req.headers.origin
+  if (!origin) return
+  res.setHeader('Access-Control-Allow-Origin', origin)
+  res.setHeader('Vary', 'Origin')
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.url?.startsWith(MOUNT_PREFIX)) {
     // oidc-provider derives the mount path it prepends onto every URL it
@@ -35,5 +53,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     ;(req as NextApiRequest & { originalUrl?: string }).originalUrl = req.url
     req.url = req.url.slice(MOUNT_PREFIX.length) || '/'
   }
+
+  if (req.url === '/register' || req.url?.startsWith('/register/')) {
+    applyRegistrationCors(req, res)
+    if (req.method === 'OPTIONS') {
+      res.statusCode = 204
+      res.end()
+      return
+    }
+  }
+
   await oidc.callback()(req, res)
 }
