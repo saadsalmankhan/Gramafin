@@ -50,6 +50,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return
     }
     grant.addResourceScope(resource, scope)
+    // gramafin:read/gramafin:write are dual-classified — declared both as
+    // resource-server scopes (getResourceServerInfo, satisfies
+    // rs_scopes_missing) and as top-level OIDC scopes (satisfies
+    // op_scopes_missing, which DCR's own scope validation now requires them
+    // to be — see lib/oidc/provider.ts). Both grant calls are needed or the
+    // consent step loops forever re-requesting the same "missing" scope.
+    grant.addOIDCScope(scope)
     const grantId = await grant.save()
 
     const result: InteractionResults = {

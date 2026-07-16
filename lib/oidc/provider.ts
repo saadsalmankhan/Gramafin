@@ -47,20 +47,24 @@ export const oidc = new Provider(ISSUER, {
       },
     }
   },
-  // Deliberately NOT declaring gramafin:read/gramafin:write here too —
-  // oidc-provider treats anything in this top-level list as a generic
-  // "OIDC scope" requiring grant.addOIDCScope(), completely separate from
-  // (and in addition to) the resource-server scope tracking
-  // getResourceServerInfo's `scope` field below drives via
-  // grant.addResourceScope(). Declaring them in both places meant the
-  // consent screen's "op_scopes_missing" check kept failing forever — it
-  // was checking the OIDC side, which nothing here ever satisfies, while
-  // this app only ever calls addResourceScope. Confirmed the hard way: the
-  // fix is to declare a scope as a resource-server scope OR a top-level
-  // OIDC scope, never both. scopes_supported for MCP client discovery is
-  // instead advertised via the Protected Resource Metadata endpoint (see
-  // app/.well-known/oauth-protected-resource/route.ts), which is what an
-  // MCP client actually consults before requesting a scope.
+  // gramafin:read/gramafin:write have to be declared here too, even though
+  // they're already declared as resource-server scopes below via
+  // getResourceServerInfo's `scope` field. Two independent oidc-provider
+  // checks read from different sources and both must pass:
+  //   - DCR's `scope` metadata validation (client_schema.js) checks
+  //     requested scope tokens against *this* top-level list — a client
+  //     that registers requesting "gramafin:read gramafin:write" (as
+  //     Claude's connector does) gets invalid_client_metadata if a scope
+  //     isn't recognized here, regardless of getResourceServerInfo.
+  //   - The consent screen's "op_scopes_missing" check separately verifies
+  //     every scope classified as "OIDC" (i.e. present in this list) was
+  //     granted via grant.addOIDCScope() — a completely different call
+  //     than addResourceScope(). Declaring a scope here without also
+  //     calling addOIDCScope() for it at consent time is exactly what
+  //     caused an infinite consent loop before (confirmed the hard way).
+  // So both grant.addOIDCScope() and grant.addResourceScope() are called
+  // for these scopes now — see pages/api/oidc/interaction/[uid]/confirm.ts.
+  scopes: ['gramafin:read', 'gramafin:write'],
   claims: {
     // No standard OIDC identity scopes (profile/email) — MCP clients only
     // need an opaque-to-them subject id, not a login/identity flow, so
