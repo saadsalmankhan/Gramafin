@@ -171,3 +171,19 @@ export const oidc = new Provider(ISSUER, {
 // Secure-flag mismatch) since it can't otherwise tell the original request
 // was HTTPS.
 oidc.proxy = true
+
+// Temporary diagnostic: oidc-provider's own function logs only carry a
+// status code, not *why* a request was rejected. 'grant.error' is the
+// officially supported event for /token failures — logging it here (rather
+// than trying to read the raw request stream, which bodyParser:false hands
+// to oidc-provider itself and can only be consumed once) is the safe way to
+// see the actual error and request params behind an otherwise-opaque 400.
+// Remove once the current investigation concludes.
+oidc.on('grant.error', (ctx, err) => {
+  console.error('grant.error:', {
+    error: err.error,
+    error_description: err.error_description,
+    message: err.message,
+    params: ctx.oidc?.params,
+  })
+})
