@@ -74,7 +74,13 @@ export default function Dashboard() {
   const recent = state.expenses.slice(0, 8)
 
   const cardReminders = state.bankAccounts
-    .filter(b => b.type === 'Credit Card' && b.dueDate)
+    // startingBalance > 0 (inverted-sign convention: positive = owed) — a
+    // card that's paid off or in credit has nothing to remind about,
+    // regardless of what its stale dueDate says. Paying via the Pay modal
+    // already rolls dueDate a month forward (see payBankAccountCard), but
+    // this covers any other way a card's balance ends up at/below zero
+    // (e.g. its expenses were edited or removed) without that happening.
+    .filter(b => b.type === 'Credit Card' && b.dueDate && b.startingBalance > 0)
     .map(b => ({ id: b.id, name: bankAccountLabel(b), minimumPayment: b.minimumPayment, days: daysUntil(b.dueDate!) }))
     .filter(c => c.days <= REMINDER_WINDOW_DAYS)
     .sort((a, b) => a.days - b.days)

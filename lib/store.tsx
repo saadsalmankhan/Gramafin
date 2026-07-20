@@ -569,7 +569,23 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             'Failed to process payment'
           )
         }
-      ).then(() => undefined)
+      ).then(result => {
+        // The optimistic update above only touches startingBalance — it
+        // doesn't know the server also rolls dueDate forward a month on
+        // payment (see app/api/bank-accounts/[id]/pay/route.ts). Patch both
+        // accounts in from the server-confirmed values, same reasoning as
+        // addExpense above, or the dashboard's payment reminder keeps
+        // showing the just-paid card as overdue until a full reload.
+        if (!result) return
+        setState(s => ({
+          ...s,
+          bankAccounts: s.bankAccounts.map(b => {
+            if (b.id === result.bankAccount.id) return result.bankAccount
+            if (result.fromAccount && b.id === result.fromAccount.id) return result.fromAccount
+            return b
+          }),
+        }))
+      })
     },
     [mutate]
   )

@@ -6,6 +6,7 @@ import { bankAccountFromRow } from '@/db/mappers'
 import { recomputeAndUpsertNetWorth } from '@/lib/networth-server'
 import { requireUserId } from '@/lib/api-auth'
 import { isFiniteNumber } from '@/lib/validate'
+import { advanceDate } from '@/lib/income'
 
 // Pays down a BankAccount-kind credit card. These already use "negative
 // balance = credit" as their documented convention (see Settings), so the
@@ -51,7 +52,14 @@ export async function POST(req: Request, { params }: { params: { id: string } })
 
     const [updatedCard] = await tx
       .update(schema.bankAccounts)
-      .set({ startingBalance: cardRow.startingBalance - body.amount })
+      .set({
+        startingBalance: cardRow.startingBalance - body.amount,
+        // A payment settles this cycle's due date — reusing it as-is would
+        // keep showing the just-paid card as overdue/due-soon on the
+        // dashboard until someone manually edits it. Only rolls forward
+        // when a due date was actually set; cards without one stay unset.
+        ...(cardRow.dueDate ? { dueDate: advanceDate(cardRow.dueDate, 'Monthly') } : {}),
+      })
       .where(and(eq(schema.bankAccounts.userId, userId), eq(schema.bankAccounts.id, params.id)))
       .returning()
 
