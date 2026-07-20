@@ -12,6 +12,7 @@ import {
   primaryKey,
   foreignKey,
   check,
+  type AnyPgColumn,
 } from 'drizzle-orm/pg-core'
 import {
   EXPENSE_CATEGORIES,
@@ -40,7 +41,32 @@ export const users = pgTable('users', {
   passwordHash: text('password_hash').notNull(),
   emailVerified: boolean('email_verified').notNull().default(false),
   createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' }).notNull().defaultNow(),
+  // Nullable rather than NOT NULL + default: existing rows predate this
+  // column and get backfilled lazily on first bootstrap read (see
+  // lib/referrals.ts) rather than via a one-off migration script — one
+  // fewer coordinated deploy step, and new signups always get one anyway.
+  referralCode: text('referral_code').unique(),
+  referredByUserId: uuid('referred_by_user_id').references((): AnyPgColumn => users.id, { onDelete: 'set null' }),
 })
+
+// Tracks each individual email invite a user sends — the source of truth
+// for both the "10 points per invite sent" count and, once accepted, the
+// "who invited whom, and did they actually join" question. Composite PK on
+// (user_id, email) deliberately dedupes: re-inviting the same address
+// doesn't re-earn the 10 points or re-send extra rows, so this can't be
+// farmed by spamming one email repeatedly.
+export const referralInvites = pgTable('referral_invites', {
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  email: text('email').notNull(),
+  invitedAt: timestamp('invited_at', { withTimezone: true, mode: 'string' }).notNull().defaultNow(),
+  // Set once (if ever) someone signs up with this exact email while
+  // referredByUserId on their new user row points back to this invite's
+  // inviter — see lib/auth/users.ts's createUser. Null means still pending.
+  acceptedAt: timestamp('accepted_at', { withTimezone: true, mode: 'string' }),
+  acceptedUserId: uuid('accepted_user_id').references(() => users.id, { onDelete: 'set null' }),
+}, (table) => [
+  primaryKey({ columns: [table.userId, table.email] }),
+])
 
 export const preferences = pgTable('preferences', {
   userId: uuid('user_id').primaryKey().references(() => users.id, { onDelete: 'cascade' }),

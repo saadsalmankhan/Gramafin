@@ -24,6 +24,7 @@ import StockDetailModal from '@/components/StockDetailModal'
 import ConfirmDialog from '@/components/ConfirmDialog'
 import MarketChart from '@/components/MarketChart'
 import IndexTicker from '@/components/IndexTicker'
+import TourHighlight from '@/components/TourHighlight'
 import {
   Plus, Trash2, TrendingUp, TrendingDown, RefreshCw, CheckCircle, AlertCircle,
   Edit2, X, Save, Search,
@@ -471,6 +472,7 @@ export default function AssetsPage() {
           {/* ---------------- Stocks / Crypto / Bonds / Other ---------------- */}
           {(assetSubTab === 'Stocks' || assetSubTab === 'Crypto' || assetSubTab === 'Bonds' || assetSubTab === 'Other') && (
             <>
+              <TourHighlight label="Add your stock or fund here">
               <div className="card mb-6">
                 <h2 className="text-sm font-medium text-ink-primary mb-4">Add {assetSubTab.toLowerCase()}</h2>
                 {assetSubTab === 'Other' && (
@@ -519,6 +521,7 @@ export default function AssetsPage() {
                   </p>
                 )}
               </div>
+              </TourHighlight>
 
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
                 <div className="card lg:col-span-2">
@@ -866,6 +869,7 @@ export default function AssetsPage() {
       {/* ---------------- Liabilities ---------------- */}
       {mainTab === 'Liabilities' && (
         <>
+          <TourHighlight label="Add your liability here">
           <div className="card mb-6">
             <h2 className="text-sm font-medium text-ink-primary mb-4">Add liability</h2>
             {liabFormError && <p className="text-xs text-danger mb-3 bg-red-50 dark:bg-danger/10 px-3 py-2 rounded">{liabFormError}</p>}
@@ -892,6 +896,7 @@ export default function AssetsPage() {
               for other liabilities like loans.
             </p>
           </div>
+          </TourHighlight>
 
           <div className="card">
             <div className="flex items-center gap-2 mb-4">

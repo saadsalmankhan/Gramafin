@@ -16,6 +16,7 @@ export async function POST(req: Request) {
   const email = typeof body?.email === 'string' ? body.email.trim() : ''
   const password = typeof body?.password === 'string' ? body.password : ''
   const name = typeof body?.name === 'string' ? body.name.trim() : ''
+  const referralCode = typeof body?.referralCode === 'string' && body.referralCode.trim() ? body.referralCode.trim() : undefined
 
   if (!name) {
     return NextResponse.json({ error: 'Name is required' }, { status: 400 })
@@ -28,7 +29,7 @@ export async function POST(req: Request) {
   }
 
   try {
-    const user = await createUser({ email, password, name })
+    const user = await createUser({ email, password, name, referralCode })
     const token = await createVerificationToken(user.email)
     await sendVerificationEmail({ to: user.email, name: user.name, token })
 

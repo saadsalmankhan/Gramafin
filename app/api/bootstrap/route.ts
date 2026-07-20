@@ -12,6 +12,7 @@ import {
 } from '@/db/mappers'
 import { recomputeAndUpsertNetWorth } from '@/lib/networth-server'
 import { runRecurringIncomeSweep } from '@/lib/recurring-sweep'
+import { getReferralSummary } from '@/lib/referrals'
 import { requireUserId } from '@/lib/api-auth'
 import { AppState, Budgets, DEFAULT_BUDGETS, DEFAULT_PREFERENCES, ExpenseCategory } from '@/types'
 import { today } from '@/lib/utils'
@@ -29,7 +30,7 @@ export async function GET() {
   const data = await db.transaction(async (tx) => {
     const result = await runRecurringIncomeSweep(tx, userId)
 
-    const [assetRows, investmentRows, mutualFundRows, expenseRows, budgetRows, prefRows, snapshotRows] =
+    const [assetRows, investmentRows, mutualFundRows, expenseRows, budgetRows, prefRows, snapshotRows, referrals] =
       await Promise.all([
         tx.select().from(schema.assets).where(eq(schema.assets.userId, userId)),
         tx.select().from(schema.investments).where(eq(schema.investments.userId, userId)),
@@ -42,6 +43,7 @@ export async function GET() {
           .from(schema.netWorthSnapshots)
           .where(eq(schema.netWorthSnapshots.userId, userId))
           .orderBy(schema.netWorthSnapshots.date),
+        getReferralSummary(tx, userId),
       ])
 
     const budgets: Budgets = { ...DEFAULT_BUDGETS }
@@ -74,6 +76,7 @@ export async function GET() {
       bankAccounts: result.bankAccounts,
       netWorthHistory,
       preferences: prefRows[0] ? preferencesFromRow(prefRows[0]) : DEFAULT_PREFERENCES,
+      referrals,
     }
 
     return state

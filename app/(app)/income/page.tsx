@@ -19,6 +19,7 @@ import AccountSelect from '@/components/AccountSelect'
 import PageHeader from '@/components/PageHeader'
 import NetWorthContribution from '@/components/NetWorthContribution'
 import ConfirmDialog from '@/components/ConfirmDialog'
+import TourHighlight from '@/components/TourHighlight'
 import { Plus, Trash2, RefreshCw, CheckCircle2 } from 'lucide-react'
 import clsx from 'clsx'
 
@@ -129,6 +130,7 @@ export default function IncomePage() {
       </div>
 
       {/* Add income */}
+      <TourHighlight label="Log your income here">
       <div className="card mb-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-sm font-medium text-ink-primary">Add income</h2>
@@ -201,6 +203,7 @@ export default function IncomePage() {
           </button>
         </div>
       </div>
+      </TourHighlight>
 
       {/* Recurring rules */}
       {state.recurringIncomes.length > 0 && (

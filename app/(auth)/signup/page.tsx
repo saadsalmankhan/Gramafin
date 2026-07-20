@@ -3,6 +3,7 @@
 import { FormEvent, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { useSearchParams } from 'next/navigation'
 import { MailCheck, Receipt, Target, Building2, TrendingUp } from 'lucide-react'
 import AuthMarketingPanel from '@/components/AuthMarketingPanel'
 import PasswordInput from '@/components/PasswordInput'
@@ -31,6 +32,8 @@ const benefits = [
 ]
 
 export default function SignupPage() {
+  const searchParams = useSearchParams()
+  const referralCode = searchParams?.get('ref') || undefined
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -46,7 +49,7 @@ export default function SignupPage() {
     const res = await fetch('/api/auth/signup', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, password }),
+      body: JSON.stringify({ name, email, password, referralCode }),
     })
     const data = await res.json()
     setLoading(false)
@@ -92,6 +95,11 @@ export default function SignupPage() {
             <p className="text-sm text-ink-muted mt-1 mb-8">Start tracking your wealth with Gramafin</p>
 
             <form onSubmit={handleSubmit} className="card space-y-3">
+              {referralCode && !error && (
+                <p className="text-xs text-success bg-green-50 px-3 py-2 rounded">
+                  You were invited by a friend 🎉
+                </p>
+              )}
               {error && <p className="text-xs text-danger bg-red-50 px-3 py-2 rounded">{error}</p>}
               <input
                 className="input"

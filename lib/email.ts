@@ -98,6 +98,38 @@ export async function sendPasswordChangedEmail(params: { to: string; name: strin
   })
 }
 
+export async function sendReferralInviteEmail(params: { to: string; inviterName: string; referralUrl: string }) {
+  const { to, inviterName, referralUrl } = params
+
+  const cardContentHtml = [
+    headingBlock(
+      `${escapeHtml(inviterName)} invited you to Gramafin`,
+      `Gramafin is a personal finance app for tracking net worth, expenses, budgets, and investments in PKR. ${escapeHtml(inviterName)} thought you'd find it useful.`
+    ),
+    buttonBlock(referralUrl, 'Create your account'),
+    fallbackLinkBlock(referralUrl, "If the button doesn't work, copy and paste this URL into your browser:"),
+  ].join('')
+
+  await send({
+    to,
+    subject: `${inviterName} invited you to Gramafin`,
+    html: emailLayout({
+      cardContentHtml,
+      footerText: "If you weren't expecting this, you can safely ignore this email.",
+    }),
+    text: [
+      `${inviterName} invited you to Gramafin.`,
+      '',
+      'Gramafin is a personal finance app for tracking net worth, expenses, budgets, and investments in PKR.',
+      '',
+      'Create your account:',
+      referralUrl,
+      '',
+      "If you weren't expecting this, you can safely ignore this email.",
+    ].join('\n'),
+  })
+}
+
 function emailLayout(params: { cardContentHtml: string; footerText: string }): string {
   const { cardContentHtml, footerText } = params
   return `

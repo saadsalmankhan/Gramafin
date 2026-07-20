@@ -9,6 +9,7 @@ import Badge from '@/components/Badge'
 import PageHeader from '@/components/PageHeader'
 import NetWorthTrendChart from '@/components/NetWorthTrendChart'
 import SpendingDonutChart from '@/components/SpendingDonutChart'
+import SetupChecklist from '@/components/SetupChecklist'
 import { ArrowRight, AlertTriangle, CreditCard } from 'lucide-react'
 import Link from 'next/link'
 
@@ -84,6 +85,8 @@ export default function Dashboard() {
         title="Dashboard"
         subtitle={`${new Date().toLocaleDateString('en-PK', { month: 'long', year: 'numeric' })} · ${fiscalYearRange().label}`}
       />
+
+      <SetupChecklist />
 
       {/* Payment reminders */}
       {cardReminders.length > 0 && (

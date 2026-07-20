@@ -9,6 +9,7 @@ import Badge from '@/components/Badge'
 import AccountSelect from '@/components/AccountSelect'
 import PageHeader from '@/components/PageHeader'
 import ConfirmDialog from '@/components/ConfirmDialog'
+import TourHighlight from '@/components/TourHighlight'
 import { Plus, Trash2, Paperclip } from 'lucide-react'
 
 export default function ExpensesPage() {
@@ -105,6 +106,7 @@ export default function ExpensesPage() {
       </div>
 
       {/* Add form */}
+      <TourHighlight label="Log your expense here">
       <div className="card mb-6">
         <h2 className="text-sm font-medium text-ink-primary mb-4">Add expense</h2>
         {error && (
@@ -164,6 +166,7 @@ export default function ExpensesPage() {
           </button>
         </div>
       </div>
+      </TourHighlight>
 
       {/* List */}
       <div className="card">

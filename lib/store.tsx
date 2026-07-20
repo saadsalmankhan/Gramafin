@@ -15,6 +15,7 @@ import {
   DEFAULT_BUDGETS,
   Preferences,
   DEFAULT_PREFERENCES,
+  DEFAULT_REFERRAL_SUMMARY,
   CURRENCIES,
   NetWorthSnapshot,
 } from '@/types'
@@ -32,6 +33,7 @@ const initialState: AppState = {
   bankAccounts: [],
   netWorthHistory: [],
   preferences: DEFAULT_PREFERENCES,
+  referrals: DEFAULT_REFERRAL_SUMMARY,
 }
 
 // Keeps a running daily history of net worth so it can be charted over time,
@@ -77,6 +79,7 @@ interface StoreCtx {
   deleteBankAccount: (id: string) => Promise<void>
   payBankAccountCard: (cardId: string, amount: number, fromAccountId: string | null) => Promise<void>
   setPreferences: (prefs: Partial<Preferences>) => Promise<void>
+  sendReferralInvite: (email: string) => Promise<void>
 }
 
 const StoreContext = createContext<StoreCtx | null>(null)
@@ -594,6 +597,21 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  // Unlike the other mutations here, this re-throws on failure instead of
+  // swallowing it into the global syncError banner — the invite form needs
+  // a specific message ("enter a valid email", "too many invites"), not
+  // just a generic sync-failed indicator, same reasoning as the receipt
+  // upload's local try/catch in the expenses add-form.
+  const sendReferralInvite = useCallback(async (email: string) => {
+    const res = await fetch('/api/referrals/invite', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    })
+    const { summary } = await readJson<{ summary: AppState['referrals'] }>(res, 'Failed to send invite')
+    setState(s => ({ ...s, referrals: summary }))
+  }, [])
+
   return (
     <StoreContext.Provider
       value={{
@@ -619,6 +637,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         deleteBankAccount,
         payBankAccountCard,
         setPreferences,
+        sendReferralInvite,
       }}
     >
       {children}

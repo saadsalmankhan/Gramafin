@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { useStore } from '@/lib/store'
 import {
   BankAccount,
@@ -21,10 +22,12 @@ import NetWorthContribution from '@/components/NetWorthContribution'
 import ConfirmDialog from '@/components/ConfirmDialog'
 import PayCreditCardModal from '@/components/PayCreditCardModal'
 import ConnectedAppsSection from '@/components/ConnectedAppsSection'
+import ReferralsSection from '@/components/ReferralsSection'
+import TourHighlight from '@/components/TourHighlight'
 import { Plus, Trash2, Landmark, CreditCard, Moon, Sun, CheckCircle } from 'lucide-react'
 import clsx from 'clsx'
 
-type Tab = 'accounts' | 'preferences' | 'connected'
+type Tab = 'accounts' | 'preferences' | 'connected' | 'referrals'
 
 function utilizationColor(p: number): string {
   return p < 70 ? '#15803d' : p < 90 ? '#d97706' : '#dc2626'
@@ -32,7 +35,11 @@ function utilizationColor(p: number): string {
 
 export default function SettingsPage() {
   const { state, addBankAccount, deleteBankAccount, payBankAccountCard, setPreferences } = useStore()
-  const [tab, setTab] = useState<Tab>('accounts')
+  const searchParams = useSearchParams()
+  const [tab, setTab] = useState<Tab>(() => {
+    const t = searchParams?.get('tab')
+    return t === 'referrals' || t === 'preferences' || t === 'connected' ? t : 'accounts'
+  })
   const [bank, setBank] = useState(PAKISTANI_BANKS[0])
   const [nickname, setNickname] = useState('')
   const [type, setType] = useState<BankAccountType>('Checking')
@@ -82,6 +89,7 @@ export default function SettingsPage() {
         {([
           { key: 'accounts', label: 'Accounts' },
           { key: 'preferences', label: 'Preferences' },
+          { key: 'referrals', label: 'Invite friends' },
           { key: 'connected', label: 'Connected apps' },
         ] as const).map(t => (
           <button
@@ -105,6 +113,7 @@ export default function SettingsPage() {
             netWorth={netWorthBreakdown.netWorth}
           />
 
+          <TourHighlight label="Add your bank account here">
           <div className="card mb-6">
             <h2 className="text-sm font-medium text-ink-primary mb-4">Add bank account</h2>
             {error && (
@@ -180,6 +189,7 @@ export default function SettingsPage() {
               </>
             )}
           </div>
+          </TourHighlight>
 
           <div className="card">
             <h2 className="text-sm font-medium text-ink-primary mb-4">
@@ -346,6 +356,8 @@ export default function SettingsPage() {
           </div>
         </div>
       )}
+
+      {tab === 'referrals' && <ReferralsSection />}
 
       {tab === 'connected' && <ConnectedAppsSection />}
 

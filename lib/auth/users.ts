@@ -3,6 +3,7 @@ import { eq } from 'drizzle-orm'
 import { db } from '@/db/client'
 import * as schema from '@/db/schema'
 import { DEFAULT_BUDGETS, EXPENSE_CATEGORIES } from '@/types'
+import { findUserByReferralCode, markInviteAccepted } from '@/lib/referrals'
 
 export interface StoredUser {
   id: string
@@ -30,21 +31,29 @@ export async function createUser(params: {
   email: string
   password: string
   name: string
+  referralCode?: string
 }): Promise<StoredUser> {
-  const { email, password, name } = params
+  const { email, password, name, referralCode } = params
   const existing = await getUserByEmail(email)
   if (existing) {
     throw new Error('An account with this email already exists')
   }
 
+  const normalizedEmail = normalizeEmail(email)
+  // Resolved before the insert, not after — if the code doesn't match a
+  // real user, referrer is just undefined and referredByUserId stays null,
+  // same as no code being given at all. Never blocks signup either way.
+  const referrer = referralCode ? await findUserByReferralCode(db, referralCode) : undefined
+
   try {
     const [user] = await db
       .insert(schema.users)
       .values({
-        email: normalizeEmail(email),
+        email: normalizedEmail,
         name: name.trim(),
         passwordHash: await bcrypt.hash(password, 12),
         emailVerified: false,
+        referredByUserId: referrer?.id,
       })
       .returning()
 
@@ -60,6 +69,12 @@ export async function createUser(params: {
         amount: DEFAULT_BUDGETS[category],
       }))
     )
+
+    // Attributes to the specific invite only if this signup's email matches
+    // one the referrer actually sent — see markInviteAccepted's own comment.
+    if (referrer) {
+      await markInviteAccepted(db, referrer.id, normalizedEmail, user.id)
+    }
 
     return user
   } catch (err: unknown) {

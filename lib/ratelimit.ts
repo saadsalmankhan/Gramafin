@@ -22,6 +22,17 @@ export const apiRatelimit = new Ratelimit({
   prefix: 'ratelimit:api',
 })
 
+// Tighter than apiRatelimit — sending a real email per call makes this a
+// more attractive spam/points-farming vector than ordinary CRUD, and it's
+// sending through this app's own Resend account, so its reputation is on
+// the line too.
+export const referralInviteRatelimit = new Ratelimit({
+  redis,
+  limiter: Ratelimit.slidingWindow(20, '1 h'),
+  analytics: true,
+  prefix: 'ratelimit:referral-invite',
+})
+
 export function clientIp(req: Request): string {
   const forwardedFor = req.headers.get('x-forwarded-for')
   if (forwardedFor) return forwardedFor.split(',')[0].trim()

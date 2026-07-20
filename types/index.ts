@@ -297,6 +297,20 @@ export const DEFAULT_PREFERENCES: Preferences = {
   onboardingDismissed: false,
 }
 
+export interface ReferralSummary {
+  code: string
+  sentCount: number
+  acceptedCount: number
+  points: number
+}
+
+export const DEFAULT_REFERRAL_SUMMARY: ReferralSummary = {
+  code: '',
+  sentCount: 0,
+  acceptedCount: 0,
+  points: 0,
+}
+
 export interface AppState {
   expenses: Expense[]
   assets: Asset[]
@@ -308,6 +322,7 @@ export interface AppState {
   bankAccounts: BankAccount[]
   netWorthHistory: NetWorthSnapshot[]
   preferences: Preferences
+  referrals: ReferralSummary
 }
 
 export const EXPENSE_CATEGORIES: ExpenseCategory[] = [

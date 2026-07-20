@@ -10,7 +10,7 @@ import {
   mutualFundFromRow,
 } from '@/db/mappers'
 import { computeNetWorth, NetWorthBreakdown } from '@/lib/networth'
-import { AppState, DEFAULT_BUDGETS, DEFAULT_PREFERENCES } from '@/types'
+import { AppState, DEFAULT_BUDGETS, DEFAULT_PREFERENCES, DEFAULT_REFERRAL_SUMMARY } from '@/types'
 import { today } from '@/lib/utils'
 
 // Accepts either the top-level `db` or an active `db.transaction(tx => ...)`
@@ -46,6 +46,7 @@ export async function recomputeAndUpsertNetWorth(tx: Queryable, userId: string):
     recurringIncomes: [],
     netWorthHistory: [],
     preferences: DEFAULT_PREFERENCES,
+    referrals: DEFAULT_REFERRAL_SUMMARY,
   }
 
   const breakdown = computeNetWorth(state)

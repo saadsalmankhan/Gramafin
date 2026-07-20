@@ -19,3 +19,9 @@ const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/
 export function isIsoDate(value: unknown): value is string {
   return typeof value === 'string' && ISO_DATE_RE.test(value)
 }
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+export function isValidEmail(value: unknown): value is string {
+  return typeof value === 'string' && EMAIL_RE.test(value)
+}
