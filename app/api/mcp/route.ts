@@ -10,6 +10,26 @@ import { verifyToken } from '@/lib/mcp/verifyToken'
 import { EXPENSE_CATEGORIES } from '@/types'
 import { uid, today } from '@/lib/utils'
 import type { AuthInfo } from '@modelcontextprotocol/sdk/server/auth/types.js'
+import type { Implementation } from '@modelcontextprotocol/sdk/types.js'
+
+const APP_URL = process.env.NEXTAUTH_URL || 'http://localhost:3000'
+
+// mcp-handler's own ServerOptions.serverInfo type only declares
+// {name, version} — narrower than the real MCP SDK's Implementation type
+// (checked directly in node_modules: mcp-handler passes this object
+// straight through, untouched, to `new McpServer(serverInfo, ...)`), which
+// does support icons/websiteUrl/description/title as of SDK 1.26. Typing
+// this as a standalone Implementation-typed const (rather than an inline
+// object literal at the call site) avoids TypeScript's excess-property
+// check, so the extra fields actually reach the client without a cast.
+const serverInfo: Implementation = {
+  name: 'gramafin',
+  version: '1.0.0',
+  title: 'Gramafin',
+  description: 'Read and manage net worth, expenses, and budgets in your Gramafin account.',
+  websiteUrl: APP_URL,
+  icons: [{ src: `${APP_URL}/logo-mark.png`, mimeType: 'image/png', sizes: ['314x295'] }],
+}
 
 // Every tool call arrives with req.auth (set by withMcpAuth below) carrying
 // the Gramafin userId resolved from the verified access token — never taken
@@ -43,6 +63,7 @@ const handler = createMcpHandler(
         title: 'Get net worth',
         description: 'Returns the current net worth breakdown: cash/assets, bank accounts, investments, mutual funds, net savings, liabilities, and total net worth, all in PKR.',
         inputSchema: {},
+        annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
       },
       async (_args, extra) => {
         const userId = requireUserId(extra)
@@ -62,6 +83,7 @@ const handler = createMcpHandler(
           toDate: z.string().optional().describe('Inclusive end date, YYYY-MM-DD'),
           limit: z.number().int().positive().max(200).optional().describe('Max rows to return (default 50)'),
         },
+        annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
       },
       async ({ category, fromDate, toDate, limit }, extra) => {
         const userId = requireUserId(extra)
@@ -93,6 +115,7 @@ const handler = createMcpHandler(
           date: z.string().optional().describe('YYYY-MM-DD, defaults to today'),
           account: z.string().optional().describe('Bank account or credit card name (as shown in Gramafin), or omit for Cash'),
         },
+        annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
       },
       async ({ description, amount, category, date, account }, extra) => {
         const userId = requireUserId(extra)
@@ -119,6 +142,7 @@ const handler = createMcpHandler(
         inputSchema: {
           id: z.string().min(1).describe('The expense id, from list_expenses'),
         },
+        annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true },
       },
       async ({ id }, extra) => {
         const userId = requireUserId(extra)
@@ -137,6 +161,7 @@ const handler = createMcpHandler(
         title: 'List budgets',
         description: 'Lists this month’s budget limit and actual spend so far, per expense category.',
         inputSchema: {},
+        annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
       },
       async (_args, extra) => {
         const userId = requireUserId(extra)
@@ -168,6 +193,7 @@ const handler = createMcpHandler(
           category: z.enum(EXPENSE_CATEGORIES as [string, ...string[]]).describe('Expense category'),
           amount: z.number().positive().describe('Monthly limit in PKR'),
         },
+        annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true },
       },
       async ({ category, amount }, extra) => {
         const userId = requireUserId(extra)
@@ -184,7 +210,7 @@ const handler = createMcpHandler(
     )
   },
   {
-    serverInfo: { name: 'gramafin', version: '1.0.0' },
+    serverInfo,
   },
   {
     // SSE isn't part of the MCP spec as of the 2025-03-26 revision — pure
