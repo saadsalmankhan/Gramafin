@@ -8,8 +8,14 @@ import { APP_ROUTE_PREFIXES } from '@/lib/routes'
 import ThemeRouteGuard from '@/components/ThemeRouteGuard'
 
 export const metadata: Metadata = {
-  title: 'Wealth Manager',
+  metadataBase: new URL(process.env.NEXTAUTH_URL || 'http://localhost:3000'),
+  title: 'Gramafin',
   description: 'Personal finance & wealth management in PKR',
+  openGraph: {
+    title: 'Gramafin',
+    description: 'Personal finance & wealth management in PKR',
+    images: ['/logo-mark.png'],
+  },
 }
 
 // Applies the saved theme (or OS preference) before the first paint, so
