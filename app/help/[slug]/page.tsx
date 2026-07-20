@@ -38,13 +38,13 @@ export default async function HelpArticlePage({ params }: { params: { slug: stri
   if (!article) notFound()
 
   return (
-    <div className="max-w-2xl mx-auto px-6 py-16">
+    <div className="max-w-2xl px-6 py-16">
       <Link href="/help" className="text-xs text-ink-muted hover:text-ink-primary flex items-center gap-1 mb-6">
         <ArrowLeft className="w-3.5 h-3.5" /> Help Center
       </Link>
 
       <p className="section-label mb-2">{categoryLabel(article.category)}</p>
-      <h1 className="font-display text-2xl sm:text-3xl text-ink-primary tracking-tight mb-6">{article.title}</h1>
+      <h1 className="font-sans font-semibold text-2xl sm:text-3xl text-ink-primary tracking-tight mb-6">{article.title}</h1>
 
       {article.mainImage && (
         <figure className="mb-8">

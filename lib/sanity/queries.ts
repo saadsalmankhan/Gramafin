@@ -1,5 +1,6 @@
 import { client } from './client'
 import type { SanityImageSource } from '@sanity/image-url/lib/types/types'
+import { HELP_CATEGORIES } from '@/lib/helpCategories'
 
 export interface HelpArticleImage {
   asset: SanityImageSource
@@ -25,16 +26,8 @@ export interface HelpArticle extends HelpArticleSummary {
   body: unknown
 }
 
-const CATEGORY_LABELS: Record<string, string> = {
-  'getting-started': 'Getting started',
-  'expenses-budgets': 'Expenses & budgets',
-  'net-worth': 'Net worth & credit cards',
-  investments: 'Investments & mutual funds',
-  account: 'Account & billing',
-}
-
 export function categoryLabel(category: string): string {
-  return CATEGORY_LABELS[category] ?? category
+  return HELP_CATEGORIES.find(c => c.id === category)?.label ?? category
 }
 
 const IMAGE_PROJECTION = `mainImage{
