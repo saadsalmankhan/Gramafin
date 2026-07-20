@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { useStore } from '@/lib/store'
 import {
   Investment, INVESTMENT_TYPES, InvestmentType, INVESTMENT_TYPE_COLORS, PsxSymbol,
@@ -70,8 +71,15 @@ export default function AssetsPage() {
     deleteAsset,
   } = useStore()
   const chartColors = useChartColors()
-  const [mainTab, setMainTab] = useState<MainTab>('Assets')
-  const [assetSubTab, setAssetSubTab] = useState<AssetSubTab>('Stocks')
+  // Deep-linkable via ?tab=liabilities and/or ?sub=<AssetSubTab> (e.g. from
+  // the first-login quick start guide) — read once on mount, not kept in
+  // sync afterward, so normal in-page tab clicks behave exactly as before.
+  const searchParams = useSearchParams()
+  const [mainTab, setMainTab] = useState<MainTab>(() => (searchParams?.get('tab') === 'liabilities' ? 'Liabilities' : 'Assets'))
+  const [assetSubTab, setAssetSubTab] = useState<AssetSubTab>(() => {
+    const sub = searchParams?.get('sub')
+    return sub && ASSET_SUB_TABS.includes(sub as AssetSubTab) ? (sub as AssetSubTab) : 'Stocks'
+  })
 
   // ---- Stocks/Crypto/Bonds/Other add-form state ----
   const [name, setName] = useState('')

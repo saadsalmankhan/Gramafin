@@ -1,5 +1,6 @@
 import Sidebar from '@/components/Sidebar'
 import HydrationGate from '@/components/HydrationGate'
+import QuickStartGuideGate from '@/components/QuickStartGuideGate'
 
 // See app/(auth)/layout.tsx — same reasoning: the CSP nonce is per-request,
 // so this subtree can't be statically optimized.
@@ -14,7 +15,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         style={{ marginLeft: 'var(--sidebar-w)' }}
       >
         <div className="max-w-4xl mx-auto">
-          <HydrationGate>{children}</HydrationGate>
+          <HydrationGate>
+            <QuickStartGuideGate />
+            {children}
+          </HydrationGate>
         </div>
       </main>
     </div>

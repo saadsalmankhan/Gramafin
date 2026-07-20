@@ -8,6 +8,7 @@ import {
   investmentFromRow,
   mutualFundFromRow,
   netWorthSnapshotFromRow,
+  preferencesFromRow,
 } from '@/db/mappers'
 import { recomputeAndUpsertNetWorth } from '@/lib/networth-server'
 import { runRecurringIncomeSweep } from '@/lib/recurring-sweep'
@@ -72,9 +73,7 @@ export async function GET() {
       recurringIncomes: result.recurring,
       bankAccounts: result.bankAccounts,
       netWorthHistory,
-      preferences: prefRows[0]
-        ? { currency: prefRows[0].currency as AppState['preferences']['currency'], stockMarket: prefRows[0].stockMarket as AppState['preferences']['stockMarket'] }
-        : DEFAULT_PREFERENCES,
+      preferences: prefRows[0] ? preferencesFromRow(prefRows[0]) : DEFAULT_PREFERENCES,
     }
 
     return state

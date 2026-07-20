@@ -21,6 +21,9 @@ export async function PATCH(req: Request) {
   if (body.stockMarket !== undefined && !isOneOf(body.stockMarket, STOCK_MARKETS.map((m) => m.code))) {
     return NextResponse.json({ error: 'Invalid stock market' }, { status: 400 })
   }
+  if (body.onboardingDismissed !== undefined && typeof body.onboardingDismissed !== 'boolean') {
+    return NextResponse.json({ error: 'Invalid onboardingDismissed' }, { status: 400 })
+  }
 
   const [row] = await db
     .insert(schema.preferences)
@@ -28,12 +31,14 @@ export async function PATCH(req: Request) {
       userId,
       currency: body.currency ?? DEFAULT_PREFERENCES.currency,
       stockMarket: body.stockMarket ?? DEFAULT_PREFERENCES.stockMarket,
+      onboardingDismissed: body.onboardingDismissed ?? DEFAULT_PREFERENCES.onboardingDismissed,
     })
     .onConflictDoUpdate({
       target: schema.preferences.userId,
       set: {
         ...(body.currency !== undefined && { currency: body.currency }),
         ...(body.stockMarket !== undefined && { stockMarket: body.stockMarket }),
+        ...(body.onboardingDismissed !== undefined && { onboardingDismissed: body.onboardingDismissed }),
       },
     })
     .returning()

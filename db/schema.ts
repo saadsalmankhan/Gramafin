@@ -46,6 +46,7 @@ export const preferences = pgTable('preferences', {
   userId: uuid('user_id').primaryKey().references(() => users.id, { onDelete: 'cascade' }),
   currency: text('currency').notNull().default('PKR'),
   stockMarket: text('stock_market').notNull().default('PK'),
+  onboardingDismissed: boolean('onboarding_dismissed').notNull().default(false),
 }, (table) => [
   check('preferences_currency_check', oneOf('currency', CURRENCIES.map((c) => c.code))),
   check('preferences_stock_market_check', oneOf('stock_market', STOCK_MARKETS.map((m) => m.code))),

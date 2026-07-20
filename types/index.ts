@@ -288,11 +288,13 @@ export const STOCK_MARKETS: { code: StockMarketCode; label: string; available: b
 export interface Preferences {
   currency: CurrencyCode
   stockMarket: StockMarketCode
+  onboardingDismissed: boolean
 }
 
 export const DEFAULT_PREFERENCES: Preferences = {
   currency: 'PKR',
   stockMarket: 'PK',
+  onboardingDismissed: false,
 }
 
 export interface AppState {

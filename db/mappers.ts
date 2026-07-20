@@ -117,5 +117,6 @@ export function preferencesFromRow(row: typeof schema.preferences.$inferSelect):
   return {
     currency: row.currency as Preferences['currency'],
     stockMarket: row.stockMarket as Preferences['stockMarket'],
+    onboardingDismissed: row.onboardingDismissed,
   }
 }
