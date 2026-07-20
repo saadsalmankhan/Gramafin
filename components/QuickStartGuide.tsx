@@ -3,7 +3,8 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { X } from 'lucide-react'
-import { ONBOARDING_STEPS } from '@/lib/onboardingSteps'
+import { useStore } from '@/lib/store'
+import { ONBOARDING_STEPS, getInitialStepIndex } from '@/lib/onboardingSteps'
 
 const STEPS = ONBOARDING_STEPS
 
@@ -14,7 +15,8 @@ interface Props {
 
 export default function QuickStartGuide({ onDismissSession, onDismissForever }: Props) {
   const router = useRouter()
-  const [stepIndex, setStepIndex] = useState(0)
+  const { state } = useStore()
+  const [stepIndex, setStepIndex] = useState(() => getInitialStepIndex(state))
   const step = STEPS[stepIndex]
   const isFirst = stepIndex === 0
   const isLast = stepIndex === STEPS.length - 1

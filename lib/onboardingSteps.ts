@@ -81,3 +81,14 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
 ]
 
 export const ACTIONABLE_STEPS = ONBOARDING_STEPS.filter(s => s.cta && s.isComplete)
+
+// Brand new users (nothing done yet) start at the 'welcome' bookend. Anyone
+// who's already completed at least one action jumps straight to their next
+// incomplete step instead of restarting from the top every time the modal
+// reappears (e.g. on each login) — 'done' if every action is already complete.
+export function getInitialStepIndex(state: AppState): number {
+  const anyComplete = ACTIONABLE_STEPS.some(s => s.isComplete!(state))
+  if (!anyComplete) return 0
+  const firstIncomplete = ONBOARDING_STEPS.findIndex(s => s.isComplete && !s.isComplete(state))
+  return firstIncomplete === -1 ? ONBOARDING_STEPS.length - 1 : firstIncomplete
+}

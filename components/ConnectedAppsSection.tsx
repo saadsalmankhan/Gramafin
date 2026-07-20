@@ -1,8 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Plug, ShieldOff } from 'lucide-react'
+import { Plug, ShieldOff, HelpCircle } from 'lucide-react'
 import ConfirmDialog from './ConfirmDialog'
+import ConnectClaudeGuide from './ConnectClaudeGuide'
 
 interface Grant {
   grantId: string
@@ -19,6 +20,7 @@ export default function ConnectedAppsSection() {
   const [grants, setGrants] = useState<Grant[] | null>(null)
   const [error, setError] = useState('')
   const [revokeTarget, setRevokeTarget] = useState<Grant | null>(null)
+  const [showGuide, setShowGuide] = useState(false)
 
   function load() {
     fetch('/api/oauth-grants')
@@ -44,7 +46,15 @@ export default function ConnectedAppsSection() {
 
   return (
     <div className="card">
-      <h2 className="text-sm font-medium text-ink-primary mb-1">Connected apps</h2>
+      <div className="flex items-start justify-between gap-3 mb-1">
+        <h2 className="text-sm font-medium text-ink-primary">Connected apps</h2>
+        <button
+          className="text-xs text-brand-700 hover:text-brand-800 flex items-center gap-1 flex-shrink-0"
+          onClick={() => setShowGuide(true)}
+        >
+          <HelpCircle className="w-3.5 h-3.5" /> How to connect
+        </button>
+      </div>
       <p className="text-xs text-ink-muted mb-4">
         AI assistants (like Claude) and other apps you've connected to your Gramafin account via MCP.
       </p>
@@ -53,7 +63,12 @@ export default function ConnectedAppsSection() {
       {grants === null ? (
         <p className="text-sm text-ink-muted text-center py-6">Loading…</p>
       ) : grants.length === 0 ? (
-        <p className="text-sm text-ink-muted text-center py-6">No apps connected yet</p>
+        <div className="text-center py-6">
+          <p className="text-sm text-ink-muted mb-3">No apps connected yet</p>
+          <button className="btn-primary" onClick={() => setShowGuide(true)}>
+            Connect Claude
+          </button>
+        </div>
       ) : (
         <div className="divide-y divide-gray-50 dark:divide-white/5">
           {grants.map(g => (
@@ -85,6 +100,8 @@ export default function ConnectedAppsSection() {
         onConfirm={() => revokeTarget && revoke(revokeTarget.grantId)}
         onCancel={() => setRevokeTarget(null)}
       />
+
+      {showGuide && <ConnectClaudeGuide onClose={() => setShowGuide(false)} />}
     </div>
   )
 }
