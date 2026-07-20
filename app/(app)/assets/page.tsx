@@ -526,7 +526,7 @@ export default function AssetsPage() {
                     <p className="text-sm text-ink-muted text-center py-8">No {assetSubTab.toLowerCase()} added yet</p>
                   ) : (
                     <div>
-                      <div className="grid grid-cols-[1fr_100px_100px_90px_36px] gap-2 px-2 pb-2 border-b border-gray-100 dark:border-white/10">
+                      <div className="grid grid-cols-[minmax(0,1fr)_minmax(90px,auto)_minmax(90px,auto)_minmax(70px,auto)_minmax(64px,auto)] gap-2 px-2 pb-2 border-b border-gray-100 dark:border-white/10">
                         <p className="section-label">Name</p>
                         <p className="section-label text-right">Invested</p>
                         <p className="section-label text-right">Current</p>
@@ -542,7 +542,7 @@ export default function AssetsPage() {
                             <div
                               key={inv.id}
                               className={clsx(
-                                'grid grid-cols-[1fr_100px_100px_90px_36px] gap-2 items-center px-2 py-3 rounded-lg transition-colors',
+                                'grid grid-cols-[minmax(0,1fr)_minmax(90px,auto)_minmax(90px,auto)_minmax(70px,auto)_minmax(64px,auto)] gap-2 items-center px-2 py-3 rounded-lg transition-colors',
                                 isTracked ? 'hover:bg-surface-0 cursor-pointer' : 'hover:bg-surface-0'
                               )}
                               onClick={() => isTracked && setDetailStock(inv)}
@@ -558,13 +558,13 @@ export default function AssetsPage() {
                                   </div>
                                 )}
                               </div>
-                              <span className="text-xs font-mono text-ink-muted text-right tabular-nums">{fmt(inv.amountInvested)}</span>
-                              <span className="text-sm font-mono text-ink-primary text-right tabular-nums">{fmt(inv.currentValue)}</span>
+                              <span className="text-xs font-mono text-ink-muted text-right tabular-nums whitespace-nowrap">{fmt(inv.amountInvested)}</span>
+                              <span className="text-sm font-mono text-ink-primary text-right tabular-nums whitespace-nowrap">{fmt(inv.currentValue)}</span>
                               <div className="flex items-center gap-1 justify-end">
                                 {gain >= 0
                                   ? <TrendingUp className="w-3 h-3 text-success flex-shrink-0" />
                                   : <TrendingDown className="w-3 h-3 text-danger flex-shrink-0" />}
-                                <span className={`text-xs font-mono font-medium ${gain >= 0 ? 'text-success' : 'text-danger'}`}>{gp}%</span>
+                                <span className={`text-xs font-mono font-medium whitespace-nowrap ${gain >= 0 ? 'text-success' : 'text-danger'}`}>{gp}%</span>
                               </div>
                               <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
                                 {isTracked && (
