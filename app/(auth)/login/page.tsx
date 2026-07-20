@@ -37,6 +37,7 @@ function LoginForm() {
   const searchParams = useSearchParams()
   const justVerified = searchParams?.get('verified') === '1'
   const justReset = searchParams?.get('reset') === '1'
+  const justIdle = searchParams?.get('idle') === '1'
   const callbackUrl = searchParams?.get('callbackUrl') || '/dashboard'
 
   const [email, setEmail] = useState('')
@@ -86,6 +87,11 @@ function LoginForm() {
             {justReset && !error && (
               <p className="text-xs text-success bg-green-50 px-3 py-2 rounded">
                 Password updated — you can log in now.
+              </p>
+            )}
+            {justIdle && !error && (
+              <p className="text-xs text-ink-secondary bg-surface-0 px-3 py-2 rounded">
+                You were signed out due to inactivity.
               </p>
             )}
             {error && <p className="text-xs text-danger bg-red-50 px-3 py-2 rounded">{error}</p>}
