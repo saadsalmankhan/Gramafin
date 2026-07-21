@@ -82,7 +82,14 @@ export class DrizzleAdapter {
   }
 
   async revokeByGrantId(grantId: string) {
+    // The Grant row's own `grant_id` column is null (it isn't a child of
+    // another grant, it IS the grant) — the first delete only removes
+    // AccessToken/RefreshToken rows issued under it. Without the second
+    // delete, the Grant row itself survives, tokens revoked, but Settings →
+    // Connected apps keeps listing the app as connected forever since that
+    // list is read straight from surviving Grant rows.
     await db.delete(oauthModelRecords).where(eq(oauthModelRecords.grantId, grantId))
+    await db.delete(oauthModelRecords).where(and(eq(oauthModelRecords.modelType, 'Grant'), eq(oauthModelRecords.id, grantId)))
   }
 }
 
