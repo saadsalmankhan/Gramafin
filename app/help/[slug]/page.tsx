@@ -31,6 +31,22 @@ const components: PortableTextComponents = {
     ),
     strong: ({ children }) => <strong className="font-semibold text-ink-primary">{children}</strong>,
   },
+  types: {
+    inlineImage: ({ value }) => (
+      <figure className="my-6">
+        <div className="relative w-full rounded-card overflow-hidden border border-gray-100 bg-surface-1">
+          <Image
+            src={urlForImage(value.asset).width(1400).fit('max').url()}
+            alt={value.alt}
+            width={1400}
+            height={900}
+            className="w-full h-auto"
+          />
+        </div>
+        {value.caption && <figcaption className="text-[11px] text-ink-muted mt-2 text-center">{value.caption}</figcaption>}
+      </figure>
+    ),
+  },
 }
 
 export default async function HelpArticlePage({ params }: { params: { slug: string } }) {
