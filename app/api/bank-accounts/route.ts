@@ -1,9 +1,7 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/db/client'
-import * as schema from '@/db/schema'
-import { bankAccountFromRow } from '@/db/mappers'
-import { recomputeAndUpsertNetWorth } from '@/lib/networth-server'
 import { requireUserId } from '@/lib/api-auth'
+import { createBankAccountForUser } from '@/lib/bankAccounts'
 import { BANK_ACCOUNT_TYPES } from '@/types'
 import { isFiniteNumber, isNonEmptyString, isOneOf } from '@/lib/validate'
 
@@ -23,25 +21,18 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Invalid bank account' }, { status: 400 })
   }
 
-  const result = await db.transaction(async (tx) => {
-    const [row] = await tx
-      .insert(schema.bankAccounts)
-      .values({
-        userId,
-        id: body.id,
-        bank: body.bank,
-        nickname: typeof body.nickname === 'string' ? body.nickname : '',
-        type: body.type,
-        startingBalance: body.startingBalance,
-        dueDate: typeof body.dueDate === 'string' ? body.dueDate : null,
-        creditLimit: isFiniteNumber(body.creditLimit) ? body.creditLimit : null,
-        minimumPayment: isFiniteNumber(body.minimumPayment) ? body.minimumPayment : null,
-      })
-      .returning()
-
-    const netWorth = await recomputeAndUpsertNetWorth(tx, userId)
-    return { bankAccount: bankAccountFromRow(row), netWorth }
-  })
+  const result = await db.transaction(tx =>
+    createBankAccountForUser(tx, userId, {
+      id: body.id,
+      bank: body.bank,
+      nickname: typeof body.nickname === 'string' ? body.nickname : '',
+      type: body.type,
+      startingBalance: body.startingBalance,
+      dueDate: typeof body.dueDate === 'string' ? body.dueDate : null,
+      creditLimit: isFiniteNumber(body.creditLimit) ? body.creditLimit : null,
+      minimumPayment: isFiniteNumber(body.minimumPayment) ? body.minimumPayment : null,
+    })
+  )
 
   return NextResponse.json(result, { status: 201 })
 }

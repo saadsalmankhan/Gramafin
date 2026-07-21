@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Plug, ShieldOff, HelpCircle } from 'lucide-react'
+import { Plug, ShieldOff, PlugZap } from 'lucide-react'
 import ConfirmDialog from './ConfirmDialog'
 import ConnectClaudeGuide from './ConnectClaudeGuide'
 
@@ -48,11 +48,8 @@ export default function ConnectedAppsSection() {
     <div className="card">
       <div className="flex items-start justify-between gap-3 mb-1">
         <h2 className="text-sm font-medium text-ink-primary">Connected apps</h2>
-        <button
-          className="text-xs text-brand-700 hover:text-brand-800 flex items-center gap-1 flex-shrink-0"
-          onClick={() => setShowGuide(true)}
-        >
-          <HelpCircle className="w-3.5 h-3.5" /> How to connect
+        <button className="btn-ghost h-8 text-xs flex-shrink-0" onClick={() => setShowGuide(true)}>
+          <PlugZap className="w-3.5 h-3.5" /> Connect an app
         </button>
       </div>
       <p className="text-xs text-ink-muted mb-4">

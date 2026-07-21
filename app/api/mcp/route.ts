@@ -6,8 +6,9 @@ import * as schema from '@/db/schema'
 import { expenseFromRow } from '@/db/mappers'
 import { recomputeAndUpsertNetWorth } from '@/lib/networth-server'
 import { createExpenseForUser, deleteExpenseForUser } from '@/lib/expenses'
+import { createBankAccountForUser } from '@/lib/bankAccounts'
 import { verifyToken } from '@/lib/mcp/verifyToken'
-import { EXPENSE_CATEGORIES } from '@/types'
+import { EXPENSE_CATEGORIES, PAKISTANI_BANKS, type BankAccountType } from '@/types'
 import { uid, today } from '@/lib/utils'
 import type { AuthInfo } from '@modelcontextprotocol/sdk/server/auth/types.js'
 import type { Implementation } from '@modelcontextprotocol/sdk/types.js'
@@ -26,7 +27,7 @@ const serverInfo: Implementation = {
   name: 'gramafin',
   version: '1.0.0',
   title: 'Gramafin',
-  description: 'Read and manage net worth, expenses, and budgets in your Gramafin account.',
+  description: 'Read and manage net worth, expenses, budgets, bank accounts, and credit cards in your Gramafin account.',
   websiteUrl: APP_URL,
   icons: [{ src: `${APP_URL}/logo-mark.png`, mimeType: 'image/png', sizes: ['314x295'] }],
 }
@@ -206,6 +207,69 @@ const handler = createMcpHandler(
             set: { amount },
           })
         return { content: [{ type: 'text', text: JSON.stringify({ category, amount }, null, 2) }] }
+      }
+    )
+
+    server.registerTool(
+      'add_bank_account',
+      {
+        title: 'Add bank account',
+        description: 'Adds a checking or savings bank account. Its balance counts toward net worth immediately.',
+        inputSchema: {
+          bank: z.enum(PAKISTANI_BANKS as [string, ...string[]]).describe('The bank, exactly as Gramafin lists it'),
+          type: z.enum(['Checking', 'Saving']).describe('Account type'),
+          startingBalance: z.number().describe('Current balance in PKR'),
+          nickname: z.string().optional().describe('Optional label, e.g. "Salary account"'),
+        },
+        annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
+      },
+      async ({ bank, type, startingBalance, nickname }, extra) => {
+        const userId = requireUserId(extra)
+        requireScope(extra, 'gramafin:write')
+        const result = await db.transaction(tx =>
+          createBankAccountForUser(tx, userId, {
+            id: uid(),
+            bank,
+            type: type as BankAccountType,
+            startingBalance,
+            nickname,
+          })
+        )
+        return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] }
+      }
+    )
+
+    server.registerTool(
+      'add_credit_card',
+      {
+        title: 'Add credit card',
+        description: 'Adds a credit card. Uses an inverted-sign convention: a positive startingBalance means you currently owe that amount (counts against net worth); a negative balance means the card is in credit and owes you instead.',
+        inputSchema: {
+          bank: z.enum(PAKISTANI_BANKS as [string, ...string[]]).describe('The card-issuing bank, exactly as Gramafin lists it'),
+          startingBalance: z.number().describe('Current balance in PKR — positive means you owe this amount'),
+          nickname: z.string().optional().describe('Optional label, e.g. "Visa Platinum"'),
+          dueDate: z.string().optional().describe('YYYY-MM-DD next payment due date — enables dashboard reminders'),
+          creditLimit: z.number().positive().optional().describe('Credit limit in PKR — enables utilization tracking'),
+          minimumPayment: z.number().positive().optional().describe('Minimum payment due, shown alongside reminders'),
+        },
+        annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
+      },
+      async ({ bank, startingBalance, nickname, dueDate, creditLimit, minimumPayment }, extra) => {
+        const userId = requireUserId(extra)
+        requireScope(extra, 'gramafin:write')
+        const result = await db.transaction(tx =>
+          createBankAccountForUser(tx, userId, {
+            id: uid(),
+            bank,
+            type: 'Credit Card',
+            startingBalance,
+            nickname,
+            dueDate,
+            creditLimit,
+            minimumPayment,
+          })
+        )
+        return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] }
       }
     )
   },
