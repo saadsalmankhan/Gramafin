@@ -12,9 +12,22 @@ function fromAddress(): string {
   return process.env.EMAIL_FROM || 'Gramafin <onboarding@resend.dev>'
 }
 
-async function send(params: { to: string; subject: string; html: string; text: string }) {
+async function send(params: {
+  to: string
+  subject: string
+  html: string
+  text: string
+  attachments?: { filename: string; content: Buffer }[]
+}) {
   const resend = new Resend(process.env.RESEND_API_KEY)
-  await resend.emails.send({ from: fromAddress(), to: params.to, subject: params.subject, html: params.html, text: params.text })
+  await resend.emails.send({
+    from: fromAddress(),
+    to: params.to,
+    subject: params.subject,
+    html: params.html,
+    text: params.text,
+    ...(params.attachments ? { attachments: params.attachments } : {}),
+  })
 }
 
 export async function sendVerificationEmail(params: { to: string; name: string; token: string }) {
@@ -127,6 +140,39 @@ export async function sendReferralInviteEmail(params: { to: string; inviterName:
       '',
       "If you weren't expecting this, you can safely ignore this email.",
     ].join('\n'),
+  })
+}
+
+export async function sendWealthStatementEmail(params: {
+  to: string
+  name: string
+  monthLabel: string
+  pdfBuffer: Buffer
+  filename: string
+}) {
+  const { to, name, monthLabel, pdfBuffer, filename } = params
+
+  const cardContentHtml = headingBlock(
+    `Your ${monthLabel} Wealth Statement`,
+    `Hi ${escapeHtml(name)}, your Gramafin wealth statement for ${escapeHtml(monthLabel)} is attached as a PDF. It's generated fresh from your account data and is for your personal reference only.`
+  )
+
+  await send({
+    to,
+    subject: `Your Gramafin Wealth Statement — ${monthLabel}`,
+    html: emailLayout({
+      cardContentHtml,
+      footerText: 'You requested this from Settings in Gramafin. If this wasn’t you, please reset your password.',
+    }),
+    text: [
+      `Hi ${name},`,
+      '',
+      `Your Gramafin wealth statement for ${monthLabel} is attached as a PDF.`,
+      "It's generated fresh from your account data and is for your personal reference only.",
+      '',
+      'You requested this from Settings in Gramafin. If this wasn’t you, please reset your password.',
+    ].join('\n'),
+    attachments: [{ filename, content: pdfBuffer }],
   })
 }
 

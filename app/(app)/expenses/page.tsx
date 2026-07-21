@@ -10,7 +10,8 @@ import AccountSelect from '@/components/AccountSelect'
 import PageHeader from '@/components/PageHeader'
 import ConfirmDialog from '@/components/ConfirmDialog'
 import TourHighlight from '@/components/TourHighlight'
-import { Plus, Trash2, Paperclip } from 'lucide-react'
+import { Plus, Trash2, Paperclip, Search, FileDown, Sheet, Loader2 } from 'lucide-react'
+import { bankAccountLabel } from '@/types'
 
 export default function ExpensesPage() {
   const { state, addExpense, deleteExpense } = useStore()
@@ -21,8 +22,12 @@ export default function ExpensesPage() {
   const [date, setDate] = useState(today())
   const [receipt, setReceipt] = useState<File | null>(null)
   const [filter, setFilter] = useState<'all' | ExpenseCategory>('all')
+  const [monthFilter, setMonthFilter] = useState(today().slice(0, 7))
+  const [accountFilter, setAccountFilter] = useState('all')
+  const [search, setSearch] = useState('')
   const [error, setError] = useState('')
   const [uploading, setUploading] = useState(false)
+  const [exporting, setExporting] = useState<'pdf' | 'csv' | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Expense | null>(null)
 
   const month = new Date().toISOString().slice(0, 7)
@@ -85,9 +90,65 @@ export default function ExpensesPage() {
     }
   }
 
-  const visible = filter === 'all'
-    ? state.expenses
-    : state.expenses.filter(e => e.category === filter)
+  const availableMonths = Array.from(new Set([month, ...state.expenses.map(e => e.date.slice(0, 7))])).sort(
+    (a, b) => b.localeCompare(a)
+  )
+  const monthLabel = (m: string) =>
+    new Date(`${m}-01T00:00:00`).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+
+  const visible = state.expenses.filter(e => {
+    if (filter !== 'all' && e.category !== filter) return false
+    if (monthFilter !== 'all' && !e.date.startsWith(monthFilter)) return false
+    if (accountFilter !== 'all' && (e.account || 'Cash') !== accountFilter) return false
+    if (search.trim() && !e.description.toLowerCase().includes(search.trim().toLowerCase())) return false
+    return true
+  })
+
+  const filterSummary = [
+    monthFilter === 'all' ? 'All time' : monthLabel(monthFilter),
+    filter !== 'all' ? filter : null,
+    accountFilter !== 'all' ? accountFilter : null,
+    search.trim() ? `"${search.trim()}"` : null,
+  ]
+    .filter(Boolean)
+    .join(' · ')
+
+  function downloadBlob(blob: Blob, filename: string) {
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  function exportCsv() {
+    setExporting('csv')
+    const header = ['Description', 'Category', 'Account', 'Date', 'Amount (PKR)']
+    const rows = visible.map(e => [e.description, e.category, e.account || 'Cash', e.date, String(e.amount)])
+    const csv = [header, ...rows]
+      .map(row => row.map(cell => `"${cell.replace(/"/g, '""')}"`).join(','))
+      .join('\n')
+    downloadBlob(new Blob([csv], { type: 'text/csv;charset=utf-8;' }), `Gramafin Expenses - ${filterSummary}.csv`)
+    setExporting(null)
+  }
+
+  async function exportPdf() {
+    setExporting('pdf')
+    try {
+      const res = await fetch('/api/export/expenses', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ expenses: visible, filterSummary }),
+      })
+      if (!res.ok) throw new Error('Export failed')
+      downloadBlob(await res.blob(), `Gramafin Expenses - ${filterSummary}.pdf`)
+    } catch {
+      setError('Failed to export PDF — try again')
+    } finally {
+      setExporting(null)
+    }
+  }
 
   return (
     <div>
@@ -170,11 +231,51 @@ export default function ExpensesPage() {
 
       {/* List */}
       <div className="card">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
           <h2 className="text-sm font-medium text-ink-primary">
-            {filter === 'all' ? 'All expenses' : filter}
+            Expenses
             <span className="ml-2 text-ink-muted font-normal">({visible.length})</span>
           </h2>
+          <div className="flex items-center gap-2">
+            <button
+              className="btn-ghost h-8 text-xs"
+              onClick={exportCsv}
+              disabled={exporting !== null || visible.length === 0}
+            >
+              {exporting === 'csv' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sheet className="w-3.5 h-3.5" />}
+              CSV
+            </button>
+            <button
+              className="btn-ghost h-8 text-xs"
+              onClick={exportPdf}
+              disabled={exporting !== null || visible.length === 0}
+            >
+              {exporting === 'pdf' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileDown className="w-3.5 h-3.5" />}
+              {exporting === 'pdf' ? 'Generating…' : 'PDF'}
+            </button>
+          </div>
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-2 mb-4">
+          <div className="relative flex-1 min-w-[160px]">
+            <Search className="w-3.5 h-3.5 text-ink-muted absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              className="input pl-8 h-8 text-xs w-full"
+              placeholder="Search description…"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
+          </div>
+          <select
+            className="select text-xs h-8"
+            value={monthFilter}
+            onChange={e => setMonthFilter(e.target.value)}
+          >
+            <option value="all">All time</option>
+            {availableMonths.map(m => (
+              <option key={m} value={m}>{monthLabel(m)}</option>
+            ))}
+          </select>
           <select
             className="select text-xs h-8"
             value={filter}
@@ -183,6 +284,17 @@ export default function ExpensesPage() {
             <option value="all">All categories</option>
             {EXPENSE_CATEGORIES.map(c => (
               <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
+          <select
+            className="select text-xs h-8"
+            value={accountFilter}
+            onChange={e => setAccountFilter(e.target.value)}
+          >
+            <option value="all">All accounts</option>
+            <option value="Cash">Cash</option>
+            {state.bankAccounts.map(b => (
+              <option key={b.id} value={bankAccountLabel(b)}>{bankAccountLabel(b)}</option>
             ))}
           </select>
         </div>
@@ -245,7 +357,7 @@ export default function ExpensesPage() {
               <div className="flex justify-end pt-4 border-t border-gray-100 dark:border-white/10 mt-2">
                 <div className="text-right">
                   <p className="text-xs text-ink-muted mb-0.5">
-                    {filter === 'all' ? 'Total' : `Total — ${filter}`} · {visible.length} transactions
+                    Total · {visible.length} transaction{visible.length === 1 ? '' : 's'}
                   </p>
                   <p className="text-base font-mono font-semibold text-ink-primary">
                     −{fmt(visible.reduce((s, e) => s + e.amount, 0))}

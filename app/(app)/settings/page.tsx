@@ -23,6 +23,7 @@ import ConfirmDialog from '@/components/ConfirmDialog'
 import PayCreditCardModal from '@/components/PayCreditCardModal'
 import ConnectedAppsSection from '@/components/ConnectedAppsSection'
 import ReferralsSection from '@/components/ReferralsSection'
+import WealthStatementSection from '@/components/WealthStatementSection'
 import TourHighlight from '@/components/TourHighlight'
 import EntityLogo from '@/components/EntityLogo'
 import { bankLogo } from '@/lib/entityLogo'
@@ -114,6 +115,8 @@ export default function SettingsPage() {
             amount={netWorthBreakdown.bankAccounts}
             netWorth={netWorthBreakdown.netWorth}
           />
+
+          <WealthStatementSection />
 
           <TourHighlight label="Add your bank account here">
           <div className="card mb-6">
