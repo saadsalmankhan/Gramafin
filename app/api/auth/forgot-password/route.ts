@@ -3,6 +3,7 @@ import { getUserByEmail } from '@/lib/auth/users'
 import { createPasswordResetToken } from '@/lib/auth/passwordReset'
 import { sendPasswordResetEmail } from '@/lib/email'
 import { authRatelimit, clientIp } from '@/lib/ratelimit'
+import { verifyTurnstileToken } from '@/lib/turnstile'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -21,6 +22,10 @@ export async function POST(req: Request) {
 
   if (!EMAIL_RE.test(email)) {
     return NextResponse.json({ error: 'Enter a valid email address' }, { status: 400 })
+  }
+  // No-op until TURNSTILE_SECRET_KEY is actually set — see lib/turnstile.ts.
+  if (!(await verifyTurnstileToken(body?.turnstileToken, clientIp(req)))) {
+    return NextResponse.json({ error: 'Verification failed. Please try again.' }, { status: 400 })
   }
 
   // Also rate-limit per target email, independent of the caller's IP, so an

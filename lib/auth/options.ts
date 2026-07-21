@@ -2,6 +2,7 @@ import type { NextAuthOptions } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import { getUserByEmail, verifyPassword } from '@/lib/auth/users'
 import { authRatelimit } from '@/lib/ratelimit'
+import { verifyTurnstileToken } from '@/lib/turnstile'
 
 // `next start` sets NODE_ENV=production regardless of hostname — including
 // on localhost — so gating cookie behavior on NODE_ENV was wrong on two
@@ -48,6 +49,7 @@ export const authOptions: NextAuthOptions = {
       credentials: {
         email: { label: 'Email', type: 'email' },
         password: { label: 'Password', type: 'password' },
+        turnstileToken: { label: 'Turnstile Token', type: 'text' },
       },
       async authorize(credentials, req) {
         if (!credentials?.email || !credentials?.password) return null
@@ -61,6 +63,11 @@ export const authOptions: NextAuthOptions = {
         ])
         if (!ipOk || !emailOk) {
           throw new Error('Too many login attempts. Please try again in a minute.')
+        }
+
+        // No-op until TURNSTILE_SECRET_KEY is actually set — see lib/turnstile.ts.
+        if (!(await verifyTurnstileToken(credentials.turnstileToken, ip))) {
+          throw new Error('Verification failed. Please try again.')
         }
 
         const user = await getUserByEmail(credentials.email)

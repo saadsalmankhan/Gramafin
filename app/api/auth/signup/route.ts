@@ -3,6 +3,7 @@ import { createUser } from '@/lib/auth/users'
 import { createVerificationToken } from '@/lib/auth/verification'
 import { sendVerificationEmail } from '@/lib/email'
 import { authRatelimit, clientIp } from '@/lib/ratelimit'
+import { verifyTurnstileToken } from '@/lib/turnstile'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -31,6 +32,10 @@ export async function POST(req: Request) {
   }
   if (!agreedToTerms) {
     return NextResponse.json({ error: 'You must agree to the Terms of Use and Privacy Policy' }, { status: 400 })
+  }
+  // No-op until TURNSTILE_SECRET_KEY is actually set — see lib/turnstile.ts.
+  if (!(await verifyTurnstileToken(body?.turnstileToken, clientIp(req)))) {
+    return NextResponse.json({ error: 'Verification failed. Please try again.' }, { status: 400 })
   }
 
   try {

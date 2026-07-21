@@ -47,7 +47,12 @@ function buildCsp(nonce: string): string {
     // instead of CSP. Next already falls back to a full page reload either
     // way, so this stays 'self'-only rather than sending a request that's
     // guaranteed to fail regardless.
-    `connect-src 'self' https://*.sanity.io`,
+    `connect-src 'self' https://*.sanity.io https://challenges.cloudflare.com`,
+    // Cloudflare Turnstile's widget renders in an iframe — default-src
+    // wouldn't allow it otherwise. Harmless to include even before
+    // NEXT_PUBLIC_TURNSTILE_SITE_KEY is set (see lib/turnstile.ts); it's
+    // simply unused until then.
+    `frame-src https://challenges.cloudflare.com`,
     `frame-ancestors 'none'`,
     `base-uri 'self'`,
     `form-action 'self'`,

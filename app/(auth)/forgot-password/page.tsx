@@ -5,6 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { CreditCard, Target, TrendingUp, Building2, MailCheck } from 'lucide-react'
 import AuthMarketingPanel from '@/components/AuthMarketingPanel'
+import TurnstileWidget from '@/components/TurnstileWidget'
 
 const tips = [
   {
@@ -31,6 +32,7 @@ const tips = [
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [sent, setSent] = useState(false)
@@ -43,7 +45,7 @@ export default function ForgotPasswordPage() {
     const res = await fetch('/api/auth/forgot-password', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email }),
+      body: JSON.stringify({ email, turnstileToken }),
     })
     const data = await res.json()
     setLoading(false)
@@ -101,6 +103,7 @@ export default function ForgotPasswordPage() {
                 autoComplete="email"
                 required
               />
+              <TurnstileWidget onVerify={setTurnstileToken} />
               <button type="submit" className="btn-primary w-full justify-center" disabled={loading}>
                 {loading ? 'Sending…' : 'Send reset link'}
               </button>

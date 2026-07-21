@@ -8,6 +8,7 @@ import Image from 'next/image'
 import { CreditCard, Target, TrendingUp, Building2 } from 'lucide-react'
 import AuthMarketingPanel from '@/components/AuthMarketingPanel'
 import PasswordInput from '@/components/PasswordInput'
+import TurnstileWidget from '@/components/TurnstileWidget'
 
 const tips = [
   {
@@ -42,6 +43,7 @@ function LoginForm() {
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -50,7 +52,7 @@ function LoginForm() {
     setError('')
     setLoading(true)
 
-    const res = await signIn('credentials', { email, password, redirect: false })
+    const res = await signIn('credentials', { email, password, turnstileToken: turnstileToken ?? '', redirect: false })
 
     setLoading(false)
     if (res?.error) {
@@ -118,6 +120,7 @@ function LoginForm() {
                 </Link>
               </div>
             </div>
+            <TurnstileWidget onVerify={setTurnstileToken} />
             <button type="submit" className="btn-primary w-full justify-center" disabled={loading}>
               {loading ? 'Logging in…' : 'Log in'}
             </button>

@@ -7,6 +7,7 @@ import { useSearchParams } from 'next/navigation'
 import { MailCheck, Receipt, Target, Building2, TrendingUp } from 'lucide-react'
 import AuthMarketingPanel from '@/components/AuthMarketingPanel'
 import PasswordInput from '@/components/PasswordInput'
+import TurnstileWidget from '@/components/TurnstileWidget'
 
 const benefits = [
   {
@@ -38,6 +39,7 @@ export default function SignupPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [agreedToTerms, setAgreedToTerms] = useState(false)
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [sent, setSent] = useState(false)
@@ -54,7 +56,15 @@ export default function SignupPage() {
     const res = await fetch('/api/auth/signup', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, password, referralCode, agreedToTerms, cookieChoice: cookieChoice || undefined }),
+      body: JSON.stringify({
+        name,
+        email,
+        password,
+        referralCode,
+        agreedToTerms,
+        cookieChoice: cookieChoice || undefined,
+        turnstileToken,
+      }),
     })
     const data = await res.json()
     setLoading(false)
@@ -151,6 +161,7 @@ export default function SignupPage() {
                   .
                 </span>
               </label>
+              <TurnstileWidget onVerify={setTurnstileToken} />
               <button type="submit" className="btn-primary w-full justify-center" disabled={loading}>
                 {loading ? 'Creating account…' : 'Sign up'}
               </button>
