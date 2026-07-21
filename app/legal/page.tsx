@@ -53,10 +53,10 @@ export default function LegalPage() {
 
       <Section title="Trademarks">
         <p>
-          Bank names, mutual fund names, and other third-party marks that appear in Gramafin (for example, in the
-          bank-account or mutual-fund selection lists) are the trademarks of their respective owners. They appear
-          solely so you can label your own manually-entered financial data, and their use does not imply any
-          partnership, sponsorship, or endorsement.
+          Bank names, bank logos, mutual fund names, and other third-party marks that appear in Gramafin (for
+          example, in the bank-account selection list or next to an account you&apos;ve added) are the trademarks
+          of their respective owners. They appear solely so you can identify your own manually-entered financial
+          data, and their use does not imply any partnership, sponsorship, or endorsement.
         </p>
       </Section>
 
