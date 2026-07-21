@@ -25,6 +25,8 @@ import ConfirmDialog from '@/components/ConfirmDialog'
 import MarketChart from '@/components/MarketChart'
 import IndexTicker from '@/components/IndexTicker'
 import TourHighlight from '@/components/TourHighlight'
+import EntityLogo from '@/components/EntityLogo'
+import { stockLogo, fundLogo } from '@/lib/entityLogo'
 import {
   Plus, Trash2, TrendingUp, TrendingDown, RefreshCw, CheckCircle, AlertCircle,
   Edit2, X, Save, Search,
@@ -558,16 +560,19 @@ export default function AssetsPage() {
                               )}
                               onClick={() => isTracked && setDetailStock(inv)}
                             >
-                              <div className="min-w-0">
-                                <p className="text-sm font-medium text-ink-primary truncate">{inv.name}</p>
-                                {isTracked && (
-                                  <div className="flex items-center gap-1.5 min-w-0">
-                                    <p className="text-[11px] text-ink-muted truncate min-w-0">
-                                      {inv.symbol} · {inv.sharesHeld} shares{inv.buyPrice ? ` @ ${fmt(inv.buyPrice)}` : ''}
-                                    </p>
-                                    {priceBadge(inv.id)}
-                                  </div>
-                                )}
+                              <div className="flex items-center gap-2.5 min-w-0">
+                                <EntityLogo {...(inv.symbol ? stockLogo(inv.symbol) : fundLogo(inv.name))} />
+                                <div className="min-w-0">
+                                  <p className="text-sm font-medium text-ink-primary truncate">{inv.name}</p>
+                                  {isTracked && (
+                                    <div className="flex items-center gap-1.5 min-w-0">
+                                      <p className="text-[11px] text-ink-muted truncate min-w-0">
+                                        {inv.symbol} · {inv.sharesHeld} shares{inv.buyPrice ? ` @ ${fmt(inv.buyPrice)}` : ''}
+                                      </p>
+                                      {priceBadge(inv.id)}
+                                    </div>
+                                  )}
+                                </div>
                               </div>
                               <span className="text-xs font-mono text-ink-muted text-right tabular-nums whitespace-nowrap">{fmt(inv.amountInvested)}</span>
                               <span className="text-sm font-mono text-ink-primary text-right tabular-nums whitespace-nowrap">{fmt(inv.currentValue)}</span>
@@ -747,15 +752,18 @@ export default function AssetsPage() {
                         return (
                           <div key={f.id} className="border border-gray-100 dark:border-white/10 rounded-lg p-4 hover:border-gray-200 dark:hover:border-white/20 transition-colors">
                             <div className="flex items-start justify-between gap-3 mb-3">
-                              <div className="min-w-0 flex-1">
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  <p className="text-sm font-medium text-ink-primary truncate">{f.name}</p>
-                                  <span className="text-[10px] font-medium px-2 py-0.5 rounded-full flex-shrink-0" style={{ background: MUTUAL_FUND_TYPE_COLORS[f.fundType] + '18', color: MUTUAL_FUND_TYPE_COLORS[f.fundType] }}>
-                                    {f.fundType}
-                                  </span>
-                                  {navSourceBadge(f.id)}
+                              <div className="min-w-0 flex-1 flex items-start gap-2.5">
+                                <EntityLogo {...fundLogo(f.name)} />
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <p className="text-sm font-medium text-ink-primary truncate">{f.name}</p>
+                                    <span className="text-[10px] font-medium px-2 py-0.5 rounded-full flex-shrink-0" style={{ background: MUTUAL_FUND_TYPE_COLORS[f.fundType] + '18', color: MUTUAL_FUND_TYPE_COLORS[f.fundType] }}>
+                                      {f.fundType}
+                                    </span>
+                                    {navSourceBadge(f.id)}
+                                  </div>
+                                  {f.notes && <p className="text-[11px] text-ink-muted mt-0.5 truncate">{f.notes}</p>}
                                 </div>
-                                {f.notes && <p className="text-[11px] text-ink-muted mt-0.5 truncate">{f.notes}</p>}
                               </div>
                               <div className="flex items-center gap-1.5 flex-shrink-0">
                                 <button className="btn-ghost h-7 px-2 text-xs" onClick={() => fetchNavForFund(f)} title="Fetch NAV">

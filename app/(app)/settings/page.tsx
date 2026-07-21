@@ -24,7 +24,9 @@ import PayCreditCardModal from '@/components/PayCreditCardModal'
 import ConnectedAppsSection from '@/components/ConnectedAppsSection'
 import ReferralsSection from '@/components/ReferralsSection'
 import TourHighlight from '@/components/TourHighlight'
-import { Plus, Trash2, Landmark, CreditCard, Moon, Sun, CheckCircle } from 'lucide-react'
+import EntityLogo from '@/components/EntityLogo'
+import { bankLogo } from '@/lib/entityLogo'
+import { Plus, Trash2, Moon, Sun, CheckCircle } from 'lucide-react'
 import clsx from 'clsx'
 
 type Tab = 'accounts' | 'preferences' | 'connected' | 'referrals'
@@ -219,9 +221,7 @@ export default function SettingsPage() {
                     <div key={b.id} className="py-2.5">
                       <div className="flex items-center justify-between gap-3">
                         <div className="flex items-center gap-2.5 min-w-0">
-                          <div className="w-7 h-7 rounded-md flex-shrink-0 flex items-center justify-center bg-brand-50 text-brand-700">
-                            {isCreditCard ? <CreditCard className="w-3.5 h-3.5" /> : <Landmark className="w-3.5 h-3.5" />}
-                          </div>
+                          <EntityLogo {...bankLogo(b.bank)} />
                           <div className="min-w-0">
                             <p className="text-sm text-ink-primary truncate">{bankAccountLabel(b)}</p>
                             <p className="text-[11px] text-ink-muted">

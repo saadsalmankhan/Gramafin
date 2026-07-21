@@ -65,7 +65,12 @@ export default function CookiePolicyPage() {
           functionality/personalization, or advertising and targeting cookies of any kind.
         </p>
         <div className="overflow-x-auto -mx-2 mt-2">
-          <table className="w-full text-xs border-collapse min-w-[480px]">
+          <table className="w-full text-xs border-collapse table-fixed min-w-[560px]">
+            <colgroup>
+              <col className="w-[30%]" />
+              <col className="w-[45%]" />
+              <col className="w-[25%]" />
+            </colgroup>
             <thead>
               <tr className="border-b border-gray-100 text-left">
                 <th className="px-2 py-2 font-medium text-ink-primary">Cookie</th>
@@ -76,9 +81,9 @@ export default function CookiePolicyPage() {
             <tbody className="divide-y divide-gray-50">
               {COOKIES.map(c => (
                 <tr key={c.name}>
-                  <td className="px-2 py-3 font-mono text-[11px] text-ink-primary align-top whitespace-nowrap">{c.name}</td>
+                  <td className="px-2 py-3 font-mono text-[11px] text-ink-primary align-top break-words">{c.name}</td>
                   <td className="px-2 py-3 text-ink-secondary align-top">{c.purpose}</td>
-                  <td className="px-2 py-3 text-ink-muted align-top whitespace-nowrap">{c.duration}</td>
+                  <td className="px-2 py-3 text-ink-muted align-top">{c.duration}</td>
                 </tr>
               ))}
             </tbody>
