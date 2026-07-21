@@ -19,6 +19,7 @@ export default function LegalPageLayout({ title, lastUpdated, children }: Props)
             {[
               { href: '/privacy', label: 'Privacy Policy' },
               { href: '/terms', label: 'Terms of Use' },
+              { href: '/cookies', label: 'Cookie Policy' },
               { href: '/legal', label: 'Legal' },
             ].map((l, i) => (
               <span key={l.href} className="flex items-center gap-3">

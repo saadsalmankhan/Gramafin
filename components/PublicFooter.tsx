@@ -8,6 +8,7 @@ export default function PublicFooter() {
         <div className="flex items-center gap-4 text-xs text-ink-muted">
           <Link href="/privacy" className="hover:text-ink-primary transition-colors">Privacy</Link>
           <Link href="/terms" className="hover:text-ink-primary transition-colors">Terms</Link>
+          <Link href="/cookies" className="hover:text-ink-primary transition-colors">Cookies</Link>
           <Link href="/legal" className="hover:text-ink-primary transition-colors">Legal</Link>
         </div>
       </div>

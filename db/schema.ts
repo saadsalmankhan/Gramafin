@@ -261,3 +261,25 @@ export const oauthModelRecords = pgTable('oauth_model_records', {
   index('oauth_model_records_uid_idx').on(table.uid),
   index('oauth_model_records_expires_at_idx').on(table.expiresAt),
 ])
+
+// One row per user, upserted independently per document as each is
+// accepted — not three separate history tables — because the compliance
+// question this answers is always "what's the current accepted version for
+// this user", never "show me every past acceptance". Versions are plain
+// date strings matching each legal page's own `lastUpdated` prop (see
+// lib/legalVersions.ts), not integers, so a version is directly traceable
+// back to the page text it corresponds to. Terms/privacy are recorded
+// together at signup (see lib/auth/users.ts); cookies separately whenever
+// the consent banner is answered (see app/api/legal-acceptance/route.ts) —
+// existing accounts predating this feature simply have null columns until
+// they next hit one of those two flows.
+export const legalAcceptances = pgTable('legal_acceptances', {
+  userId: uuid('user_id').primaryKey().references(() => users.id, { onDelete: 'cascade' }),
+  cookiePolicyVersion: text('cookie_policy_version'),
+  cookiePolicyChoice: text('cookie_policy_choice', { enum: ['accepted', 'rejected'] }),
+  cookiePolicyAcceptedAt: timestamp('cookie_policy_accepted_at', { withTimezone: true, mode: 'string' }),
+  privacyPolicyVersion: text('privacy_policy_version'),
+  privacyPolicyAcceptedAt: timestamp('privacy_policy_accepted_at', { withTimezone: true, mode: 'string' }),
+  termsVersion: text('terms_version'),
+  termsAcceptedAt: timestamp('terms_accepted_at', { withTimezone: true, mode: 'string' }),
+})

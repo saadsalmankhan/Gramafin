@@ -37,6 +37,7 @@ export default function SignupPage() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [agreedToTerms, setAgreedToTerms] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [sent, setSent] = useState(false)
@@ -46,10 +47,14 @@ export default function SignupPage() {
     setError('')
     setLoading(true)
 
+    // Folds in a cookie-banner choice already made anonymously in this
+    // browser, if any, so it isn't lost once the account actually exists.
+    const cookieChoice = localStorage.getItem('gramafin_cookie_consent')
+
     const res = await fetch('/api/auth/signup', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, password, referralCode }),
+      body: JSON.stringify({ name, email, password, referralCode, agreedToTerms, cookieChoice: cookieChoice || undefined }),
     })
     const data = await res.json()
     setLoading(false)
@@ -126,6 +131,26 @@ export default function SignupPage() {
                 minLength={8}
                 required
               />
+              <label className="flex items-start gap-2 text-xs text-ink-muted leading-relaxed pt-1">
+                <input
+                  type="checkbox"
+                  className="mt-0.5"
+                  checked={agreedToTerms}
+                  onChange={e => setAgreedToTerms(e.target.checked)}
+                  required
+                />
+                <span>
+                  I agree to Gramafin&apos;s{' '}
+                  <Link href="/terms" target="_blank" className="text-brand-600 hover:underline">
+                    Terms of Use
+                  </Link>{' '}
+                  and{' '}
+                  <Link href="/privacy" target="_blank" className="text-brand-600 hover:underline">
+                    Privacy Policy
+                  </Link>
+                  .
+                </span>
+              </label>
               <button type="submit" className="btn-primary w-full justify-center" disabled={loading}>
                 {loading ? 'Creating account…' : 'Sign up'}
               </button>

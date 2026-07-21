@@ -17,6 +17,8 @@ export async function POST(req: Request) {
   const password = typeof body?.password === 'string' ? body.password : ''
   const name = typeof body?.name === 'string' ? body.name.trim() : ''
   const referralCode = typeof body?.referralCode === 'string' && body.referralCode.trim() ? body.referralCode.trim() : undefined
+  const cookieChoice = body?.cookieChoice === 'accepted' || body?.cookieChoice === 'rejected' ? body.cookieChoice : undefined
+  const agreedToTerms = body?.agreedToTerms === true
 
   if (!name) {
     return NextResponse.json({ error: 'Name is required' }, { status: 400 })
@@ -27,9 +29,12 @@ export async function POST(req: Request) {
   if (password.length < 8) {
     return NextResponse.json({ error: 'Password must be at least 8 characters' }, { status: 400 })
   }
+  if (!agreedToTerms) {
+    return NextResponse.json({ error: 'You must agree to the Terms of Use and Privacy Policy' }, { status: 400 })
+  }
 
   try {
-    const user = await createUser({ email, password, name, referralCode })
+    const user = await createUser({ email, password, name, referralCode, cookieChoice })
     const token = await createVerificationToken(user.email)
     await sendVerificationEmail({ to: user.email, name: user.name, token })
 

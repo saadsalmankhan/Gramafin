@@ -57,6 +57,13 @@
       "when": 1784580137050,
       "tag": "0007_mixed_power_pack",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1784636697860,
+      "tag": "0008_nasty_vampiro",
+      "breakpoints": true
     }
   ]
 }

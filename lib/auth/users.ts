@@ -4,6 +4,7 @@ import { db } from '@/db/client'
 import * as schema from '@/db/schema'
 import { DEFAULT_BUDGETS, EXPENSE_CATEGORIES } from '@/types'
 import { findUserByReferralCode, markInviteAccepted } from '@/lib/referrals'
+import { LEGAL_VERSIONS } from '@/lib/legalVersions'
 
 export interface StoredUser {
   id: string
@@ -32,8 +33,13 @@ export async function createUser(params: {
   password: string
   name: string
   referralCode?: string
+  // Reconciles a cookie-banner choice made anonymously (stored client-side
+  // in localStorage) before this account existed — see CookieConsentBanner
+  // and app/api/auth/signup/route.ts. Absent if the banner was never shown
+  // or already answered while logged in some other way.
+  cookieChoice?: 'accepted' | 'rejected'
 }): Promise<StoredUser> {
-  const { email, password, name, referralCode } = params
+  const { email, password, name, referralCode, cookieChoice } = params
   const existing = await getUserByEmail(email)
   if (existing) {
     throw new Error('An account with this email already exists')
@@ -75,6 +81,22 @@ export async function createUser(params: {
     if (referrer) {
       await markInviteAccepted(db, referrer.id, normalizedEmail, user.id)
     }
+
+    // Terms/privacy acceptance is implicit in completing signup (the
+    // checkbox on the signup form is required to submit); cookie choice
+    // only gets folded in here if the banner was already answered
+    // anonymously pre-signup, so it isn't lost once an account exists.
+    const now = new Date().toISOString()
+    await db.insert(schema.legalAcceptances).values({
+      userId: user.id,
+      termsVersion: LEGAL_VERSIONS.terms,
+      termsAcceptedAt: now,
+      privacyPolicyVersion: LEGAL_VERSIONS.privacy,
+      privacyPolicyAcceptedAt: now,
+      ...(cookieChoice
+        ? { cookiePolicyVersion: LEGAL_VERSIONS.cookies, cookiePolicyChoice: cookieChoice, cookiePolicyAcceptedAt: now }
+        : {}),
+    })
 
     return user
   } catch (err: unknown) {

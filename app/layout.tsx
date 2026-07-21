@@ -6,6 +6,7 @@ import SessionProvider from '@/lib/auth/SessionProvider'
 import { THEME_KEY } from '@/lib/themeConstants'
 import { APP_ROUTE_PREFIXES } from '@/lib/routes'
 import ThemeRouteGuard from '@/components/ThemeRouteGuard'
+import CookieConsentBanner from '@/components/CookieConsentBanner'
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXTAUTH_URL || 'http://localhost:3000'),
@@ -41,6 +42,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <StoreProvider>
             <ThemeRouteGuard />
             {children}
+            <CookieConsentBanner />
           </StoreProvider>
         </SessionProvider>
       </body>
