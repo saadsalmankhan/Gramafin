@@ -5,7 +5,15 @@ import { useEffect, useRef, useState } from 'react'
 declare global {
   interface Window {
     turnstile?: {
-      render: (container: HTMLElement, options: { sitekey: string; callback: (token: string) => void; 'expired-callback'?: () => void }) => string
+      render: (
+        container: HTMLElement,
+        options: {
+          sitekey: string
+          callback: (token: string) => void
+          'expired-callback'?: () => void
+          appearance?: 'always' | 'execute' | 'interaction-only'
+        }
+      ) => string
       remove: (widgetId: string) => void
     }
   }
@@ -46,6 +54,11 @@ export default function TurnstileWidget({ onVerify }: Props) {
       sitekey: siteKey,
       callback: token => onVerify(token),
       'expired-callback': () => onVerify(null),
+      // Stays invisible and runs its check silently in the background —
+      // Cloudflare only pops up a visible challenge for sessions its risk
+      // engine actually flags, instead of showing a box to every user on
+      // every attempt regardless of risk.
+      appearance: 'interaction-only',
     })
     return () => {
       if (window.turnstile) window.turnstile.remove(widgetId)
