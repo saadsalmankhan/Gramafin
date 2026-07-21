@@ -9,18 +9,13 @@ interface Props {
   size?: 'sm' | 'md'
 }
 
+// Same square footprint used everywhere else in the app (expense-category
+// badges, stock/fund initials) — a real bank logo gets a white background
+// instead of a colored tint, but stays the same size and shape as every
+// other entity badge so it doesn't read as a different UI element.
 const BADGE_SIZE = {
   sm: 'w-7 h-7 text-[9px]',
   md: 'w-9 h-9 text-[10px]',
-}
-
-// Real bank logos are almost all wide wordmarks, not square icon marks —
-// forcing them into the same square badge as the colored-initials fallback
-// squeezed them down to near-illegible slivers. Fixed height, flexible
-// (capped) width lets a wordmark render at a readable size instead.
-const LOGO_SIZE = {
-  sm: 'h-8 max-w-[72px]',
-  md: 'h-10 max-w-[92px]',
 }
 
 export default function EntityLogo({ initials, color, logoSrc, size = 'sm' }: Props) {
@@ -28,7 +23,7 @@ export default function EntityLogo({ initials, color, logoSrc, size = 'sm' }: Pr
 
   if (logoSrc && !failed) {
     return (
-      <div className={`${LOGO_SIZE[size]} rounded-md flex-shrink-0 flex items-center justify-center bg-white border border-gray-100 px-2 py-1.5`}>
+      <div className={`${BADGE_SIZE[size]} rounded-md flex-shrink-0 flex items-center justify-center bg-white border border-gray-100 p-1 overflow-hidden`}>
         {/* eslint-disable-next-line @next/next/no-img-element -- tiny static badge icon, not worth next/image's fixed-dimension ceremony */}
         <img src={logoSrc} alt="" className="w-full h-full object-contain" onError={() => setFailed(true)} />
       </div>
