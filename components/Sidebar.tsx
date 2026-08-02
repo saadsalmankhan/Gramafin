@@ -107,7 +107,7 @@ export default function Sidebar() {
   return (
     <aside
       className={clsx(
-        'fixed left-0 top-0 h-screen bg-shell-bg flex flex-col',
+        'fixed left-0 top-0 h-screen bg-white dark:bg-surface-2 border-r border-gray-100 dark:border-white/10 flex flex-col',
         !dragging && 'transition-[width] duration-200 ease-in-out'
       )}
       style={{ width: 'var(--sidebar-w)' }}
@@ -116,7 +116,7 @@ export default function Sidebar() {
           mark, rather than anywhere in the nav/footer stack below — it's
           chrome for the sidebar itself, not a destination or account
           control, so it shouldn't compete visually with either group. */}
-      <div className="px-4 py-6 border-b border-shell-border/10 flex items-center justify-between">
+      <div className="px-4 py-6 border-b border-gray-100 dark:border-white/10 flex items-center justify-between">
         {collapsed ? (
           <button
             onClick={toggle}
@@ -124,22 +124,22 @@ export default function Sidebar() {
             aria-label="Expand sidebar"
             className="mx-auto rounded-lg transition-opacity hover:opacity-70"
           >
-            <Image src="/logo-mark-on-dark.png" alt="Gramafin" width={314} height={295} className="w-8 h-auto shrink-0" priority />
+            <Image src="/logo-mark.png" alt="Gramafin" width={314} height={295} className="w-8 h-auto shrink-0" priority />
           </button>
         ) : (
           <>
             <div className="flex items-center gap-2.5 overflow-hidden">
-              <Image src="/logo-mark-on-dark.png" alt="Gramafin" width={314} height={295} className="w-8 h-auto shrink-0" priority />
+              <Image src="/logo-mark.png" alt="Gramafin" width={314} height={295} className="w-8 h-auto shrink-0" priority />
               <div className="whitespace-nowrap">
-                <p className="font-grotesk font-semibold text-sm text-shell-ink leading-none">Gramafin</p>
-                <p className="text-[10px] text-shell-ink-muted mt-0.5">Personal Finance</p>
+                <p className="font-grotesk font-semibold text-sm text-ink-primary leading-none">Gramafin</p>
+                <p className="text-[10px] text-ink-muted mt-0.5">Personal Finance</p>
               </div>
             </div>
             <button
               onClick={toggle}
               title="Collapse sidebar"
               aria-label="Collapse sidebar"
-              className="p-1.5 rounded-md text-shell-ink-muted hover:bg-white/5 hover:text-shell-ink transition-colors shrink-0"
+              className="p-1.5 rounded-md text-ink-muted hover:bg-surface-0 hover:text-ink-primary transition-colors shrink-0"
             >
               <PanelLeftClose className="w-4 h-4" />
             </button>
@@ -149,7 +149,7 @@ export default function Sidebar() {
 
       {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-hidden">
-        {!collapsed && <p className="text-[10px] font-medium uppercase tracking-widest text-shell-ink-muted px-3 mb-3">Menu</p>}
+        {!collapsed && <p className="section-label px-3 mb-3">Menu</p>}
         {nav.map(({ href, label, icon: Icon }) => {
           const active = path === href
           return (
@@ -161,11 +161,11 @@ export default function Sidebar() {
                 'flex items-center gap-3 px-3 py-2.5 rounded-pill text-sm transition-colors whitespace-nowrap',
                 collapsed && 'justify-center',
                 active
-                  ? 'bg-shell-active/15 text-shell-ink font-medium'
-                  : 'text-shell-ink-muted hover:bg-white/5 hover:text-shell-ink'
+                  ? 'bg-brand-50 text-brand-700 font-medium'
+                  : 'text-ink-secondary hover:bg-surface-0 hover:text-ink-primary'
               )}
             >
-              <Icon className={clsx('w-4 h-4 shrink-0', active ? 'text-brand-500' : 'text-shell-ink-muted')} />
+              <Icon className={clsx('w-4 h-4 shrink-0', active ? 'text-brand-600' : 'text-ink-muted')} />
               {!collapsed && label}
             </Link>
           )
@@ -178,7 +178,7 @@ export default function Sidebar() {
           href="/settings"
           title={collapsed ? 'Settings' : undefined}
           className={clsx(
-            'flex items-center gap-3 px-3 py-2.5 rounded-pill text-sm text-shell-ink-muted hover:bg-white/5 hover:text-shell-ink transition-colors',
+            'flex items-center gap-3 px-3 py-2.5 rounded-pill text-sm text-ink-muted hover:bg-surface-0 hover:text-ink-primary transition-colors',
             collapsed && 'justify-center'
           )}
         >
@@ -189,7 +189,7 @@ export default function Sidebar() {
           href="/help"
           title={collapsed ? 'Help Centre' : undefined}
           className={clsx(
-            'flex items-center gap-3 px-3 py-2.5 rounded-pill text-sm text-shell-ink-muted hover:bg-white/5 hover:text-shell-ink transition-colors',
+            'flex items-center gap-3 px-3 py-2.5 rounded-pill text-sm text-ink-muted hover:bg-surface-0 hover:text-ink-primary transition-colors',
             collapsed && 'justify-center'
           )}
         >
@@ -200,14 +200,14 @@ export default function Sidebar() {
 
       {/* User + footer */}
       {collapsed ? (
-        <div className="px-3 pb-3 flex flex-col items-center gap-2 border-t border-shell-border/10 pt-3">
+        <div className="px-3 pb-3 flex flex-col items-center gap-2 border-t border-gray-100 dark:border-white/10 pt-3">
           {syncError && (
             <span title="Sync failed — changes aren't saving">
               <CloudOff className="w-4 h-4 text-danger" />
             </span>
           )}
           <div
-            className="w-7 h-7 rounded-full bg-white/10 text-shell-ink flex items-center justify-center text-xs font-semibold shrink-0"
+            className="w-7 h-7 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center text-xs font-semibold shrink-0"
             title={session?.user?.name || undefined}
           >
             {initial}
@@ -215,25 +215,25 @@ export default function Sidebar() {
           <button
             onClick={() => signOut({ callbackUrl: '/login' })}
             title="Log out"
-            className="text-shell-ink-muted hover:text-danger transition-colors"
+            className="text-ink-muted hover:text-danger transition-colors"
           >
             <LogOut className="w-4 h-4" />
           </button>
         </div>
       ) : (
-        <div className="px-3 py-3 border-t border-shell-border/10">
+        <div className="px-3 py-3 border-t border-gray-100 dark:border-white/10">
           <div className="flex items-center gap-2.5 px-2 py-1.5">
-            <div className="w-7 h-7 rounded-full bg-white/10 text-shell-ink flex items-center justify-center text-xs font-semibold shrink-0">
+            <div className="w-7 h-7 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center text-xs font-semibold shrink-0">
               {initial}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-medium text-shell-ink truncate">{session?.user?.name}</p>
-              <p className="text-[10px] text-shell-ink-muted truncate">{session?.user?.email}</p>
+              <p className="text-xs font-medium text-ink-primary truncate">{session?.user?.name}</p>
+              <p className="text-[10px] text-ink-muted truncate">{session?.user?.email}</p>
             </div>
             <button
               onClick={() => signOut({ callbackUrl: '/login' })}
               title="Log out"
-              className="text-shell-ink-muted hover:text-danger transition-colors shrink-0"
+              className="text-ink-muted hover:text-danger transition-colors shrink-0"
             >
               <LogOut className="w-4 h-4" />
             </button>
@@ -243,7 +243,7 @@ export default function Sidebar() {
               <CloudOff className="w-3 h-3" /> Sync failed — check your connection
             </p>
           ) : (
-            <p className="text-[10px] text-shell-ink-muted px-2 mt-2">All amounts in {currencyLabel}</p>
+            <p className="text-[10px] text-ink-muted px-2 mt-2">All amounts in {currencyLabel}</p>
           )}
         </div>
       )}
@@ -252,7 +252,7 @@ export default function Sidebar() {
       {!collapsed && (
         <div
           onPointerDown={onResizeStart}
-          className="absolute top-0 right-0 h-full w-1.5 cursor-col-resize hover:bg-brand-500/40 active:bg-brand-500/60"
+          className="absolute top-0 right-0 h-full w-1.5 cursor-col-resize hover:bg-brand-200/60 active:bg-brand-300/70"
         />
       )}
     </aside>

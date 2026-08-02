@@ -46,16 +46,6 @@
   --accent-amber:  204 106 46;
   --accent-sky:    30 147 199;
 
-  /* Sidebar shell — deliberately NOT part of the light/dark split below.
-     The nav chrome stays a constant dark shell regardless of the app's own
-     light/dark theme toggle (which only affects the content area), so these
-     tokens don't move under .dark. */
-  --shell-bg:        10 10 9;
-  --shell-border:    255 255 255;
-  --shell-ink:       245 244 242;
-  --shell-ink-muted: 154 152 145;
-  --shell-active-bg: 34 187 105;
-
   --scrollbar-color: #d4d2cb;
   --sidebar-w: 240px;
 }

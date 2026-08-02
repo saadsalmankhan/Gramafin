@@ -18,36 +18,47 @@ import {
   Landmark,
 } from 'lucide-react'
 
-const BENEFITS: { feature: string; benefit: string; icon: typeof Receipt }[] = [
-  { feature: 'Expense tracking', benefit: 'Log every rupee you spend, categorized automatically, with monthly budgets per category.', icon: Receipt },
-  { feature: 'Net worth', benefit: 'Assets, liabilities, credit cards, investments, mutual funds, and bank accounts — combined into one real number.', icon: Building2 },
-  { feature: 'Income tracking', benefit: 'One-off and recurring salary, Pakistan-specific income sources, and Jul–Jun tax-year reporting.', icon: Wallet },
-  { feature: 'Investments', benefit: 'Track stocks, crypto, and bonds with live gain/loss and portfolio allocation.', icon: TrendingUp },
-  { feature: 'Mutual funds', benefit: 'Pakistani mutual funds with NAV tracking, so this calculator’s projections meet your real portfolio.', icon: PieChart },
-  { feature: 'Bank accounts', benefit: 'Checking, savings, and credit cards in PKR — credit card debt subtracts from your net worth automatically.', icon: Landmark },
-  { feature: 'Privacy', benefit: 'No bank-account linking required. Every number is one you entered — nothing is sold to third parties.', icon: Lock },
-  { feature: 'Cost', benefit: 'Free, forever. No credit card to sign up.', icon: Sparkles },
+type Tone = 'brand' | 'violet' | 'amber' | 'sky'
+
+const TONE_CHIP: Record<Tone, string> = {
+  brand:  'bg-brand-50 text-brand-600',
+  violet: 'bg-accent-violet/10 text-accent-violet',
+  amber:  'bg-accent-amber/10 text-accent-amber',
+  sky:    'bg-accent-sky/10 text-accent-sky',
+}
+
+const BENEFITS: { feature: string; benefit: string; icon: typeof Receipt; tone: Tone }[] = [
+  { feature: 'Expense tracking', benefit: 'Log every rupee you spend, categorized automatically, with monthly budgets per category.', icon: Receipt, tone: 'amber' },
+  { feature: 'Net worth', benefit: 'Assets, liabilities, credit cards, investments, mutual funds, and bank accounts — combined into one real number.', icon: Building2, tone: 'brand' },
+  { feature: 'Income tracking', benefit: 'One-off and recurring salary, Pakistan-specific income sources, and Jul–Jun tax-year reporting.', icon: Wallet, tone: 'sky' },
+  { feature: 'Investments', benefit: 'Track stocks, crypto, and bonds with live gain/loss and portfolio allocation.', icon: TrendingUp, tone: 'violet' },
+  { feature: 'Mutual funds', benefit: 'Pakistani mutual funds with NAV tracking, so this calculator’s projections meet your real portfolio.', icon: PieChart, tone: 'sky' },
+  { feature: 'Bank accounts', benefit: 'Checking, savings, and credit cards in PKR — credit card debt subtracts from your net worth automatically.', icon: Landmark, tone: 'brand' },
+  { feature: 'Privacy', benefit: 'No bank-account linking required. Every number is one you entered — nothing is sold to third parties.', icon: Lock, tone: 'violet' },
+  { feature: 'Cost', benefit: 'Free, forever. No credit card to sign up.', icon: Sparkles, tone: 'amber' },
 ]
 
-const bigFeatures = [
+const bigFeatures: { icon: typeof Receipt; title: string; desc: string; bars: number[]; tone: Tone }[] = [
   {
     icon: Receipt,
     title: 'Expense tracking',
     desc: 'Log every rupee you spend and see where it actually goes, by category and by month.',
     bars: [40, 70, 35, 90, 55, 80],
+    tone: 'amber',
   },
   {
     icon: TrendingUp,
     title: 'Investments',
     desc: 'Monitor stocks, crypto, and bonds with live gain/loss and portfolio allocation.',
     bars: [30, 42, 38, 58, 50, 72],
+    tone: 'brand',
   },
 ]
 
-const smallFeatures = [
-  { icon: Target, title: 'Budgets', desc: 'Set monthly limits per category, stay under them.' },
-  { icon: Building2, title: 'Net worth', desc: 'Assets and liabilities, together in one number.' },
-  { icon: PieChart, title: 'Mutual funds', desc: 'Track units held and NAV over time.' },
+const smallFeatures: { icon: typeof Target; title: string; desc: string; tone: Tone }[] = [
+  { icon: Target, title: 'Budgets', desc: 'Set monthly limits per category, stay under them.', tone: 'violet' },
+  { icon: Building2, title: 'Net worth', desc: 'Assets and liabilities, together in one number.', tone: 'brand' },
+  { icon: PieChart, title: 'Mutual funds', desc: 'Track units held and NAV over time.', tone: 'sky' },
 ]
 
 const stats = [
@@ -99,7 +110,7 @@ export default async function HomePage() {
       {/* Hero */}
       <section className="max-w-6xl mx-auto px-6 pt-16 sm:pt-20 pb-16 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
         <div>
-          <h1 className="font-display text-5xl sm:text-6xl leading-[1.05] tracking-tight">
+          <h1 className="font-grotesk text-5xl sm:text-6xl leading-[1.05] tracking-tight">
             <span className="bg-gradient-to-r from-brand-700 to-brand-500 bg-clip-text text-transparent">
               All-in-One
             </span>
@@ -189,7 +200,7 @@ export default async function HomePage() {
       {/* Bento features */}
       <section id="features" className="max-w-6xl mx-auto px-6 py-24">
         <div className="text-center mb-12">
-          <h2 className="font-display text-3xl sm:text-4xl tracking-tight">
+          <h2 className="font-grotesk text-3xl sm:text-4xl tracking-tight">
             <span className="bg-gradient-to-r from-brand-700 to-brand-500 bg-clip-text text-transparent">
               Take control
             </span>{' '}
@@ -199,7 +210,7 @@ export default async function HomePage() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-          {bigFeatures.map(({ icon: Icon, title, desc, bars }) => (
+          {bigFeatures.map(({ icon: Icon, title, desc, bars, tone }) => (
             <div key={title} className="card">
               <div className="flex items-end gap-1.5 h-16 mb-5">
                 {bars.map((h, i) => (
@@ -210,8 +221,8 @@ export default async function HomePage() {
                   />
                 ))}
               </div>
-              <div className="w-9 h-9 rounded-lg bg-brand-50 flex items-center justify-center mb-4">
-                <Icon className="w-4 h-4 text-brand-600" />
+              <div className={`w-9 h-9 rounded-lg flex items-center justify-center mb-4 ${TONE_CHIP[tone]}`}>
+                <Icon className="w-4 h-4" />
               </div>
               <h3 className="text-sm font-medium text-ink-primary mb-1.5">{title}</h3>
               <p className="text-xs text-ink-muted leading-relaxed max-w-sm">{desc}</p>
@@ -220,10 +231,10 @@ export default async function HomePage() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {smallFeatures.map(({ icon: Icon, title, desc }) => (
+          {smallFeatures.map(({ icon: Icon, title, desc, tone }) => (
             <div key={title} className="card">
-              <div className="w-9 h-9 rounded-lg bg-brand-50 flex items-center justify-center mb-4">
-                <Icon className="w-4 h-4 text-brand-600" />
+              <div className={`w-9 h-9 rounded-lg flex items-center justify-center mb-4 ${TONE_CHIP[tone]}`}>
+                <Icon className="w-4 h-4" />
               </div>
               <h3 className="text-sm font-medium text-ink-primary mb-1.5">{title}</h3>
               <p className="text-xs text-ink-muted leading-relaxed">{desc}</p>
@@ -235,7 +246,7 @@ export default async function HomePage() {
       {/* Compound interest calculator + benefits */}
       <section id="calculator" className="max-w-6xl mx-auto px-6 pb-24">
         <div className="text-center mb-12">
-          <h2 className="font-display text-3xl sm:text-4xl tracking-tight">
+          <h2 className="font-grotesk text-3xl sm:text-4xl tracking-tight">
             <span className="bg-gradient-to-r from-brand-700 to-brand-500 bg-clip-text text-transparent">
               Compound interest
             </span>{' '}
@@ -249,7 +260,7 @@ export default async function HomePage() {
         <CompoundInterestCalculator />
 
         <div className="mt-16">
-          <h3 className="font-display text-xl text-ink-primary tracking-tight mb-2 text-center">
+          <h3 className="font-grotesk text-xl text-ink-primary tracking-tight mb-2 text-center">
             Why track it with Gramafin
           </h3>
           <p className="text-sm text-ink-muted mb-6 max-w-xl mx-auto text-center">
@@ -269,8 +280,8 @@ export default async function HomePage() {
                 {BENEFITS.map(row => (
                   <tr key={row.feature} className="hover:bg-surface-0 transition-colors">
                     <td className="pl-5 pr-3 py-4 align-middle">
-                      <div className="w-9 h-9 rounded-lg bg-brand-50 flex items-center justify-center">
-                        <row.icon className="w-4 h-4 text-brand-600" />
+                      <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${TONE_CHIP[row.tone]}`}>
+                        <row.icon className="w-4 h-4" />
                       </div>
                     </td>
                     <td className="pr-4 py-4 font-medium text-ink-primary whitespace-nowrap align-middle">{row.feature}</td>
@@ -288,7 +299,7 @@ export default async function HomePage() {
         <div className="card grid grid-cols-1 lg:grid-cols-2 gap-8 items-center p-10">
           <div>
             <p className="section-label mb-3">How it works</p>
-            <h3 className="font-display text-2xl text-ink-primary mb-3">
+            <h3 className="font-grotesk text-2xl text-ink-primary mb-3">
               One dashboard, your whole financial picture.
             </h3>
             <p className="text-sm text-ink-muted leading-relaxed max-w-md">
@@ -332,7 +343,7 @@ export default async function HomePage() {
       {/* Final CTA */}
       <section className="max-w-6xl mx-auto px-6 py-20">
         <div className="bg-ink-primary rounded-card p-10 sm:p-14 text-center">
-          <h3 className="font-display text-2xl sm:text-3xl text-white mb-3">
+          <h3 className="font-grotesk text-2xl sm:text-3xl text-white mb-3">
             Get your finances in order.
           </h3>
           <p className="text-sm text-gray-400 mb-8">Free forever. Set up in under a minute.</p>

@@ -41,16 +41,6 @@ const config: Config = {
           amber:  'rgb(var(--accent-amber) / <alpha-value>)',
           sky:    'rgb(var(--accent-sky) / <alpha-value>)',
         },
-        // Sidebar shell — constant across the light/dark toggle, see
-        // globals.css. --shell-border is applied only via /opacity (e.g.
-        // border-shell-border/10), never at full alpha.
-        shell: {
-          bg:        'rgb(var(--shell-bg) / <alpha-value>)',
-          border:    'rgb(var(--shell-border) / <alpha-value>)',
-          ink:       'rgb(var(--shell-ink) / <alpha-value>)',
-          'ink-muted': 'rgb(var(--shell-ink-muted) / <alpha-value>)',
-          active:    'rgb(var(--shell-active-bg) / <alpha-value>)',
-        },
       },
       fontFamily: {
         sans:    ['Inter', 'system-ui', 'sans-serif'],
