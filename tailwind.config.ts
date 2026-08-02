@@ -34,17 +34,38 @@ const config: Config = {
         success: 'rgb(var(--success) / <alpha-value>)',
         danger:  'rgb(var(--danger) / <alpha-value>)',
         warning: 'rgb(var(--warning) / <alpha-value>)',
+        // Per-metric stat-card accent family — see globals.css for the
+        // palette-validator provenance. Not for charts with >4 series.
+        accent: {
+          violet: 'rgb(var(--accent-violet) / <alpha-value>)',
+          amber:  'rgb(var(--accent-amber) / <alpha-value>)',
+          sky:    'rgb(var(--accent-sky) / <alpha-value>)',
+        },
+        // Sidebar shell — constant across the light/dark toggle, see
+        // globals.css. --shell-border is applied only via /opacity (e.g.
+        // border-shell-border/10), never at full alpha.
+        shell: {
+          bg:        'rgb(var(--shell-bg) / <alpha-value>)',
+          border:    'rgb(var(--shell-border) / <alpha-value>)',
+          ink:       'rgb(var(--shell-ink) / <alpha-value>)',
+          'ink-muted': 'rgb(var(--shell-ink-muted) / <alpha-value>)',
+          active:    'rgb(var(--shell-active-bg) / <alpha-value>)',
+        },
       },
       fontFamily: {
         sans:    ['Inter', 'system-ui', 'sans-serif'],
         mono:    ['JetBrains Mono', 'monospace'],
-        // Bold slab-serif display face for headlines only — not a body/UI
-        // face, so it's applied selectively via font-display, not globally.
+        // Bold slab-serif display face for the marketing site only.
         display: ['ChunkFive', 'Georgia', 'serif'],
+        // Grotesk display face for in-app headings (page titles, big
+        // figures) — the app's own hierarchy, distinct from the marketing
+        // site's ChunkFive.
+        grotesk: ['"Bricolage Grotesque"', 'Inter', 'system-ui', 'sans-serif'],
       },
       borderRadius: {
         DEFAULT: '8px',
-        card: '12px',
+        card: '16px',
+        pill: '9999px',
       },
     },
   },

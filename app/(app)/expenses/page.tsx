@@ -10,7 +10,7 @@ import AccountSelect from '@/components/AccountSelect'
 import PageHeader from '@/components/PageHeader'
 import ConfirmDialog from '@/components/ConfirmDialog'
 import TourHighlight from '@/components/TourHighlight'
-import { Plus, Trash2, Paperclip, Search, FileDown, Sheet, Loader2 } from 'lucide-react'
+import { Plus, Trash2, Paperclip, Search, FileDown, Sheet, Loader2, Receipt, Wallet2, ListOrdered } from 'lucide-react'
 import { bankAccountLabel } from '@/types'
 
 export default function ExpensesPage() {
@@ -156,14 +156,16 @@ export default function ExpensesPage() {
 
       <div className="grid grid-cols-3 gap-4 mb-8">
         <MetricCard
+          icon={Receipt}
+          tone="amber"
           label="This month"
           value={fmt(monthTotal)}
           delta={spendPct !== null ? `${spendPct}%` : undefined}
           deltaTone={spendPct !== null && spendPct > 100 ? 'negative' : 'neutral'}
           sub={totalBudget > 0 ? `of ${fmt(totalBudget)} budget` : undefined}
         />
-        <MetricCard label="All time" value={fmt(totalAll)} />
-        <MetricCard label="Transactions" value={String(state.expenses.length)} sub="total logged" />
+        <MetricCard icon={Wallet2} tone="brand" label="All time" value={fmt(totalAll)} />
+        <MetricCard icon={ListOrdered} tone="sky" label="Transactions" value={String(state.expenses.length)} sub="total logged" />
       </div>
 
       {/* Add form */}

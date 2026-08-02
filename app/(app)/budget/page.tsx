@@ -5,6 +5,7 @@ import { EXPENSE_CATEGORIES, ExpenseCategory, CATEGORY_COLORS } from '@/types'
 import { fmt } from '@/lib/utils'
 import MetricCard from '@/components/MetricCard'
 import PageHeader from '@/components/PageHeader'
+import { Target, PiggyBank, AlertTriangle } from 'lucide-react'
 
 export default function BudgetPage() {
   const { state, setBudget: setBudgetOnServer } = useStore()
@@ -30,12 +31,16 @@ export default function BudgetPage() {
 
       <div className="grid grid-cols-3 gap-4 mb-8">
         <MetricCard
+          icon={Target}
+          tone="violet"
           label="Total budget"
           value={fmt(totalBudget)}
           delta={spendPct !== null ? `${spendPct}% used` : undefined}
           deltaTone={spendPct !== null && spendPct > 100 ? 'negative' : 'neutral'}
         />
         <MetricCard
+          icon={PiggyBank}
+          tone="brand"
           label="Remaining"
           value={fmt(Math.abs(remaining))}
           sub={remaining < 0 ? 'over budget' : 'left this month'}
@@ -43,6 +48,8 @@ export default function BudgetPage() {
           deltaTone="negative"
         />
         <MetricCard
+          icon={AlertTriangle}
+          tone="danger"
           label="Over limit"
           value={String(overBudgetCats)}
           sub="categories"

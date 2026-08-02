@@ -29,7 +29,8 @@ import EntityLogo from '@/components/EntityLogo'
 import { stockLogo, fundLogo } from '@/lib/entityLogo'
 import {
   Plus, Trash2, TrendingUp, TrendingDown, RefreshCw, CheckCircle, AlertCircle,
-  Edit2, X, Save, Search,
+  Edit2, X, Save, Search, Building2, CreditCard, Scale, Layers, ArrowDownToLine,
+  LineChart, Receipt, Coins,
 } from 'lucide-react'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 import clsx from 'clsx'
@@ -416,9 +417,11 @@ export default function AssetsPage() {
       </div>
 
       <div className="grid grid-cols-3 gap-4 mb-6">
-        <MetricCard label="Total assets" value={fmtCompact(totalAssetsAll)} />
-        <MetricCard label="Total liabilities" value={fmtCompact(totalLiab)} />
+        <MetricCard icon={Building2} tone="brand" label="Total assets" value={fmtCompact(totalAssetsAll)} />
+        <MetricCard icon={CreditCard} tone="amber" label="Total liabilities" value={fmtCompact(totalLiab)} />
         <MetricCard
+          icon={Scale}
+          tone="violet"
           label="Assets − liabilities"
           value={fmtCompact(Math.abs(assetsMinusLiabilities))}
           sub={assetsMinusLiabilities >= 0 ? 'positive position' : 'negative position'}
@@ -445,9 +448,11 @@ export default function AssetsPage() {
       {mainTab === 'Assets' && (
         <>
           <div className="grid grid-cols-3 gap-4 mb-6">
-            <MetricCard label="Combined value" value={fmtCompact(totalCurrent + totalFundCurrent)} />
-            <MetricCard label="Total invested" value={fmtCompact(totalCost + totalFundCost)} />
+            <MetricCard icon={Layers} tone="sky" label="Combined value" value={fmtCompact(totalCurrent + totalFundCurrent)} />
+            <MetricCard icon={ArrowDownToLine} tone="violet" label="Total invested" value={fmtCompact(totalCost + totalFundCost)} />
             <MetricCard
+              icon={TrendingUp}
+              tone="brand"
               label="Total gain / loss"
               value={fmtCompact(Math.abs(totalGain + totalFundGain))}
               sub="vs invested"
@@ -682,16 +687,18 @@ export default function AssetsPage() {
           {assetSubTab === 'Mutual Funds' && (
             <>
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                <MetricCard label="Portfolio value" value={fmtCompact(totalFundCurrent)} />
-                <MetricCard label="Cost basis" value={fmtCompact(totalFundCost)} />
+                <MetricCard icon={LineChart} tone="sky" label="Portfolio value" value={fmtCompact(totalFundCurrent)} />
+                <MetricCard icon={Receipt} tone="violet" label="Cost basis" value={fmtCompact(totalFundCost)} />
                 <MetricCard
+                  icon={TrendingUp}
+                  tone="brand"
                   label="Unrealized gain"
                   value={fmtCompact(Math.abs(totalFundGain))}
                   sub="vs cost basis"
                   delta={`${totalFundGain >= 0 ? '+' : '−'}${totalFundGainPct}%`}
                   deltaTone={totalFundGain >= 0 ? 'positive' : 'negative'}
                 />
-                <MetricCard label="Realized gains" value={fmtCompact(totalRealizedGains)} sub="from sold units" />
+                <MetricCard icon={Coins} tone="amber" label="Realized gains" value={fmtCompact(totalRealizedGains)} sub="from sold units" />
               </div>
 
               <p className="text-[11px] text-ink-muted -mt-3 mb-4">

@@ -10,7 +10,7 @@ import PageHeader from '@/components/PageHeader'
 import NetWorthTrendChart from '@/components/NetWorthTrendChart'
 import SpendingDonutChart from '@/components/SpendingDonutChart'
 import SetupChecklist from '@/components/SetupChecklist'
-import { ArrowRight, AlertTriangle, CreditCard } from 'lucide-react'
+import { ArrowRight, AlertTriangle, CreditCard, TrendingUp, Wallet, Receipt, Target } from 'lucide-react'
 import Link from 'next/link'
 
 const REMINDER_WINDOW_DAYS = 7
@@ -143,6 +143,8 @@ export default function Dashboard() {
       {/* Metrics */}
       <div id="net-worth" className="scroll-mt-6 grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
         <MetricCard
+          icon={TrendingUp}
+          tone="brand"
           label="Net worth"
           value={fmtCompact(netWorth)}
           sub="assets + investments − liabilities"
@@ -150,11 +152,15 @@ export default function Dashboard() {
           deltaTone={netWorthChangePct !== null && netWorthChangePct < 0 ? 'negative' : 'positive'}
         />
         <MetricCard
+          icon={Wallet}
+          tone="sky"
           label={`Income · ${monthLabel}`}
           value={fmtCompact(monthIncome)}
           sub="salary + other income"
         />
         <MetricCard
+          icon={Receipt}
+          tone="amber"
           label={`Spent · ${monthLabel}`}
           value={fmtCompact(totalSpend)}
           sub={`of ${fmtCompact(totalBudget)} budgeted`}
@@ -162,6 +168,8 @@ export default function Dashboard() {
           deltaTone={spendPct !== null && spendPct > 100 ? 'negative' : 'neutral'}
         />
         <MetricCard
+          icon={Target}
+          tone="violet"
           label="Budget left"
           value={fmtCompact(Math.abs(budgetLeft))}
           sub={budgetLeft < 0 ? 'over budget' : `${daysRemainingInMonth()} days remaining`}

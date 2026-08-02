@@ -20,7 +20,7 @@ import PageHeader from '@/components/PageHeader'
 import NetWorthContribution from '@/components/NetWorthContribution'
 import ConfirmDialog from '@/components/ConfirmDialog'
 import TourHighlight from '@/components/TourHighlight'
-import { Plus, Trash2, RefreshCw, CheckCircle2 } from 'lucide-react'
+import { Plus, Trash2, RefreshCw, CheckCircle2, Wallet, CalendarRange, Landmark, ListOrdered } from 'lucide-react'
 import clsx from 'clsx'
 
 export default function IncomePage() {
@@ -118,15 +118,17 @@ export default function IncomePage() {
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
         <MetricCard
+          icon={Wallet}
+          tone="sky"
           label="This month"
           value={fmt(monthTotal)}
           sub={monthDeltaPct !== null ? 'vs last month' : undefined}
           delta={monthDeltaPct !== null ? `${monthDeltaPct >= 0 ? '+' : ''}${monthDeltaPct}%` : undefined}
           deltaTone={monthDeltaPct !== null && monthDeltaPct < 0 ? 'negative' : 'positive'}
         />
-        <MetricCard label={`This tax year (${fy.label})`} value={fmt(fyTotal)} sub="Jul – Jun" />
-        <MetricCard label="All time" value={fmt(totalAll)} />
-        <MetricCard label="Transactions" value={String(state.incomes.length)} sub="total logged" />
+        <MetricCard icon={CalendarRange} tone="violet" label={`This tax year (${fy.label})`} value={fmt(fyTotal)} sub="Jul – Jun" />
+        <MetricCard icon={Landmark} tone="brand" label="All time" value={fmt(totalAll)} />
+        <MetricCard icon={ListOrdered} tone="amber" label="Transactions" value={String(state.incomes.length)} sub="total logged" />
       </div>
 
       {/* Add income */}

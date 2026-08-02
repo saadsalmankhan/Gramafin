@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Bricolage+Grotesque:opsz,wght@12..96,500..800&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -37,6 +37,25 @@
   --danger:  220 38 38;
   --warning: 217 119 6;
 
+  /* Secondary accent family — per-metric identity on stat-card icon chips
+     (MetricCard) only, never a substitute for brand/success/danger/warning.
+     Validated with the dataviz skill's palette checker (CVD separation,
+     contrast vs surface-0, OKLCH lightness band) — don't hand-tune these
+     without re-running it. */
+  --accent-violet: 109 90 224;
+  --accent-amber:  204 106 46;
+  --accent-sky:    30 147 199;
+
+  /* Sidebar shell — deliberately NOT part of the light/dark split below.
+     The nav chrome stays a constant dark shell regardless of the app's own
+     light/dark theme toggle (which only affects the content area), so these
+     tokens don't move under .dark. */
+  --shell-bg:        10 10 9;
+  --shell-border:    255 255 255;
+  --shell-ink:       245 244 242;
+  --shell-ink-muted: 154 152 145;
+  --shell-active-bg: 34 187 105;
+
   --scrollbar-color: #d4d2cb;
   --sidebar-w: 240px;
 }
@@ -60,6 +79,10 @@
   --success: 74 222 128;
   --danger:  248 113 113;
   --warning: 251 191 36;
+
+  --accent-violet: 124 107 224;
+  --accent-amber:  201 122 62;
+  --accent-sky:    59 157 194;
 
   --scrollbar-color: #4a4945;
 }
@@ -98,19 +121,19 @@ input[type='number']::-webkit-outer-spin-button {
   }
 
   .btn-primary {
-    @apply h-9 px-4 rounded bg-brand-600 text-white text-sm font-medium
+    @apply h-9 px-4 rounded-pill bg-brand-600 text-white text-sm font-medium
            hover:bg-brand-700 active:scale-[.98] transition-all duration-100
            flex items-center gap-1.5 whitespace-nowrap;
   }
 
   .btn-ghost {
-    @apply h-9 px-3 rounded border border-gray-200 dark:border-white/10 bg-white dark:bg-surface-1 text-sm text-ink-secondary
+    @apply h-9 px-3.5 rounded-pill border border-gray-200 dark:border-white/10 bg-white dark:bg-surface-1 text-sm text-ink-secondary
            hover:bg-surface-1 active:scale-[.98] transition-all duration-100
            flex items-center gap-1.5 whitespace-nowrap;
   }
 
   .btn-danger {
-    @apply h-8 px-2.5 rounded border border-red-200 dark:border-danger/30 text-red-500 dark:text-danger text-xs
+    @apply h-8 px-3 rounded-pill border border-red-200 dark:border-danger/30 text-red-500 dark:text-danger text-xs
            hover:bg-red-50 dark:hover:bg-danger/10 active:scale-[.98] transition-all duration-100
            flex items-center gap-1;
   }
@@ -129,5 +152,11 @@ input[type='number']::-webkit-outer-spin-button {
 
   .section-label {
     @apply text-[10px] font-medium uppercase tracking-widest text-ink-muted;
+  }
+
+  /* Per-metric accent chip on stat cards (MetricCard) — the icon carries a
+     tinted background at low opacity, the icon itself at full tone. */
+  .icon-chip {
+    @apply w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0;
   }
 }
